@@ -8,7 +8,6 @@ const Canvas = require("canvas");
 const path = require("path");
 require("dotenv").config();
 const { subRole1, subRole2, subRole3, rankChannelID } = process.env;
-let success = false;
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -25,6 +24,7 @@ module.exports = {
       fetchReply: true,
     });
 
+    let success = false;
     const target = interaction.options.getUser("user") || interaction.user;
     let memberTarget = interaction.guild.members.cache.get(target.id);
     const user = await Levels.fetch(target.id, interaction.guild.id, true);
@@ -184,8 +184,10 @@ module.exports = {
       if (success === true) {
         if (interaction.channel.id === rankChannelID) return;
       } else {
-        interaction.deleteReply().catch(console.error);
+        interaction.deleteReply().catch((e) => {
+          console.log(`Failed to delete Rank interaction.`);
+        });
       }
-    }, 10 * 60 * 1000);
+    }, 5 * 60 * 1000);
   },
 };

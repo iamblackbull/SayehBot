@@ -32,13 +32,12 @@ module.exports = (client) => {
         Age: `${newBirthdayAge}`,
       });
       await newBirthdayProfile.save().catch(console.error);
-      if (guild.member(`${newBirthdayProfile.User}`)) {
-        await channel
-          .send({
-            content: `🎈 🎂 Today is **<@${birthdayProfile.User}>**'s birthday! (Age **${newBirthdayProfile.Age}**) Happy birthday! 🥳 🎉`,
-          })
-          .catch(console.error);
-      }
+      await channel
+        .send({
+          content: `🎈 🎂 Today is **<@${birthdayProfile.User}>**'s birthday! (Age **${newBirthdayProfile.Age}**) Happy birthday! 🥳 🎉`,
+        })
+        .catch(console.error);
+
       console.log(
         `Today is ${birthdayProfile.User}'s birthday! (Age ${newBirthdayProfile.Age}) Happy birthday! `
       );

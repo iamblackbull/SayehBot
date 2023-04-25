@@ -9,6 +9,7 @@ const {
 } = require("discord.js");
 const fs = require("fs");
 const { Player } = require("discord-player");
+const executing = require("node:process");
 
 const client = new Client({
   intents: [
@@ -45,6 +46,7 @@ client.player = new Player(client, {
   leaveOnEmpty: true,
   leaveOnEndCooldown: 5 * 60 * 1000,
   leaveOnEmptyCooldown: 5 * 60 * 1000,
+  smoothVolume: true,
   ytdlOptions: {
     quality: "highestaudio",
     highWaterMark: 1 << 25,
@@ -75,6 +77,13 @@ client.player.on("connectionCreate", function (queue) {
         : newNetworking.on("stateChange", networkStateChangeHandler);
     }
   );
+});
+
+executing.on("unhandledRejection", (reason) => {
+  console.log(`Unhandled Rejection with reason:\n`, reason);
+});
+executing.on("uncaughtException", (reason) => {
+  console.log(`Uncaugh Exception with reason:\n`, reason);
 });
 
 client.commands = new Collection();

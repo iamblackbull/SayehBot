@@ -89,7 +89,7 @@ module.exports = {
         })
         .catch((e) => {
           failedEmbed
-            .setTitle(`**No results**`)
+            .setTitle(`**No Result**`)
             .setDescription(`Please try again later.`)
             .setColor(0xffea00)
             .setThumbnail(
@@ -100,7 +100,9 @@ module.exports = {
           });
         });
       setTimeout(() => {
-        interaction.deleteReply().catch(console.error);
+        interaction.deleteReply().catch((e) => {
+          console.log(`Failed to delete Apex context menu.`);
+        });
       }, 10 * 60 * 1000);
     }
   },

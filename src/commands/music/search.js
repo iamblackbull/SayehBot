@@ -5,7 +5,7 @@ const {
 } = require("discord.js");
 const { QueryType } = require("discord-player");
 const { musicChannelID } = process.env;
-let success = false;
+const replay = require("../../schemas/replay-schema");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -21,6 +21,11 @@ module.exports = {
     const searchEmbed = await interaction.deferReply({
       fetchReply: true,
     });
+    let success = false;
+    const { guild } = interaction;
+    let replayList = await replay.findOne({
+      guild: guild.id,
+    });
 
     let queue = client.player.getQueue(interaction.guildId);
     if (!queue) {
@@ -29,6 +34,7 @@ module.exports = {
         leaveOnEmpty: true,
         leaveOnEndCooldown: 5 * 60 * 1000,
         leaveOnEmptyCooldown: 5 * 60 * 1000,
+        smoothVolume: true,
         ytdlOptions: {
           quality: "highestaudio",
           highWaterMark: 1 << 25,
@@ -37,6 +43,7 @@ module.exports = {
     }
 
     let connection = false;
+    let song;
     let failedEmbed = new EmbedBuilder();
     let embed = new EmbedBuilder()
       .setTitle(`🔎 Result`)
@@ -90,7 +97,7 @@ module.exports = {
           });
           if (result.tracks.length === 0) {
             failedEmbed
-              .setTitle(`**No results**`)
+              .setTitle(`**No Result**`)
               .setDescription(`Make sure you input a valid link.`)
               .setColor(0xffea00)
               .setThumbnail(
@@ -100,7 +107,7 @@ module.exports = {
               embeds: [failedEmbed],
             });
           } else {
-            const song = result.tracks[0];
+            song = result.tracks[0];
             embed
               .setDescription(
                 `\`[${song.duration}]\` [${song.title} -- ${song.author}](${song.url})\n\n`
@@ -136,6 +143,47 @@ module.exports = {
               embeds: [embed],
             });
             success = true;
+            if (!replayList) {
+              replayList = new replay({
+                guild: guild.id,
+                Song1: song.url,
+                Name1: song.title,
+              });
+              await replayList.save().catch(console.error);
+            } else {
+              if (!replayList.Song1) {
+                await replay.updateOne(
+                  { guild: guild.id },
+                  { Song1: song.url, Name1: song.title }
+                );
+                await replay.save().catch(console.error);
+              } else if (!replayList.Song2) {
+                await replay.updateOne(
+                  { guild: guild.id },
+                  { Song2: song.url, Name2: song.title }
+                );
+                await replay.save().catch(console.error);
+              } else if (!replayList.Song3) {
+                await replay.updateOne(
+                  { guild: guild.id },
+                  { Song3: song.url, Name3: song.title }
+                );
+                await replay.save().catch(console.error);
+              } else {
+                await replay.updateOne(
+                  { guild: guild.id },
+                  {
+                    Song1: replayList.Song2,
+                    Name1: replayList.Name2,
+                    Song2: replayList.Song3,
+                    Name2: replayList.Name3,
+                    Song3: song.url,
+                    Name3: song.title,
+                  }
+                );
+                await replay.save().catch(console.error);
+              }
+            }
           }
         } else {
           let url = interaction.options.getString("keyword");
@@ -146,7 +194,7 @@ module.exports = {
 
           if (result.tracks.length === 0) {
             failedEmbed
-              .setTitle(`**No results**`)
+              .setTitle(`**No Result**`)
               .setDescription(`Make sure you input a valid link.`)
               .setColor(0xffea00)
               .setThumbnail(
@@ -181,7 +229,6 @@ module.exports = {
               if (user.bot) return;
               else {
                 reaction.users.remove(reaction.users.cache.get(user.id));
-                let song;
                 if (reaction.emoji.name === `1️⃣`) {
                   song = result.tracks[0];
                   queue.addTrack(song);
@@ -217,11 +264,52 @@ module.exports = {
               embeds: [embed],
             });
             success = true;
+            if (!replayList) {
+              replayList = new replay({
+                guild: guild.id,
+                Song1: song.url,
+                Name1: song.title,
+              });
+              await replayList.save().catch(console.error);
+            } else {
+              if (!replayList.Song1) {
+                await replay.updateOne(
+                  { guild: guild.id },
+                  { Song1: song.url, Name1: song.title }
+                );
+                await replay.save().catch(console.error);
+              } else if (!replayList.Song2) {
+                await replay.updateOne(
+                  { guild: guild.id },
+                  { Song2: song.url, Name2: song.title }
+                );
+                await replay.save().catch(console.error);
+              } else if (!replayList.Song3) {
+                await replay.updateOne(
+                  { guild: guild.id },
+                  { Song3: song.url, Name3: song.title }
+                );
+                await replay.save().catch(console.error);
+              } else {
+                await replay.updateOne(
+                  { guild: guild.id },
+                  {
+                    Song1: replayList.Song2,
+                    Name1: replayList.Name2,
+                    Song2: replayList.Song3,
+                    Name2: replayList.Name3,
+                    Song3: song.url,
+                    Name3: song.title,
+                  }
+                );
+                await replay.save().catch(console.error);
+              }
+            }
           }
         }
       } else {
         failedEmbed
-          .setTitle(`**Bot is busy**`)
+          .setTitle(`**Busy**`)
           .setDescription(`Bot is busy in another voice channel.`)
           .setColor(0x256fc4)
           .setThumbnail(
@@ -244,10 +332,14 @@ module.exports = {
               )
             );
         } else {
-          interaction.deleteReply().catch(console.error);
+          interaction.deleteReply().catch((e) => {
+            console.log(`Failed to delete Search interaction.`);
+          });
         }
       } else {
-        interaction.deleteReply().catch(console.error);
+        interaction.deleteReply().catch((e) => {
+          console.log(`Failed to delete unsuccessfull Search interaction.`);
+        });
       }
     }, 10 * 60 * 1000);
   },

@@ -112,6 +112,18 @@ module.exports = {
               User: interaction.user.id,
             });
 
+            const saveEmbed = new EmbedBuilder()
+            .setTitle(`Save Account`)
+            .setDescription("Your Apex Account have been saved to the database.")
+            .setColor(0x25bfc4)
+            .setThumbnail(
+              `https://freeiconshop.com/wp-content/uploads/edd/link-open-flat.png`
+            )
+            .setFooter({
+              iconURL: `https://seeklogo.com/images/A/apex-logo-C3478A4601-seeklogo.com.png`,
+              text: `Apex Legends`,
+            });
+
             if (!apexList) {
               apexList = new apex({
                 User: interaction.user.id,
@@ -120,8 +132,7 @@ module.exports = {
               });
               await apexList.save().catch(console.error);
               await interaction.reply({
-                content:
-                  "✅ Your Apex Account have been saved to the database.",
+                embeds: [saveEmbed],
                 ephemeral: true,
               });
               console.log(
@@ -138,8 +149,7 @@ module.exports = {
               });
               await newApexList.save().catch(console.error);
               await interaction.reply({
-                content:
-                  "✅ Your new Apex Account have been saved to the database.",
+                embeds: [saveEmbed],
                 ephemeral: true,
               });
               console.log(
@@ -155,7 +165,7 @@ module.exports = {
       })
       .catch((e) => {
         let failedEmbed = new EmbedBuilder()
-          .setTitle(`**No results**`)
+          .setTitle(`**No Result**`)
           .setDescription(`Make sure you input the correct informations.`)
           .setColor(0xffea00)
           .setThumbnail(
@@ -166,7 +176,9 @@ module.exports = {
         });
       });
     setTimeout(() => {
-      interaction.deleteReply().catch(console.error);
+      interaction.deleteReply().catch((e) => {
+        console.log(`Failed to delete Apex interaction.`);
+      });
     }, 10 * 60 * 1000);
   },
 };

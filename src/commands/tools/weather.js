@@ -24,9 +24,9 @@ module.exports = {
       function (err, result) {
         if (!result) {
           failedEmbed
-            .setTitle(`**No results**`)
+            .setTitle(`**No Result**`)
             .setDescription(
-              `There is no data for ${location} at this moment. Please try again later.`
+              `There is no data for ${location} at this moment.`
             )
             .setColor(0xffea00)
             .setThumbnail(
@@ -92,9 +92,9 @@ module.exports = {
           } catch (err) {
             console.log(err);
             failedEmbed
-              .setTitle(`**Action Failed**`)
+              .setTitle(`**No Response**`)
               .setDescription(
-                `Unable to recieve data from MSN Weather API. Please try again later.`
+                `MSN Weather API did not respond. Please try again later`
               )
               .setColor(0xffea00)
               .setThumbnail(
@@ -107,7 +107,9 @@ module.exports = {
           }
         }
         setTimeout(() => {
-          interaction.deleteReply().catch(console.error);
+          interaction.deleteReply().catch((e) => {
+            console.log(`Failed to delete Weather interaction.`);
+          });
         }, 10 * 60 * 1000);
       }
     );

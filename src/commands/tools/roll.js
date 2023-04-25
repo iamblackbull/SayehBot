@@ -29,7 +29,9 @@ module.exports = {
       content: `🎲 ${interaction.user} rolls **${roll}** `,
     });
     setTimeout(() => {
-      interaction.deleteReply().catch(console.error);
+      interaction.deleteReply().catch((e) => {
+        console.log(`Failed to delete Roll interaction.`);
+      });
     }, 2 * 60 * 1000);
 
     if (user.xp > 0) {
@@ -89,7 +91,7 @@ module.exports = {
           if (loseXp > user.xp) {
             loseXp = uesr.xp;
           }
-          const hasLevelDown = await Levels.subtractXp(
+          await Levels.subtractXp(
             interaction.user.id,
             interaction.guild.id,
             loseXp
@@ -108,18 +110,6 @@ module.exports = {
           console.log(
             `${interaction.user.tag} lost ${loseXp} XP by rolling ${roll} `
           );
-          if (hasLevelDown) {
-            const user = await Levels.fetch(
-              interaction.user.id,
-              interaction.guild.id
-            );
-            console.log(
-              `${interaction.user.tag} just retreated to level ${user.level}`
-            );
-            channel.send(
-              `😓 ${interaction.user} just retreated to level **${user.level}** 📉`
-            );
-          }
         }
       } else if (roll === 50) {
         if (user.level === 60) return;
@@ -157,7 +147,7 @@ module.exports = {
             if (Xp > user.xp) {
               Xp = user.xp;
             }
-            const hasLevelDown = await Levels.subtractXp(
+            await Levels.subtractXp(
               interaction.user.id,
               interaction.guild.id,
               Xp
@@ -170,20 +160,8 @@ module.exports = {
                 `https://www.inventicons.com/uploads/iconset/669/wm/512/Deslikelose-78.png`
               );
             console.log(
-              `${interaction.user.tag} lost ${loseXp} XP by rolling ${roll} `
+              `${interaction.user.tag} lost ${Xp} XP by rolling ${roll} `
             );
-            if (hasLevelDown) {
-              const user = await Levels.fetch(
-                interaction.user.id,
-                interaction.guild.id
-              );
-              console.log(
-                `${interaction.user.tag} just retreated to level ${user.level}`
-              );
-              channel.send(
-                `😓 ${interaction.user} just retreated to level **${user.level}** 📉`
-              );
-            }
           }
           await interaction.editReply({
             content: `🎲 ${interaction.user} rolls **${roll}** `,
@@ -288,18 +266,6 @@ module.exports = {
           console.log(
             `${interaction.user.tag} lost ${loseXp} XP by rolling ${roll} `
           );
-          if (hasLevelDown) {
-            const user = await Levels.fetch(
-              interaction.user.id,
-              interaction.guild.id
-            );
-            console.log(
-              `${interaction.user.tag} just retreated to level ${user.level}`
-            );
-            channel.send(
-              `😓 ${interaction.user} just retreated to level **${user.level}** 📉`
-            );
-          }
         }
       } else if (roll === 7) {
         if (user.level === 60) return;
@@ -344,7 +310,7 @@ module.exports = {
           if (loseXp > user.xp) {
             loseXp = uesr.xp;
           }
-          const hasLevelDown = await Levels.subtractXp(
+          await Levels.subtractXp(
             interaction.user.id,
             interaction.guild.id,
             loseXp
@@ -363,18 +329,6 @@ module.exports = {
           console.log(
             `${interaction.user.tag} lost ${loseXp} XP by rolling ${roll} `
           );
-          if (hasLevelDown) {
-            const user = await Levels.fetch(
-              interaction.user.id,
-              interaction.guild.id
-            );
-            console.log(
-              `${interaction.user.tag} just retreated to level ${user.level}`
-            );
-            channel.send(
-              `😓 ${interaction.user} just retreated to level **${user.level}** 📉`
-            );
-          }
         }
       } else if (roll === 39) {
         if ((user.level = 60)) return;
@@ -383,7 +337,7 @@ module.exports = {
           if (loseXp > user.xp) {
             loseXp = uesr.xp;
           }
-          const hasLevelDown = await Levels.subtractXp(
+          await Levels.subtractXp(
             interaction.user.id,
             interaction.guild.id,
             loseXp
@@ -402,18 +356,6 @@ module.exports = {
           console.log(
             `${interaction.user.tag} lost ${loseXp} XP by rolling ${roll} `
           );
-          if (hasLevelDown) {
-            const user = await Levels.fetch(
-              interaction.user.id,
-              interaction.guild.id
-            );
-            console.log(
-              `${interaction.user.tag} just retreated to level ${user.level}`
-            );
-            channel.send(
-              `😓 ${interaction.user} just retreated to level **${user.level}** 📉`
-            );
-          }
         }
       }
     }

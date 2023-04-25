@@ -24,7 +24,7 @@ module.exports = {
     if (rawLeaderboard.length < 1) {
       failedEmbed
         .setTitle(`**Action Failed**`)
-        .setDescription(`Leaderboard is empty!`)
+        .setDescription(`Leaderboard is empty.`)
         .setColor(0xffea00)
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
@@ -57,7 +57,9 @@ module.exports = {
       if (success === true) {
         if (interaction.channel.id === rankChannelID) return;
       } else {
-        interaction.deleteReply().catch(console.error);
+        interaction.deleteReply().catch((e) => {
+          console.log(`Failed to delete Leaderboard interaction.`);
+        });
       }
     }, 10 * 60 * 1000);
   },

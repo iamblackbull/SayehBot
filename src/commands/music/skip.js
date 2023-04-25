@@ -6,8 +6,6 @@ const {
   ButtonStyle,
 } = require("discord.js");
 const { musicChannelID } = process.env;
-let success = false;
-let timer;
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -22,6 +20,8 @@ module.exports = {
 
     let failedEmbed = new EmbedBuilder();
     let embed = new EmbedBuilder().setColor(0xc42525);
+    let success = false;
+    let timer;
 
     if (!queue) {
       failedEmbed
@@ -77,6 +77,14 @@ module.exports = {
           .setCustomId(`remove-favorite`)
           .setEmoji(`💔`)
           .setStyle(ButtonStyle.Secondary);
+        const lyricsButton = new ButtonBuilder()
+          .setCustomId(`lyrics`)
+          .setEmoji(`🎤`)
+          .setStyle(ButtonStyle.Primary);
+        const downloadButton = new ButtonBuilder()
+          .setCustomId(`downloader`)
+          .setEmoji(`⬇`)
+          .setStyle(ButtonStyle.Primary);
 
         embed
           .setTitle(`⏭ Next`)
@@ -105,14 +113,16 @@ module.exports = {
           components: [
             new ActionRowBuilder()
               .addComponents(addButton)
-              .addComponents(removeButton),
+              .addComponents(removeButton)
+              .addComponents(lyricsButton)
+              .addComponents(downloadButton),
           ],
         });
         success = true;
       }
     } else {
       failedEmbed
-        .setTitle(`**Bot is busy**`)
+        .setTitle(`**Busy**`)
         .setDescription(`Bot is busy in another voice channel.`)
         .setColor(0x256fc4)
         .setThumbnail(
@@ -123,7 +133,7 @@ module.exports = {
       });
     }
     if (success === false) {
-      timer = 10;
+      timer = 5;
     }
     if (timer > 10) timer = 10;
     if (timer < 1) timer = 1;
@@ -132,10 +142,14 @@ module.exports = {
         if (interaction.channel.id === musicChannelID) {
           interaction.editReply({ components: [] });
         } else {
-          interaction.deleteReply().catch(console.error);
+          interaction.deleteReply().catch((e) => {
+            console.log(`Failed to delete Skip interaction.`);
+          });
         }
       } else {
-        interaction.deleteReply().catch(console.error);
+        interaction.deleteReply().catch((e) => {
+          console.log(`Failed to delete unsuccessfull Skip interaction.`);
+        });
       }
     }, timer * 60 * 1000);
   },

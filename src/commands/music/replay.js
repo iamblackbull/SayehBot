@@ -7,18 +7,38 @@ const {
   ButtonStyle,
 } = require("discord.js");
 const { QueryType } = require("discord-player");
-const { musicChannelID } = process.env;
+const { musicChannelID, guildID } = process.env;
 const replay = require("../../schemas/replay-schema");
+let replayList = await replay.findOne({
+  guild: guildID,
+});
+let name1 = replayList.Name1 || `--`;
+let name2 = replayList.Name2 || `--`;
+let name3 = replayList.Name3 || `--`;
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("play")
-    .setDescription("Play audios from YouTube / Spotify / Soundcloud")
+    .setName("replay")
+    .setDescription("Replay recently played audio")
     .addStringOption((option) =>
       option
         .setName("song")
-        .setDescription("Input song name or url")
+        .setDescription("Select the audio you want to play")
         .setRequired(true)
+        .addChoices(
+          {
+            name: `${name1}`,
+            value: "1",
+          },
+          {
+            name: `${name2}`,
+            value: "2",
+          },
+          {
+            name: `${name3}`,
+            value: "3",
+          }
+        )
     ),
   async execute(interaction, client) {
     await interaction.deferReply({
@@ -97,22 +117,29 @@ module.exports = {
           .setEmoji(`⬇`)
           .setStyle(ButtonStyle.Primary);
 
-        let url = interaction.options.getString("song");
+        const recentNumber = interaction.options.get("song").value;
+        let url;
+
+        if (recentNumber == 1) {
+          url = replayList.Song1;
+        }
+        if (recentNumber == 2) {
+          url = replayList.Song2;
+        }
+        if (recentNumber == 3) {
+          url = replayList.Song3;
+        }
         const result = await client.player.search(url, {
           requestedBy: interaction.user,
           searchEngine: QueryType.AUTO,
         });
         if (result.tracks.length === 0) {
-          if (url.toLowerCase().startsWith("https")) {
-            failedEmbed.setDescription(`Make sure you input a valid link.`);
-          } else {
-            failedEmbed.setDescription(
-              `Make sure you input a valid song name.`
-            );
-          }
           failedEmbed
             .setTitle(`**No Result**`)
             .setColor(0xffea00)
+            .setDescription(
+              `Unable to replay audio. It might not be available anymore.`
+            )
             .setThumbnail(
               `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
             );
@@ -157,51 +184,6 @@ module.exports = {
                 .addComponents(downloadButton),
             ],
           });
-          const { guild } = interaction;
-          let replayList = await replay.findOne({
-            guild: guild.id,
-          });
-          if (!replayList) {
-            replayList = new replay({
-              guild: guild.id,
-              Song1: song.url,
-              Name1: song.title,
-            });
-            await replayList.save().catch(console.error);
-          } else {
-            if (!replayList.Song1) {
-              await replay.updateOne(
-                { guild: guild.id },
-                { Song1: song.url, Name1: song.title }
-              );
-              await replay.save().catch(console.error);
-            } else if (!replayList.Song2) {
-              await replay.updateOne(
-                { guild: guild.id },
-                { Song2: song.url, Name2: song.title }
-              );
-              await replay.save().catch(console.error);
-            } else if (!replayList.Song3) {
-              await replay.updateOne(
-                { guild: guild.id },
-                { Song3: song.url, Name3: song.title }
-              );
-              await replay.save().catch(console.error);
-            } else {
-              await replay.updateOne(
-                { guild: guild.id },
-                {
-                  Song1: replayList.Song2,
-                  Name1: replayList.Name2,
-                  Song2: replayList.Song3,
-                  Name2: replayList.Name3,
-                  Song3: song.url,
-                  Name3: song.title,
-                }
-              );
-              await replay.save().catch(console.error);
-            }
-          }
         }
       } else {
         failedEmbed
@@ -227,12 +209,12 @@ module.exports = {
           interaction.editReply({ components: [] });
         } else {
           interaction.deleteReply().catch((e) => {
-            console.log(`Failed to delete Play interaction.`);
+            console.log(`Failed to delete Replay interaction.`);
           });
         }
       } else {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete unsuccessfull Play interaction.`);
+          console.log(`Failed to delete unsuccessfull Replay interaction.`);
         });
       }
     }, timer * 60 * 1000);

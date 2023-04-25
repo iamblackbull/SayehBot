@@ -136,7 +136,9 @@ module.exports = {
       });
     }
     setTimeout(() => {
-      interaction.deleteReply().catch(console.error);
+      interaction.deleteReply().catch((e) => {
+        console.log(`Failed to delete XP interaction.`);
+      });
     }, 10 * 60 * 1000);
   },
 };

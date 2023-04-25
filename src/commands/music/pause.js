@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { musicChannelID } = process.env;
 let paused = false;
-let success = false;
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -15,6 +14,7 @@ module.exports = {
 
     let failedEmbed = new EmbedBuilder();
     let embed = new EmbedBuilder();
+    let success = false;
 
     if (!queue) {
       failedEmbed
@@ -68,11 +68,12 @@ module.exports = {
         collector.on("collect", async (reaction, user) => {
           if (user.bot) return;
           else {
-            pauseEmbed.reactions.removeAll();
+            reaction.users.remove(reaction.users.cache.get(user.id));
             if (reaction.emoji.name === `▶`) {
               if (!queue) return;
               if (!queue.current) return;
               if (paused === false) return;
+              pauseEmbed.reactions.removeAll();
               queue.setPaused(false);
               paused = false;
               embed
@@ -137,7 +138,7 @@ module.exports = {
       }
     } else {
       failedEmbed
-        .setTitle(`**Bot is busy**`)
+        .setTitle(`**Busy**`)
         .setDescription(`Bot is busy in another voice channel.`)
         .setColor(0x256fc4)
         .setThumbnail(
@@ -159,10 +160,14 @@ module.exports = {
               )
             );
         } else {
-          interaction.deleteReply().catch(console.error);
+          interaction.deleteReply().catch((e) => {
+            console.log(`Failed to delete Pause interaction.`);
+          });
         }
       } else {
-        interaction.deleteReply().catch(console.error);
+        interaction.deleteReply().catch((e) => {
+          console.log(`Failed to delete unsuccessfull Pause interaction.`);
+        });
       }
     }, 10 * 60 * 1000);
   },

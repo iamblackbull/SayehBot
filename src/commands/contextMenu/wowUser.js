@@ -437,7 +437,7 @@ module.exports = {
         })
         .catch((e) => {
           failedEmbed
-            .setTitle(`**No results**`)
+            .setTitle(`**No Result**`)
             .setDescription(`Character might not be max level.`)
             .setColor(0xffea00)
             .setThumbnail(
@@ -449,8 +449,10 @@ module.exports = {
         });
 
       setTimeout(() => {
-        interaction.deleteReply().catch(console.error);
-      }, 10 * 60 * 1000);
+        interaction.deleteReply().catch((e) => {
+          console.log(`Failed to delete WOW context menu.`);
+        });
+      }, 5 * 60 * 1000);
     }
   },
 };

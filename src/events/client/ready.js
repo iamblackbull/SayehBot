@@ -10,13 +10,13 @@ module.exports = {
   async execute(client) {
     console.log(`SayehBot is online!`);
     console.log(
-      `Today's date: ${currentDate} / ${currentMonth} / ${currentYear}`
+      `Today's date: ${currentDate}.${currentMonth}.${currentYear}`
     );
 
     setInterval(client.remindBirthday, 24 * 60 * 60 * 1000);
-    setInterval(client.checkStreamS, 10 * 1000);
-    setInterval(client.checkStreamH, 10 * 1000);
-    setInterval(client.checkVideo, 10 * 1000);
+    setInterval(client.checkStreamS, 1 * 10 * 1000);
+    setInterval(client.checkStreamH, 1 * 10 * 1000);
+    setInterval(client.checkVideo, 5 * 10 * 1000);
     client.user.setPresence({
       activities: [
         {

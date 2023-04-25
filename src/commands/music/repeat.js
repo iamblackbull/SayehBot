@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { musicChannelID } = process.env;
 let repeatMode = false;
-let success = false;
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -15,6 +14,7 @@ module.exports = {
 
     let embed = new EmbedBuilder().setColor(0x25bfc4).setTitle(`🔁 Repeat`);
     let failedEmbed = new EmbedBuilder();
+    let success = false;
 
     if (!queue) {
       failedEmbed
@@ -79,7 +79,7 @@ module.exports = {
       success = true;
     } else {
       failedEmbed
-        .setTitle(`**Bot is busy**`)
+        .setTitle(`**Busy**`)
         .setDescription(`Bot is busy in another voice channel.`)
         .setColor(0x256fc4)
         .setThumbnail(
@@ -102,10 +102,14 @@ module.exports = {
               )
             );
         } else {
-          interaction.deleteReply().catch(console.error);
+          interaction.deleteReply().catch((e) => {
+            console.log(`Failed to delete Repeat interaction.`);
+          });
         }
       } else {
-        interaction.deleteReply().catch(console.error);
+        interaction.deleteReply().catch((e) => {
+          console.log(`Failed to delete unsuccessfull Repeat interaction.`);
+        });
       }
     }, 10 * 60 * 1000);
   },

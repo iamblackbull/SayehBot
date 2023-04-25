@@ -105,7 +105,7 @@ module.exports = {
         });
 
         embed
-          .setTitle(`New Birthday`)
+          .setTitle(`Save Birthday`)
           .setDescription(
             `**${birthdayProfile.Day} / ${birthdayProfile.Month} / ${birthdayProfile.Year}** (Age **${birthdayProfile.Age}**)\n has been added to the database.`
           )
@@ -154,7 +154,9 @@ module.exports = {
       }
     }
     setTimeout(() => {
-      interaction.deleteReply().catch(console.error);
+      interaction.deleteReply().catch((e) => {
+        console.log(`Failed to delete Birthday interaction.`);
+      });
     }, 10 * 60 * 1000);
   },
 };

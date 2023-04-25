@@ -25,7 +25,9 @@ module.exports = {
       embeds: [embed],
     });
     setTimeout(() => {
-      interaction.deleteReply().catch(console.error);
-    }, 60 * 1000);
+      interaction.deleteReply().catch((e) => {
+        console.log(`Failed to delete Ping interaction.`);
+      });
+    }, 1 * 60 * 1000);
   },
 };

@@ -450,6 +450,21 @@ module.exports = {
             let wowList = await wow.findOne({
               User: interaction.user.id,
             });
+
+            const saveEmbed = new EmbedBuilder()
+              .setTitle(`Save Account`)
+              .setDescription(
+                "Your WOW Character have been saved to the database."
+              )
+              .setColor(0x25bfc4)
+              .setThumbnail(
+                `https://freeiconshop.com/wp-content/uploads/edd/link-open-flat.png`
+              )
+              .setFooter({
+                iconURL: `https://i.pinimg.com/originals/cf/f4/a5/cff4a59d9390e8f836581e55828fb9ca.png`,
+                text: `World of Warcraft`,
+              });
+
             if (!wowList) {
               wowList = new wow({
                 User: interaction.user.id,
@@ -459,8 +474,7 @@ module.exports = {
               });
               await wowList.save().catch(console.error);
               await interaction.reply({
-                content:
-                  "✅ Your WOW Character have been saved to the database.",
+                embeds: [saveEmbed],
                 ephemeral: true,
               });
               console.log(
@@ -478,8 +492,7 @@ module.exports = {
               });
               await newWowList.save().catch(console.error);
               await interaction.reply({
-                content:
-                  "✅ Your new WOW Character have been saved to the database.",
+                embeds: [saveEmbed],
                 ephemeral: true,
               });
               console.log(
@@ -500,8 +513,8 @@ module.exports = {
       })
       .catch((e) => {
         let failedEmbed = new EmbedBuilder()
-          .setTitle(`**No results**`)
-          .setDescription(`Character might not be max level.`)
+          .setTitle(`**No Result**`)
+          .setDescription(`Make sure you input the correct information or character may not be max level.`)
           .setColor(0xffea00)
           .setThumbnail(
             `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
@@ -511,7 +524,9 @@ module.exports = {
         });
       });
     setTimeout(() => {
-      interaction.deleteReply().catch(console.error);
+      interaction.deleteReply().catch((e) => {
+        console.log(`Failed to delete WOW interaction.`);
+      });
     }, 10 * 60 * 1000);
   },
 };

@@ -8,25 +8,29 @@ const {
 const { QueryType } = require("discord-player");
 require("dotenv").config();
 const { musicChannelID } = process.env;
-let song;
-let success = false;
-let timer;
+const replay = require("../../schemas/replay-schema");
 
 module.exports = (client) => {
   client.on("messageCreate", async (message) => {
     if (message.author.bot) return;
     if (!message.guild) return;
     const { guild } = message;
+    let replayList = await replay.findOne({
+      guild: guild.id,
+    });
 
     let failedEmbed = new EmbedBuilder();
     let connection = false;
+    let song;
+    let success = false;
+    let timer;
 
     if (message.channel.id === `744591209359474728`) {
       const channel = await guild.channels
         .fetch(musicChannelID)
         .catch(console.error);
       if (
-        !interaction.guild.members.me.permissions.has(
+        !message.guild.members.me.permissions.has(
           PermissionsBitField.Flags.Speak
         )
       ) {
@@ -59,6 +63,7 @@ module.exports = (client) => {
           leaveOnEmpty: true,
           leaveOnEndCooldown: 5 * 60 * 1000,
           leaveOnEmptyCooldown: 5 * 60 * 1000,
+          smoothVolume: true,
           ytdlOptions: {
             quality: "highestaudio",
             highWaterMark: 1 << 25,
@@ -67,9 +72,7 @@ module.exports = (client) => {
         if (!queue.connection) {
           await queue.connect(message.member.voice.channel);
         }
-        if (
-          queue.connection.channel.id === interaction.member.voice.channel.id
-        ) {
+        if (queue.connection.channel.id === message.member.voice.channel.id) {
           connection = true;
         }
         if (connection === true) {
@@ -83,24 +86,84 @@ module.exports = (client) => {
             .setCustomId(`remove-favorite`)
             .setEmoji(`💔`)
             .setStyle(ButtonStyle.Secondary);
+          const lyricsButton = new ButtonBuilder()
+            .setCustomId(`lyrics`)
+            .setEmoji(`🎤`)
+            .setStyle(ButtonStyle.Primary);
+          const downloadButton = new ButtonBuilder()
+            .setCustomId(`downloader`)
+            .setEmoji(`⬇`)
+            .setStyle(ButtonStyle.Primary);
 
           let url = message.content;
-          const result = await client.player.search(url, {
-            requestedBy: message.author,
-            searchEngine: QueryType.AUTO,
-          });
-          if (result.tracks.length === 0) {
-            failedEmbed
-              .setTitle(`**No results**`)
-              .setDescription(`Make sure you input a valid link.`)
-              .setColor(0xffea00)
-              .setThumbnail(
-                `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
+          let result;
+          if (url.toLowerCase().startsWith("https").includes("playlist")) {
+            if (url.toLowerCase().includes("youtube")) {
+              result = await client.player.search(url, {
+                requestedBy: message.author,
+                searchEngine: QueryType.YOUTUBE_PLAYLIST,
+              });
+            }
+            if (url.toLowerCase().includes("spotify")) {
+              result = await client.player.search(url, {
+                requestedBy: message.author,
+                searchEngine: QueryType.SPOTIFY_PLAYLIST,
+              });
+            }
+            if (url.toLowerCase().includes("soundcloud")) {
+              result = await client.player.search(url, {
+                requestedBy: message.author,
+                searchEngine: QueryType.SOUNDCLOUD_PLAYLIST,
+              });
+            }
+            const playlist = result.playlist;
+            timer = parseInt(result.tracks[0].duration);
+            await queue.addTracks(result.tracks);
+            embed.setDescription(
+              `**[${playlist.title}](${playlist.url})**\n**${result.tracks.length} songs**`
+            );
+            let song1 = result.tracks[result.tracks.length - 3];
+            if (!song1) {
+              song1 = null;
+            }
+            let song2 = result.tracks[result.tracks.length - 2];
+            if (!song2) {
+              song2 = null;
+            }
+            let song3 = result.tracks[result.tracks.length - 1];
+            if (!song3) {
+              song3 = null;
+            }
+            if (!replayList) {
+              replayList = new replay({
+                guild: guild.id,
+                Song1: song1.url,
+                Name1: song1.title,
+                Song2: song2.url,
+                Name2: song2.title,
+                Song3: song3.url,
+                Name3: song3.title,
+              });
+              await replayList.save().catch(console.error);
+            } else {
+              await replay.updateOne(
+                { guild: guild.id },
+                {
+                  Song1: song1.url,
+                  Name1: song1.title,
+                  Song2: song2.url,
+                  Name2: song2.title,
+                  Song3: song3.url,
+                  Name3: song3.title,
+                }
               );
-            message.reply({
-              embeds: [failedEmbed],
-            });
+              await replay.save().catch(console.error);
+            }
           } else {
+            result = await client.player.search(url, {
+              requestedBy: message.author,
+              searchEngine: QueryType.AUTO,
+            });
             song = result.tracks[0];
             timer = parseInt(song.duration);
             await queue.addTrack(song);
@@ -110,6 +173,60 @@ module.exports = (client) => {
                 `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`
               )
               .setThumbnail(song.thumbnail);
+            if (!replayList) {
+              replayList = new replay({
+                guild: guild.id,
+                Song1: song.url,
+                Name1: song.title,
+              });
+              await replayList.save().catch(console.error);
+            } else {
+              if (!replayList.Song1) {
+                await replay.updateOne(
+                  { guild: guild.id },
+                  { Song1: song.url, Name1: song.title }
+                );
+                await replay.save().catch(console.error);
+              } else if (!replayList.Song2) {
+                await replay.updateOne(
+                  { guild: guild.id },
+                  { Song2: song.url, Name2: song.title }
+                );
+                await replay.save().catch(console.error);
+              } else if (!replayList.Song3) {
+                await replay.updateOne(
+                  { guild: guild.id },
+                  { Song3: song.url, Name3: song.title }
+                );
+                await replay.save().catch(console.error);
+              } else {
+                await replay.updateOne(
+                  { guild: guild.id },
+                  {
+                    Song1: replayList.Song2,
+                    Name1: replayList.Name2,
+                    Song2: replayList.Song3,
+                    Name2: replayList.Name3,
+                    Song3: song.url,
+                    Name3: song.title,
+                  }
+                );
+                await replay.save().catch(console.error);
+              }
+            }
+          }
+          if (result.tracks.length === 0) {
+            failedEmbed
+              .setTitle(`**No Result**`)
+              .setDescription(`Make sure you input a valid link.`)
+              .setColor(0xffea00)
+              .setThumbnail(
+                `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
+              );
+            message.reply({
+              embeds: [failedEmbed],
+            });
+          } else {
             if (song.url.includes("youtube")) {
               embed.setColor(0xff0000).setFooter({
                 iconURL: `https://www.iconpacks.net/icons/2/free-youtube-logo-icon-2431-thumb.png`,
@@ -134,7 +251,9 @@ module.exports = (client) => {
               components: [
                 new ActionRowBuilder()
                   .addComponents(addButton)
-                  .addComponents(removeButton),
+                  .addComponents(removeButton)
+                  .addComponents(lyricsButton)
+                  .addComponents(downloadButton),
               ],
             });
             success = true;
@@ -146,7 +265,7 @@ module.exports = (client) => {
           }
         } else {
           failedEmbed
-            .setTitle(`**Bot is busy**`)
+            .setTitle(`**Busy**`)
             .setDescription(`Bot is busy in another voice channel.`)
             .setColor(0x256fc4)
             .setThumbnail(
@@ -157,11 +276,13 @@ module.exports = (client) => {
           });
         }
       }
-      setTimeout(() => {
-        if (success === false) {
-          message.delete().catch(console.error);
-        }
-      }, 2 * 60 * 1000);
     }
+    setTimeout(() => {
+      if (success === false) {
+        message.delete().catch((e) => {
+          console.log(`Failed to delete unsuccessfull Play message.`);
+        });
+      }
+    }, 2 * 60 * 1000);
   });
 };

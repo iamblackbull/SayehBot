@@ -16,13 +16,14 @@ module.exports = (client) => {
       const user = await Levels.fetch(newMember.user.id, newMember.guild.id);
       if (1 < user.level < 60) {
         try {
-          const XP = 10000;
+          const neededXp = Levels.xpFor(parseInt(user.level + 1));
+          const XP = neededXp + 1;
           const hasLevelUp = await Levels.appendXp(
             newMember.user.id,
             newMember.guild.id,
             XP
           );
-          console.log(`${newMember.user.tag} gained ${XP} XP`);
+          console.log(`${newMember.user.tag} gained ${XP} XP for boosting the server.`);
           if (hasLevelUp) {
             const user = await Levels.fetch(
               newMember.user.id,

@@ -33,9 +33,9 @@ module.exports = {
     } catch (error) {
       console.log(error);
       let failedEmbed = new EmbedBuilder()
-        .setTitle(`**Action Failed**`)
+        .setTitle(`**No Response**`)
         .setDescription(
-          `Unable to recieve data from NASA API. Please try again later.`
+          `NASA API did not respond. Please try again later.`
         )
         .setColor(0xffea00)
         .setThumbnail(
@@ -47,7 +47,9 @@ module.exports = {
       });
     }
     setTimeout(() => {
-      interaction.deleteReply().catch(console.error);
+      interaction.deleteReply().catch((e) => {
+        console.log(`Failed to delete Space interaction.`);
+      });
     }, 10 * 60 * 1000);
   },
 };

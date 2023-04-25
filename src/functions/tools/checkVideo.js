@@ -61,6 +61,7 @@ module.exports = (client) => {
           .setLabel(`Watch Video`)
           .setURL(`${link}`)
           .setStyle(ButtonStyle.Link);
+        console.log(`Sayeh just uploaded a new video on YouTube!`)
         await channel
           .send({
             embeds: [embed],

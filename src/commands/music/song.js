@@ -8,7 +8,6 @@ const {
 const chalk = require("chalk");
 const { musicChannelID } = process.env;
 let paused = false;
-let success = false;
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -22,6 +21,7 @@ module.exports = {
     let queue = client.player.getQueue(interaction.guildId);
 
     let failedEmbed = new EmbedBuilder();
+    let success = false;
 
     if (!queue) {
       failedEmbed
@@ -74,6 +74,14 @@ module.exports = {
         .setCustomId(`remove-favorite`)
         .setEmoji(`💔`)
         .setStyle(ButtonStyle.Secondary);
+      const lyricsButton = new ButtonBuilder()
+        .setCustomId(`lyrics`)
+        .setEmoji(`🎤`)
+        .setStyle(ButtonStyle.Primary);
+      const downloadButton = new ButtonBuilder()
+        .setCustomId(`downloader`)
+        .setEmoji(`⬇`)
+        .setStyle(ButtonStyle.Primary);
 
       songEmbed.react(`▶`);
       songEmbed.react(`⏸`);
@@ -106,11 +114,6 @@ module.exports = {
               );
             await interaction.editReply({
               embeds: [embed],
-              components: [
-                new ActionRowBuilder()
-                  .addComponents(addButton)
-                  .addComponents(removeButton),
-              ],
             });
             success = true;
           } else if (reaction.emoji.name === `⏸`) {
@@ -132,11 +135,6 @@ module.exports = {
               );
             await interaction.editReply({
               embeds: [embed],
-              components: [
-                new ActionRowBuilder()
-                  .addComponents(addButton)
-                  .addComponents(removeButton),
-              ],
             });
             success = true;
           } else if (reaction.emoji.name === `⏭`) {
@@ -153,11 +151,6 @@ module.exports = {
             );
             await interaction.editReply({
               embeds: [embed],
-              components: [
-                new ActionRowBuilder()
-                  .addComponents(addButton)
-                  .addComponents(removeButton),
-              ],
             });
             success = true;
           }
@@ -169,13 +162,15 @@ module.exports = {
         components: [
           new ActionRowBuilder()
             .addComponents(addButton)
-            .addComponents(removeButton),
+            .addComponents(removeButton)
+            .addComponents(lyricsButton)
+            .addComponents(downloadButton),
         ],
       });
       success = true;
     } else {
       failedEmbed
-        .setTitle(`**Bot is busy**`)
+        .setTitle(`**Busy**`)
         .setDescription(`Bot is busy in another voice channel.`)
         .setColor(0x256fc4)
         .setThumbnail(
@@ -186,7 +181,7 @@ module.exports = {
       });
     }
     if (success === false) {
-      timer = 10;
+      timer = 5;
     }
     if (timer > 10) timer = 10;
     if (timer < 1) timer = 1;
@@ -203,10 +198,14 @@ module.exports = {
               )
             );
         } else {
-          interaction.deleteReply().catch(console.error);
+          interaction.deleteReply().catch((e) => {
+            console.log(`Failed to delete Song interaction.`);
+          });
         }
       } else {
-        interaction.deleteReply().catch(console.error);
+        interaction.deleteReply().catch((e) => {
+          console.log(`Failed to delete unsuccessfull Song interaction.`);
+        });
       }
     }, timer * 60 * 1000);
   },

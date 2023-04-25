@@ -1,7 +1,7 @@
 ﻿const {
   EmbedBuilder,
   SlashCommandBuilder,
-  PermissionsBitField,
+  PermissionFlagsBits,
 } = require("discord.js");
 const chalk = require("chalk");
 const ms = require("ms");
@@ -10,6 +10,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("giveaway")
     .setDescription("Manage giveaways (moderators-only)")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .addSubcommand((subcommand) =>
       subcommand
         .setName("start")
@@ -75,167 +76,152 @@ module.exports = {
     ),
   async execute(interaction, client) {
     const member = interaction.member;
-    if (!member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
-      failedEmbed
-        .setTitle(`**Action Failed**`)
-        .setDescription(`You don't have the required permission!`)
-        .setColor(0xffea00)
-        .setThumbnail(
-          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-        );
-      interaction.reply({
-        embeds: [failedEmbed],
-      });
-    } else {
-      const { options } = interaction;
-      const Sub = options.getSubcommand();
 
-      const errorEmbed = new EmbedBuilder().setColor(0xe01010);
+    const { options } = interaction;
+    const Sub = options.getSubcommand();
 
-      const successEmbed = new EmbedBuilder().setColor(0x46eb34);
+    const errorEmbed = new EmbedBuilder().setColor(0xe01010);
 
-      switch (Sub) {
-        case "start":
-          {
-            const gChannel =
-              options.getChannel("channel") || interaction.channel;
-            const duration = options.getString("duration");
-            const winnerCount = options.getInteger("winners");
-            const prize = options.getString("prize");
+    const successEmbed = new EmbedBuilder().setColor(0x46eb34);
 
-            client.giveawaysManager
-              .start(gChannel, {
-                duration: ms(duration),
-                winnerCount,
-                prize,
-                messages: {
-                  giveaway: "🎉 **Giveaway has begun !** 🎉",
-                  giveawayEnded: "Giveaway expired !",
-                  winMessage:
-                    "🏆 Conratulations, {winners}! You won **{this.prize}** ! 🎉",
-                },
-              })
-              .then(async () => {
-                successEmbed.setDescription(
-                  "✅ Giveaway was Successfully started !"
-                );
-                return interaction.reply({
-                  embeds: [successEmbed],
-                  ephemeral: true,
-                });
-              })
-              .catch((err) => {
-                errorEmbed.setDescription("An error occurred...");
-                return interaction.reply({
-                  embeds: [errorEmbed],
-                  ephemeral: true,
-                });
+    switch (Sub) {
+      case "start":
+        {
+          const gChannel = options.getChannel("channel") || interaction.channel;
+          const duration = options.getString("duration");
+          const winnerCount = options.getInteger("winners");
+          const prize = options.getString("prize");
+
+          client.giveawaysManager
+            .start(gChannel, {
+              duration: ms(duration),
+              winnerCount,
+              prize,
+              messages: {
+                giveaway: "🎉 **Giveaway has begun !** 🎉",
+                giveawayEnded: "Giveaway expired !",
+                winMessage:
+                  "🏆 Conratulations, {winners}! You won **{this.prize}** ! 🎉",
+              },
+            })
+            .then(async () => {
+              successEmbed.setDescription(
+                "✅ Giveaway was Successfully started !"
+              );
+              return interaction.reply({
+                embeds: [successEmbed],
+                ephemeral: true,
               });
-          }
-          break;
-
-        case "action":
-          {
-            const choice = options.getString("options");
-            const meesageId = options.getString("message-id");
-            switch (choice) {
-              case "end":
-                {
-                  client.giveawaysManager
-                    .end(meesageId)
-                    .then(() => {
-                      successEmbed.setDescription("🏁 Giveaway has ended !");
-                      return interaction.reply({
-                        embeds: [successEmbed],
-                        ephemeral: true,
-                      });
-                    })
-                    .catch((err) => {
-                      errorEmbed.setDescription("An error occurred...");
-                      return interaction.reply({
-                        embeds: [errorEmbed],
-                        ephemeral: true,
-                      });
-                    });
-                }
-                break;
-              case "pause":
-                {
-                  client.giveawaysManager
-                    .pause(meesageId)
-                    .then(() => {
-                      successEmbed.setDescription(
-                        "⏸ Giveaway has been paused !"
-                      );
-                      return interaction.reply({
-                        embeds: [successEmbed],
-                        ephemeral: true,
-                      });
-                    })
-                    .catch((err) => {
-                      errorEmbed.setDescription("An error occurred...");
-                      return interaction.reply({
-                        embeds: [errorEmbed],
-                        ephemeral: true,
-                      });
-                    });
-                }
-                break;
-              case "unpause":
-                {
-                  client.giveawaysManager
-                    .unpause(meesageId)
-                    .then(() => {
-                      successEmbed.setDescription(
-                        "▶ Giveaway has been resumed !"
-                      );
-                      return interaction.reply({
-                        embeds: [successEmbed],
-                        ephemeral: true,
-                      });
-                    })
-                    .catch((err) => {
-                      errorEmbed.setDescription("An error occurred...");
-                      return interaction.reply({
-                        embeds: [errorEmbed],
-                        ephemeral: true,
-                      });
-                    });
-                }
-                break;
-              case "delete":
-                {
-                  client.giveawaysManager
-                    .delete(meesageId)
-                    .then(() => {
-                      successEmbed.setDescription(
-                        "🚮 Giveaway has been removed !"
-                      );
-                      return interaction.reply({
-                        embeds: [successEmbed],
-                        ephemeral: true,
-                      });
-                    })
-                    .catch((err) => {
-                      errorEmbed.setDescription("An error occurred...");
-                      return interaction.reply({
-                        embeds: [errorEmbed],
-                        ephemeral: true,
-                      });
-                    });
-                }
-                break;
-            }
-          }
-          break;
-
-        default: {
-          console.log(
-            chalk.yellow(
-              "Something went wrong while executing giveaway command..."
-            )
-          );
+            })
+            .catch((err) => {
+              errorEmbed.setDescription("An error occurred...");
+              return interaction.reply({
+                embeds: [errorEmbed],
+                ephemeral: true,
+              });
+            });
         }
+        break;
+
+      case "action":
+        {
+          const choice = options.getString("options");
+          const meesageId = options.getString("message-id");
+          switch (choice) {
+            case "end":
+              {
+                client.giveawaysManager
+                  .end(meesageId)
+                  .then(() => {
+                    successEmbed.setDescription("🏁 Giveaway has ended !");
+                    return interaction.reply({
+                      embeds: [successEmbed],
+                      ephemeral: true,
+                    });
+                  })
+                  .catch((err) => {
+                    errorEmbed.setDescription("An error occurred...");
+                    return interaction.reply({
+                      embeds: [errorEmbed],
+                      ephemeral: true,
+                    });
+                  });
+              }
+              break;
+            case "pause":
+              {
+                client.giveawaysManager
+                  .pause(meesageId)
+                  .then(() => {
+                    successEmbed.setDescription("⏸ Giveaway has been paused !");
+                    return interaction.reply({
+                      embeds: [successEmbed],
+                      ephemeral: true,
+                    });
+                  })
+                  .catch((err) => {
+                    errorEmbed.setDescription("An error occurred...");
+                    return interaction.reply({
+                      embeds: [errorEmbed],
+                      ephemeral: true,
+                    });
+                  });
+              }
+              break;
+            case "unpause":
+              {
+                client.giveawaysManager
+                  .unpause(meesageId)
+                  .then(() => {
+                    successEmbed.setDescription(
+                      "▶ Giveaway has been resumed !"
+                    );
+                    return interaction.reply({
+                      embeds: [successEmbed],
+                      ephemeral: true,
+                    });
+                  })
+                  .catch((err) => {
+                    errorEmbed.setDescription("An error occurred...");
+                    return interaction.reply({
+                      embeds: [errorEmbed],
+                      ephemeral: true,
+                    });
+                  });
+              }
+              break;
+            case "delete":
+              {
+                client.giveawaysManager
+                  .delete(meesageId)
+                  .then(() => {
+                    successEmbed.setDescription(
+                      "🚮 Giveaway has been removed !"
+                    );
+                    return interaction.reply({
+                      embeds: [successEmbed],
+                      ephemeral: true,
+                    });
+                  })
+                  .catch((err) => {
+                    errorEmbed.setDescription("An error occurred...");
+                    return interaction.reply({
+                      embeds: [errorEmbed],
+                      ephemeral: true,
+                    });
+                  });
+              }
+              break;
+          }
+        }
+        break;
+
+      default: {
+        console.log(
+          chalk.yellow(
+            "Something went wrong while executing giveaway command..."
+          )
+        );
       }
     }
   },

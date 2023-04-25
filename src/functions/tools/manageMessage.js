@@ -12,7 +12,13 @@ module.exports = (client) => {
     const member = message.member;
     const channel = guild.channels.cache.get(rankChannelID);
     const user = await Levels.fetch(message.author.id, message.guild.id);
-    const firstXp = parseInt(Math.floor(Math.random() * 50 + 1));
+    let firstXp = parseInt(Math.floor(Math.random() * 35 + 10));
+    if (firstXp > 50) {
+      firstXp = 50;
+    }
+    if (firstXp < 10) {
+      firstXp = 10;
+    }
     const randomXp = parseInt(firstXp * 2);
     let finalXp;
 
@@ -68,8 +74,10 @@ module.exports = (client) => {
       else if (member.permissions.has(PermissionsBitField.Flags.ManageMessages))
         return;
       else {
+        console.log(
+          `Deleted a message included a link in ${message.channel.name} by ${message.author}`
+        );
         message.delete();
-        console.log(`Deleted a message included a link.`);
       }
     }
 
@@ -100,8 +108,10 @@ module.exports = (client) => {
       if (member.permissions.has(PermissionsBitField.Flags.ManageMessages))
         return;
       else {
+        console.log(
+          `Deleted a message included banned word in ${message.channel.name} by ${message.author}`
+        );
         message.delete();
-        console.log(`Deleted a message included banned word.`);
       }
     }
   });

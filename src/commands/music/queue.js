@@ -1,7 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { musicChannelID } = process.env;
-let success = false;
-let timer;
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -21,6 +19,8 @@ module.exports = {
     const queue = client.player.getQueue(interaction.guildId);
 
     let failedEmbed = new EmbedBuilder();
+    let success = false;
+    let timer;
 
     if (!queue || !queue.connection) {
       failedEmbed
@@ -198,7 +198,7 @@ module.exports = {
       success = true;
     } else {
       failedEmbed
-        .setTitle(`**Bot is busy**`)
+        .setTitle(`**Busy**`)
         .setDescription(`Bot is busy in another voice channel.`)
         .setColor(0x256fc4)
         .setThumbnail(
@@ -209,7 +209,7 @@ module.exports = {
       });
     }
     if (success === false) {
-      timer = 10;
+      timer = 5;
     }
     if (timer > 10) timer = 10;
     if (timer < 1) timer = 1;
@@ -225,10 +225,14 @@ module.exports = {
               )
             );
         } else {
-          interaction.deleteReply().catch(console.error);
+          interaction.deleteReply().catch((e) => {
+            console.log(`Failed to delete Queue interaction.`);
+          });
         }
       } else {
-        interaction.deleteReply().catch(console.error);
+        interaction.deleteReply().catch((e) => {
+          console.log(`Failed to delete unsuccessfull Queue interaction.`);
+        });
       }
     }, timer * 60 * 1000);
   },

@@ -1,6 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { musicChannelID } = process.env;
-let success = false;
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -11,6 +10,7 @@ module.exports = {
     const queue = client.player.getQueue(interaction.guildId);
 
     let failedEmbed = new EmbedBuilder();
+    let success = false;
 
     if (!queue) {
       failedEmbed
@@ -57,7 +57,7 @@ module.exports = {
       success = true;
     } else {
       failedEmbed
-        .setTitle(`**Bot is busy**`)
+        .setTitle(`**Busy**`)
         .setDescription(`Bot is busy in another voice channel.`)
         .setColor(0x256fc4)
         .setThumbnail(
@@ -71,10 +71,14 @@ module.exports = {
       if (success === true) {
         if (interaction.channel.id === musicChannelID) return;
         else {
-          interaction.deleteReply().catch(console.error);
+          interaction.deleteReply().catch((e) => {
+            console.log(`Failed to delete Shuffle interaction.`);
+          });
         }
       } else {
-        interaction.deleteReply().catch(console.error);
+        interaction.deleteReply().catch((e) => {
+          console.log(`Failed to delete unsuccessfull Shuffle interaction.`);
+        });
       }
     }, 10 * 60 * 1000);
   },

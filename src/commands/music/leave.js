@@ -1,23 +1,27 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { musicChannelID, Gigulebalaha, ShadowxRole, HamitzRole } = process.env;
-let success = false;
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  PermissionFlagsBits,
+} = require("discord.js");
+const { getVoiceConnection } = require("@discordjs/voice");
+const { musicChannelID } = process.env;
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("leave")
-    .setDescription("Disconnect and reset the queue"),
+    .setDescription("Disconnect and reset the queue")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
   async execute(interaction, client) {
     const member = interaction.member;
-    const queue = client.player.getQueue(interaction.guildId);
+    const voiceChannel = getVoiceConnection(interaction.member.guild.id);
 
     let failedEmbed = new EmbedBuilder();
+    let success = false;
 
-    if (!queue) {
+    if (!voiceChannel) {
       failedEmbed
         .setTitle(`**Action Failed**`)
-        .setDescription(
-          `Queue is empty. Add at least 1 song to the queue to use this command.`
-        )
+        .setDescription(`Bot is already not connected to any voice channel.`)
         .setColor(0xffea00)
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
@@ -39,20 +43,7 @@ module.exports = {
         embeds: [failedEmbed],
       });
     } else if (
-      !member.roles.cache.has(Gigulebalaha || ShadowxRole || HamitzRole)
-    ) {
-      failedEmbed
-        .setTitle(`**Action Failed**`)
-        .setDescription(`You don't have the required role!`)
-        .setColor(0xffea00)
-        .setThumbnail(
-          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-        );
-      interaction.reply({
-        embeds: [failedEmbed],
-      });
-    } else if (
-      queue.connection.channel.id === interaction.member.voice.channel.id
+      voiceChannel.joinConfig.channelId === interaction.member.voice.channel.id
     ) {
       let embed = new EmbedBuilder()
         .setTitle(`❎ Leave`)
@@ -62,13 +53,18 @@ module.exports = {
           `https://icons.veryicon.com/png/o/miscellaneous/programming-software-icons/reset-28.png`
         );
 
-      queue.destroy();
+      const queue = client.player.getQueue(interaction.guildId);
+      if (!queue) {
+        voiceChannel.destroy();
+      } else {
+        queue.destroy();
+      }
 
       await interaction.reply({ embeds: [embed] });
       success = true;
     } else {
       failedEmbed
-        .setTitle(`**Bot is busy**`)
+        .setTitle(`**Busy**`)
         .setDescription(`Bot is busy in another voice channel.`)
         .setColor(0x256fc4)
         .setThumbnail(
@@ -82,11 +78,15 @@ module.exports = {
       if (success === true) {
         if (interaction.channel.id === musicChannelID) return;
         else {
-          interaction.deleteReply().catch(console.error);
+          interaction.deleteReply().catch((e) => {
+            console.log(`Failed to delete Leave interaction.`);
+          });
         }
       } else {
-        interaction.deleteReply().catch(console.error);
+        interaction.deleteReply().catch((e) => {
+          console.log(`Failed to delete unsuccessfull Leave interaction.`);
+        });
       }
-    }, 10 * 60 * 1000);
+    }, 5 * 60 * 1000);
   },
 };
