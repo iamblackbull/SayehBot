@@ -80,7 +80,7 @@ module.exports = {
             }
           }
         });
-        await interaction.editReply({
+        interaction.editReply({
           embeds: [embed],
         });
       } else if (result.lyrics.length <= 1200) {
