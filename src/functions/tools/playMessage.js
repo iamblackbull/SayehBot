@@ -15,9 +15,6 @@ module.exports = (client) => {
     if (message.author.bot) return;
     if (!message.guild) return;
     const { guild } = message;
-    let replayList = await replay.findOne({
-      guild: guild.id,
-    });
 
     let failedEmbed = new EmbedBuilder();
     let connection = false;
@@ -97,75 +94,68 @@ module.exports = (client) => {
 
           let url = message.content;
           let result;
-          if (url.toLowerCase().startsWith("https").includes("playlist")) {
-            if (url.toLowerCase().includes("youtube")) {
-              result = await client.player.search(url, {
-                requestedBy: message.author,
-                searchEngine: QueryType.YOUTUBE_PLAYLIST,
-              });
-            }
-            if (url.toLowerCase().includes("spotify")) {
-              result = await client.player.search(url, {
-                requestedBy: message.author,
-                searchEngine: QueryType.SPOTIFY_PLAYLIST,
-              });
-            }
-            if (url.toLowerCase().includes("soundcloud")) {
-              result = await client.player.search(url, {
-                requestedBy: message.author,
-                searchEngine: QueryType.SOUNDCLOUD_PLAYLIST,
-              });
-            }
-            const playlist = result.playlist;
-            timer = parseInt(result.tracks[0].duration);
-            await queue.addTracks(result.tracks);
-            embed.setDescription(
-              `**[${playlist.title}](${playlist.url})**\n**${result.tracks.length} songs**`
-            );
-            let song1 = result.tracks[result.tracks.length - 3];
-            if (!song1) {
-              song1 = null;
-            }
-            let song2 = result.tracks[result.tracks.length - 2];
-            if (!song2) {
-              song2 = null;
-            }
-            let song3 = result.tracks[result.tracks.length - 1];
-            if (!song3) {
-              song3 = null;
-            }
-            if (!replayList) {
-              replayList = new replay({
-                guild: guild.id,
-                Song1: song1.url,
-                Name1: song1.title,
-                Song2: song2.url,
-                Name2: song2.title,
-                Song3: song3.url,
-                Name3: song3.title,
-              });
-              await replayList.save().catch(console.error);
+          if (url.toLowerCase().startsWith("https")) {
+            if (url.toLowerCase().includes("playlist")) {
+              if (url.toLowerCase().includes("youtube")) {
+                result = await client.player.search(url, {
+                  requestedBy: message.author,
+                  searchEngine: QueryType.YOUTUBE_PLAYLIST,
+                });
+              }
+              if (url.toLowerCase().includes("spotify")) {
+                result = await client.player.search(url, {
+                  requestedBy: message.author,
+                  searchEngine: QueryType.SPOTIFY_PLAYLIST,
+                });
+              }
+              if (url.toLowerCase().includes("soundcloud")) {
+                result = await client.player.search(url, {
+                  requestedBy: message.author,
+                  searchEngine: QueryType.SOUNDCLOUD_PLAYLIST,
+                });
+              }
+              const playlist = result.playlist;
+              if (result.tracks[0].duration.length >= 7) {
+                timer = 10;
+              } else {
+                timer = parseInt(result.tracks[0].duration);
+              }
+              await queue.addTracks(result.tracks);
+              embed
+                .setTitle(`🎶 Playlist`)
+                .setDescription(
+                  `**[${playlist.title}](${playlist.url})**\n**${result.tracks.length} songs**`
+                );
+              song = result.tracks[result.tracks.length - 1];
             } else {
-              await replay.updateOne(
-                { guild: guild.id },
-                {
-                  Song1: song1.url,
-                  Name1: song1.title,
-                  Song2: song2.url,
-                  Name2: song2.title,
-                  Song3: song3.url,
-                  Name3: song3.title,
-                }
-              );
-              await replay.save().catch(console.error);
+              result = await client.player.search(url, {
+                requestedBy: message.author,
+                searchEngine: QueryType.AUTO,
+              });
+              song = result.tracks[0];
+              if (song.duration.length >= 7) {
+                timer = 10;
+              } else {
+                timer = parseInt(song.duration);
+              }
+              embed
+                .setTitle(`🎵 Track`)
+                .setDescription(
+                  `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`
+                )
+                .setThumbnail(song.thumbnail);
             }
           } else {
             result = await client.player.search(url, {
-              requestedBy: message.author,
+              requestedBy: interaction.user,
               searchEngine: QueryType.AUTO,
             });
             song = result.tracks[0];
-            timer = parseInt(song.duration);
+            if (song.duration.length >= 7) {
+              timer = 10;
+            } else {
+              timer = parseInt(song.duration);
+            }
             await queue.addTrack(song);
             embed
               .setTitle(`🎵 Track`)
@@ -173,47 +163,25 @@ module.exports = (client) => {
                 `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`
               )
               .setThumbnail(song.thumbnail);
-            if (!replayList) {
-              replayList = new replay({
-                guild: guild.id,
-                Song1: song.url,
-                Name1: song.title,
-              });
-              await replayList.save().catch(console.error);
-            } else {
-              if (!replayList.Song1) {
-                await replay.updateOne(
-                  { guild: guild.id },
-                  { Song1: song.url, Name1: song.title }
-                );
-                await replay.save().catch(console.error);
-              } else if (!replayList.Song2) {
-                await replay.updateOne(
-                  { guild: guild.id },
-                  { Song2: song.url, Name2: song.title }
-                );
-                await replay.save().catch(console.error);
-              } else if (!replayList.Song3) {
-                await replay.updateOne(
-                  { guild: guild.id },
-                  { Song3: song.url, Name3: song.title }
-                );
-                await replay.save().catch(console.error);
-              } else {
-                await replay.updateOne(
-                  { guild: guild.id },
-                  {
-                    Song1: replayList.Song2,
-                    Name1: replayList.Name2,
-                    Song2: replayList.Song3,
-                    Name2: replayList.Name3,
-                    Song3: song.url,
-                    Name3: song.title,
-                  }
-                );
-                await replay.save().catch(console.error);
+          }
+          let replayList = await replay.findOne({
+            guild: guild.id,
+          });
+          if (!replayList) {
+            replayList = new replay({
+              guild: guild.id,
+              Song: song.url,
+              Name: song.title,
+            });
+            await replayList.save().catch(console.error);
+          } else {
+            replayList = await replay.updateOne(
+              { guild: guild.id },
+              {
+                Song: song.url,
+                Name: song.title,
               }
-            }
+            );
           }
           if (result.tracks.length === 0) {
             failedEmbed
@@ -243,25 +211,37 @@ module.exports = (client) => {
                 text: `Soundcloud`,
               });
             }
-            if (!queue.playing) {
-              await queue.play();
+            if (!queue.playing) await queue.play();
+
+            if (url.toLowerCase().includes("playlist")) {
+              await message.reply({
+                embeds: [embed],
+              });
+            } else {
+              success = true;
+              let msg;
+              if (timer < 10) {
+                msg = await interaction.replay({
+                  embeds: [embed],
+                  components: [
+                    new ActionRowBuilder()
+                      .addComponents(addButton)
+                      .addComponents(removeButton)
+                      .addComponents(lyricsButton)
+                      .addComponents(downloadButton),
+                  ],
+                });
+              } else {
+                msg = await interaction.replay({
+                  embeds: [embed],
+                });
+              }
+              if (timer > 10) timer = 10;
+              if (timer < 1) timer = 1;
+              setTimeout(() => {
+                msg.edit({ components: [] });
+              }, timer * 60 * 1000);
             }
-            const msg = await message.reply({
-              embeds: [embed],
-              components: [
-                new ActionRowBuilder()
-                  .addComponents(addButton)
-                  .addComponents(removeButton)
-                  .addComponents(lyricsButton)
-                  .addComponents(downloadButton),
-              ],
-            });
-            success = true;
-            if (timer > 10) timer = 10;
-            if (timer < 1) timer = 1;
-            setTimeout(() => {
-              msg.edit({ components: [] });
-            }, timer * 60 * 1000);
           }
         } else {
           failedEmbed

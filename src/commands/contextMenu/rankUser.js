@@ -178,11 +178,16 @@ module.exports = {
     setTimeout(() => {
       if (success === true) {
         if (interaction.channel.id === rankChannelID) return;
+        else {
+          interaction.deleteReply().catch((e) => {
+            console.log(`Failed to delete Rank context menu.`);
+          });
+        }
       } else {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete Rank context menu.`);
+          console.log(`Failed to delete unsuccessfull Rank context menu.`);
         });
       }
-    }, 10 * 60 * 1000);
+    }, 5 * 60 * 1000);
   },
 };

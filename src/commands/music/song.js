@@ -22,6 +22,7 @@ module.exports = {
 
     let failedEmbed = new EmbedBuilder();
     let success = false;
+    let timer;
 
     if (!queue) {
       failedEmbed
@@ -140,6 +141,7 @@ module.exports = {
           } else if (reaction.emoji.name === `⏭`) {
             if (!queue) return;
             queue.skip();
+            if (!queue.playing) await queue.play();
             song = queue.current;
             bar = queue.createProgressBar({
               timecodes: true,
@@ -157,17 +159,28 @@ module.exports = {
         }
       });
 
-      await interaction.editReply({
-        embeds: [embed],
-        components: [
-          new ActionRowBuilder()
-            .addComponents(addButton)
-            .addComponents(removeButton)
-            .addComponents(lyricsButton)
-            .addComponents(downloadButton),
-        ],
-      });
       success = true;
+      if (song.duration.length >= 7) {
+        timer = 10;
+      } else {
+        timer = parseInt(song.duration);
+      }
+      if (timer < 10) {
+        await interaction.editReply({
+          embeds: [embed],
+          components: [
+            new ActionRowBuilder()
+              .addComponents(addButton)
+              .addComponents(removeButton)
+              .addComponents(lyricsButton)
+              .addComponents(downloadButton),
+          ],
+        });
+      } else {
+        await interaction.editReply({
+          embeds: [embed],
+        });
+      }
     } else {
       failedEmbed
         .setTitle(`**Busy**`)

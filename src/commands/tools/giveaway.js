@@ -9,12 +9,12 @@ const ms = require("ms");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("giveaway")
-    .setDescription("Manage giveaways (moderators-only)")
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+    .setDescription("Manage giveaways")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
     .addSubcommand((subcommand) =>
       subcommand
         .setName("start")
-        .setDescription("Start a giveaway (moderators-only)")
+        .setDescription("Start a giveaway")
         .addStringOption((option) =>
           option
             .setName("duration")
@@ -42,7 +42,7 @@ module.exports = {
     .addSubcommand((subcommand) =>
       subcommand
         .setName("action")
-        .setDescription("Manage the current giveaway (moderators-only)")
+        .setDescription("Manage the current giveaway")
         .addStringOption((option) =>
           option
             .setName("options")

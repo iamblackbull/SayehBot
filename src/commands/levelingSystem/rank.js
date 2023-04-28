@@ -183,9 +183,14 @@ module.exports = {
     setTimeout(() => {
       if (success === true) {
         if (interaction.channel.id === rankChannelID) return;
+        else {
+          interaction.deleteReply().catch((e) => {
+            console.log(`Failed to delete Rank interaction.`);
+          });
+        }
       } else {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete Rank interaction.`);
+          console.log(`Failed to delete unsuccessfull Rank interaction.`);
         });
       }
     }, 5 * 60 * 1000);

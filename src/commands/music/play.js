@@ -144,19 +144,29 @@ module.exports = {
               text: `Soundcloud`,
             });
           }
-          success = true;
-          timer = parseInt(song.duration);
           if (!queue.playing) await queue.play();
-          await interaction.editReply({
-            embeds: [embed],
-            components: [
-              new ActionRowBuilder()
-                .addComponents(addButton)
-                .addComponents(removeButton)
-                .addComponents(lyricsButton)
-                .addComponents(downloadButton),
-            ],
-          });
+          success = true;
+          if (song.duration.length >= 7) {
+            timer = 10;
+          } else {
+            timer = parseInt(song.duration);
+          }
+          if (timer < 10) {
+            await interaction.editReply({
+              embeds: [embed],
+              components: [
+                new ActionRowBuilder()
+                  .addComponents(addButton)
+                  .addComponents(removeButton)
+                  .addComponents(lyricsButton)
+                  .addComponents(downloadButton),
+              ],
+            });
+          } else {
+            await interaction.editReply({
+              embeds: [embed],
+            });
+          }
           const { guild } = interaction;
           let replayList = await replay.findOne({
             guild: guild.id,
@@ -164,43 +174,18 @@ module.exports = {
           if (!replayList) {
             replayList = new replay({
               guild: guild.id,
-              Song1: song.url,
-              Name1: song.title,
+              Song: song.url,
+              Name: song.title,
             });
             await replayList.save().catch(console.error);
           } else {
-            if (!replayList.Song1) {
-              await replay.updateOne(
-                { guild: guild.id },
-                { Song1: song.url, Name1: song.title }
-              );
-              await replay.save().catch(console.error);
-            } else if (!replayList.Song2) {
-              await replay.updateOne(
-                { guild: guild.id },
-                { Song2: song.url, Name2: song.title }
-              );
-              await replay.save().catch(console.error);
-            } else if (!replayList.Song3) {
-              await replay.updateOne(
-                { guild: guild.id },
-                { Song3: song.url, Name3: song.title }
-              );
-              await replay.save().catch(console.error);
-            } else {
-              await replay.updateOne(
-                { guild: guild.id },
-                {
-                  Song1: replayList.Song2,
-                  Name1: replayList.Name2,
-                  Song2: replayList.Song3,
-                  Name2: replayList.Name3,
-                  Song3: song.url,
-                  Name3: song.title,
-                }
-              );
-              await replay.save().catch(console.error);
-            }
+            replayList = await replay.updateOne(
+              { guild: guild.id },
+              {
+                Song: song.url,
+                Name: song.title,
+              }
+            );
           }
         }
       } else {

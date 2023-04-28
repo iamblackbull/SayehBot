@@ -139,7 +139,7 @@ module.exports = {
         queue.setFilters({ vaporwave: true });
         filterMode = true;
         embed
-          .setThumbnail(`https://www.freeiconspng.com/img/43645`)
+          .setThumbnail(`https://img.icons8.com/nolan/512/vaporwave.png`)
           .setDescription("**Vaporwave** filter has been added to the queue.");
       } else if (interaction.options.get("effect").value === "nightcore") {
         queue.setFilters({ nightcore: true });
@@ -286,6 +286,6 @@ module.exports = {
           console.log(`Failed to delete unsuccessfull Filter interaction.`);
         });
       }
-    }, 10 * 60 * 1000);
+    }, 5 * 60 * 1000);
   },
 };

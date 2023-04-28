@@ -13,8 +13,8 @@ module.exports = (client) => {
     const channel = guild.channels.cache.get(rankChannelID);
     const user = await Levels.fetch(message.author.id, message.guild.id);
     let firstXp = parseInt(Math.floor(Math.random() * 35 + 10));
-    if (firstXp > 50) {
-      firstXp = 50;
+    if (firstXp > 35) {
+      firstXp = 35;
     }
     if (firstXp < 10) {
       firstXp = 10;

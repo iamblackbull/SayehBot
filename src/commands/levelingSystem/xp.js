@@ -1,11 +1,14 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { Gigulebalaha, ShadowxRole, HamitzRole } = process.env;
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  PermissionFlagsBits,
+} = require("discord.js");
 const Levels = require("discord-xp");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("xp")
-    .setDescription("Manage user level and XP (moderators-only)")
+    .setDescription("Manage user level and XP")
     .addStringOption((option) => {
       return option
         .setName("action")
@@ -49,28 +52,17 @@ module.exports = {
         .setName("user")
         .setDescription("Pick any member")
         .setRequired(true);
-    }),
+    })
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
   async execute(interaction, client) {
     await interaction.deferReply({
       fetchReply: true,
     });
     let failedEmbed = new EmbedBuilder();
-    const member = interaction.member;
     let embed = new EmbedBuilder().setTitle("🤖 Leveling System");
     const user = interaction.options.getUser("user");
     const userTarget = await Levels.fetch(user.id, interaction.guild.id, true);
-    if (!member.roles.cache.has(Gigulebalaha || ShadowxRole || HamitzRole)) {
-      failedEmbed
-        .setTitle(`**Action Failed**`)
-        .setDescription(`You don't have the required role!`)
-        .setColor(0xffea00)
-        .setThumbnail(
-          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-        );
-      interaction.editReply({
-        embeds: [failedEmbed],
-      });
-    } else if (userTarget <= 0) {
+    if (userTarget <= 0) {
       failedEmbed
         .setTitle(`**Action Failed**`)
         .setDescription(

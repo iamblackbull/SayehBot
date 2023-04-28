@@ -101,18 +101,29 @@ module.exports = {
         });
       }
 
-      await interaction.reply({
-        embeds: [embed],
-        components: [
-          new ActionRowBuilder()
-            .addComponents(addButton)
-            .addComponents(removeButton)
-            .addComponents(lyricsButton)
-            .addComponents(downloadButton),
-        ],
-      });
-      timer = parseInt(nextSong.duration);
+      if (!queue.playing) await queue.play();
       success = true;
+      if (nextSong.duration.length >= 7) {
+        timer = 10;
+      } else {
+        timer = parseInt(nextSong.duration);
+      }
+      if (timer < 10) {
+        await interaction.reply({
+          embeds: [embed],
+          components: [
+            new ActionRowBuilder()
+              .addComponents(addButton)
+              .addComponents(removeButton)
+              .addComponents(lyricsButton)
+              .addComponents(downloadButton),
+          ],
+        });
+      } else {
+        await interaction.reply({
+          embeds: [embed],
+        });
+      }
     } else {
       failedEmbed
         .setTitle(`**Busy**`)

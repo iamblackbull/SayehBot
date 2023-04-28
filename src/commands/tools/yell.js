@@ -8,7 +8,7 @@ require("dotenv").config();
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("yell")
-    .setDescription("Yell at everyone! (moderators-only)")
+    .setDescription("Yell at everyone!")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addChannelOption((option) => {
       return option

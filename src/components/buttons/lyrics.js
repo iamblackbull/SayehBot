@@ -1,6 +1,6 @@
 const { EmbedBuilder } = require("discord.js");
-const { lyricsExtractor } = require("@discord-player/extractor");
-const lyricsClient = lyricsExtractor();
+const Genius = require("genius-lyrics");
+const genius = new Genius.Client();
 
 module.exports = {
   data: {
@@ -8,108 +8,111 @@ module.exports = {
   },
   async execute(interaction, client) {
     const lyricsEmbed = await interaction.deferReply({
-        fetchReply: true,
-      });
+      fetchReply: true,
+    });
 
     let queue = client.player.getQueue(interaction.guildId);
-
     if (!queue) return;
 
     const songTitle = queue.current.title;
 
-    lyricsClient
-    .search(`${songTitle}`)
-    .then((result) => {
-      let embed = new EmbedBuilder()
-      .setTitle(`🎤 ${result.title}`)
-      .setAuthor({
-        name: `${result.artist.name}`,
-        url: `${result.artist.url}`,
-      })
-      .setURL(`${result.url}`)
-      .setThumbnail(`${result.thumbnail}`)
-      .setColor(0x256fc4);
+    await genius.songs
+      .search(`${songTitle}`)
+      .then(async function (result) {
+        const song = result[0];
+        const lyrics = await song.lyrics();
+        let embed = new EmbedBuilder()
+          .setTitle(`**${song.title}**`)
+          .setAuthor({
+            name: `${song.artist.name}`,
+            iconURL: `${song.artist.image}`,
+            url: `${song.artist.url}`,
+          })
+          .setURL(`${song.url}`)
+          .setThumbnail(`${song.image}`)
+          .setColor(0x256fc4);
 
-      if (result.lyrics.length > 1200) {
-        let totalPages = Math.ceil(result.lyrics.length / 1000) || 1;
-        let page = 0;
+        if (lyrics.length > 1200) {
+          let totalPages = Math.ceil(lyrics.length / 1000) || 1;
+          let page = 0;
 
-        let res = result.lyrics.slice(page * 1000, page * 1000 + 1000);
-        embed.setDescription(res).setFooter({
-          iconURL: `https://cdn0.iconfinder.com/data/icons/summer-and-travel-3-2/128/134-512.png`,
-          text: `Page ${page + 1} of ${totalPages}`,
-        });
-        lyricsEmbed.react(`⬅`);
-        lyricsEmbed.react(`➡`);
-        const filter = (reaction, user) => {
-          [`⬅`, `➡`].includes(reaction.emoji.name) &&
-            user.id === interaction.user.id;
-        };
-        const collector = lyricsEmbed.createReactionCollector(filter);
-  
-        collector.on("collect", async (reaction, user) => {
-          if (user.bot) return;
-          else {
-            reaction.users.remove(reaction.users.cache.get(interaction.user.id));
-            if (reaction.emoji.name === `➡`) {
-              if (page < totalPages - 1) {
-                page++;
-                res = result.lyrics.slice(page * 1000, page * 1000 + 1000);
-                embed.setDescription(res).setFooter({
-                  iconURL: `https://cdn0.iconfinder.com/data/icons/summer-and-travel-3-2/128/134-512.png`,
-                  text: `Page ${page + 1} of ${totalPages}`,
-                });
-                await interaction.editReply({
-                  embeds: [embed],
-                });
-              }
-            } else {
-              if (reaction.emoji.name == `⬅`) {
-                if (page !== 0) {
-                  --page;
-                  res = result.lyrics.slice(page * 1000, page * 1000 + 1000);
+          let res = lyrics.slice(page * 1000, page * 1000 + 1000);
+          embed.setDescription(res).setFooter({
+            iconURL: `https://images.genius.com/0ca83e3130e1303a7f78ba351e3091cd.1000x1000x1.png`,
+            text: `Genius | Page ${page + 1} of ${totalPages}`,
+          });
+          lyricsEmbed.react(`⬅`);
+          lyricsEmbed.react(`➡`);
+          const filter = (reaction, user) => {
+            [`⬅`, `➡`].includes(reaction.emoji.name) &&
+              user.id === interaction.user.id;
+          };
+          const collector = lyricsEmbed.createReactionCollector(filter);
+
+          collector.on("collect", async (reaction, user) => {
+            if (user.bot) return;
+            else {
+              reaction.users.remove(
+                reaction.users.cache.get(interaction.user.id)
+              );
+              if (reaction.emoji.name === `➡`) {
+                if (page < totalPages - 1) {
+                  page++;
+                  res = lyrics.slice(page * 1000, page * 1000 + 1000);
                   embed.setDescription(res).setFooter({
-                    iconURL: `https://cdn0.iconfinder.com/data/icons/summer-and-travel-3-2/128/134-512.png`,
-                    text: `Page ${page + 1} of ${totalPages}`,
+                    iconURL: `https://images.genius.com/0ca83e3130e1303a7f78ba351e3091cd.1000x1000x1.png`,
+                    text: `Genius | Page ${page + 1} of ${totalPages}`,
                   });
-                  await interaction.editReply({
+                  interaction.editReply({
                     embeds: [embed],
                   });
                 }
+              } else {
+                if (reaction.emoji.name == `⬅`) {
+                  if (page !== 0) {
+                    --page;
+                    res = lyrics.slice(page * 1000, page * 1000 + 1000);
+                    embed.setDescription(res).setFooter({
+                      iconURL: `https://images.genius.com/0ca83e3130e1303a7f78ba351e3091cd.1000x1000x1.png`,
+                      text: `Genius | Page ${page + 1} of ${totalPages}`,
+                    });
+                    interaction.editReply({
+                      embeds: [embed],
+                    });
+                  }
+                }
               }
             }
-          }
-        });
-        interaction.editReply({
-          embeds: [embed],
-        });
-      } else if (result.lyrics.length <= 1200) {
-        const sing = result.lyrics;
-        embed.setDescription(sing).setFooter({
-          iconURL: `https://cdn0.iconfinder.com/data/icons/summer-and-travel-3-2/128/134-512.png`,
-          text: `Lyrics`,
-        });
-        await interaction.editReply({
-          embeds: [embed],
-        });
-      } else if (!result) {
+          });
+          interaction.editReply({
+            embeds: [embed],
+          });
+        } else if (lyrics.length <= 1200) {
+          embed.setDescription(lyrics).setFooter({
+            iconURL: `https://images.genius.com/0ca83e3130e1303a7f78ba351e3091cd.1000x1000x1.png`,
+            text: `Genius`,
+          });
+          interaction.editReply({
+            embeds: [embed],
+          });
+        }
+      })
+      .catch((e) => {
         const failedEmbed = new EmbedBuilder()
-        .setTitle(`**No Result**`)
-        .setDescription(`Make sure you input a valid song name.`)
-        .setColor(0xffea00)
-        .setThumbnail(
-          `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
-        );
-        await interaction.editReply({
+          .setTitle(`**No Result**`)
+          .setDescription(`Make sure you input a valid song name.`)
+          .setColor(0xffea00)
+          .setThumbnail(
+            `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
+          );
+        interaction.editReply({
           embeds: [failedEmbed],
         });
-      }
-    })
-    .catch(console.error);
-  setTimeout(() => {
-    interaction.deleteReply().catch((e) => {
-      console.log(`Failed to delete Lyrics button interaction.`);
-    });
-  }, 10 * 60 * 1000);
-},
+      });
+    setTimeout(() => {
+      interaction.deleteReply().catch((e) => {
+        console.log(`Failed to delete Lyrics interaction.`);
+      });
+    }, 10 * 60 * 1000);
+  },
 };

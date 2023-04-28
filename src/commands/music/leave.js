@@ -1,18 +1,12 @@
-const {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  PermissionFlagsBits,
-} = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { getVoiceConnection } = require("@discordjs/voice");
 const { musicChannelID } = process.env;
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("leave")
-    .setDescription("Disconnect and reset the queue")
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
+    .setDescription("Disconnect and reset the queue"),
   async execute(interaction, client) {
-    const member = interaction.member;
     const voiceChannel = getVoiceConnection(interaction.member.guild.id);
 
     let failedEmbed = new EmbedBuilder();
@@ -47,7 +41,7 @@ module.exports = {
     ) {
       let embed = new EmbedBuilder()
         .setTitle(`❎ Leave`)
-        .setDescription(`Queue has been cleared.`)
+        .setDescription(`Queue has been reset.`)
         .setColor(0x256fc4)
         .setThumbnail(
           `https://icons.veryicon.com/png/o/miscellaneous/programming-software-icons/reset-28.png`

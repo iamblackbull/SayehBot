@@ -1,5 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { Moderators, Gigulebalaha, ShadowxRole, HamitzRole } = process.env;
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require("discord.js");
 const welcomeSchema = require("../../schemas/welcome-schema");
 
 const cache = new Map();
@@ -16,25 +15,11 @@ loadData();
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("setwelcome")
-    .setDescription("Set Welcome channel (moderators-only)"),
+    .setDescription("Set Welcome channel of server")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
   async execute(interaction, client) {
-    const member = interaction.member;
     const { guild, channel } = interaction;
 
-    let failedEmbed = new EmbedBuilder();
-
-    if (!member.roles.cache.has(Gigulebalaha || ShadowxRole || HamitzRole)) {
-      failedEmbed
-        .setTitle(`**Action Failed**`)
-        .setDescription(`You don't have the required role!`)
-        .setColor(0xffea00)
-        .setThumbnail(
-          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-        );
-      interaction.reply({
-        embeds: [failedEmbed],
-      });
-    } else {
       await welcomeSchema.findOneAndUpdate(
         {
           _id: guild.id,
@@ -62,7 +47,7 @@ module.exports = {
         embeds: [embed],
         ephemeral: true,
       });
-    }
+    
   },
 };
 module.exports.getChannelId = (guildId) => {

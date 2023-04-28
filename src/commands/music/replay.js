@@ -7,39 +7,13 @@ const {
   ButtonStyle,
 } = require("discord.js");
 const { QueryType } = require("discord-player");
-const { musicChannelID, guildID } = process.env;
+const { musicChannelID } = process.env;
 const replay = require("../../schemas/replay-schema");
-let replayList = await replay.findOne({
-  guild: guildID,
-});
-let name1 = replayList.Name1 || `--`;
-let name2 = replayList.Name2 || `--`;
-let name3 = replayList.Name3 || `--`;
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("replay")
-    .setDescription("Replay recently played audio")
-    .addStringOption((option) =>
-      option
-        .setName("song")
-        .setDescription("Select the audio you want to play")
-        .setRequired(true)
-        .addChoices(
-          {
-            name: `${name1}`,
-            value: "1",
-          },
-          {
-            name: `${name2}`,
-            value: "2",
-          },
-          {
-            name: `${name3}`,
-            value: "3",
-          }
-        )
-    ),
+    .setDescription("Replay last played audio"),
   async execute(interaction, client) {
     await interaction.deferReply({
       fetchReply: true,
@@ -117,18 +91,26 @@ module.exports = {
           .setEmoji(`⬇`)
           .setStyle(ButtonStyle.Primary);
 
-        const recentNumber = interaction.options.get("song").value;
         let url;
+        const { guild } = interaction;
+        let replayList = await replay.findOne({
+          guild: guild.id,
+        });
+        if (!replayList) {
+          failedEmbed
+            .setTitle(`**Unavailable**`)
+            .setColor(0xffea00)
+            .setDescription(`No audio found to replay.`)
+            .setThumbnail(
+              `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
+            );
+          interaction.editReply({
+            embeds: [failedEmbed],
+          });
+        } else {
+          url = replayList.Song;
+        }
 
-        if (recentNumber == 1) {
-          url = replayList.Song1;
-        }
-        if (recentNumber == 2) {
-          url = replayList.Song2;
-        }
-        if (recentNumber == 3) {
-          url = replayList.Song3;
-        }
         const result = await client.player.search(url, {
           requestedBy: interaction.user,
           searchEngine: QueryType.AUTO,
@@ -171,19 +153,29 @@ module.exports = {
               text: `Soundcloud`,
             });
           }
-          success = true;
-          timer = parseInt(song.duration);
           if (!queue.playing) await queue.play();
-          await interaction.editReply({
-            embeds: [embed],
-            components: [
-              new ActionRowBuilder()
-                .addComponents(addButton)
-                .addComponents(removeButton)
-                .addComponents(lyricsButton)
-                .addComponents(downloadButton),
-            ],
-          });
+          success = true;
+          if (song.duration.length >= 7) {
+            timer = 10;
+          } else {
+            timer = parseInt(song.duration);
+          }
+          if (timer < 10) {
+            await interaction.editReply({
+              embeds: [embed],
+              components: [
+                new ActionRowBuilder()
+                  .addComponents(addButton)
+                  .addComponents(removeButton)
+                  .addComponents(lyricsButton)
+                  .addComponents(downloadButton),
+              ],
+            });
+          } else {
+            await interaction.editReply({
+              embeds: [embed],
+            });
+          }
         }
       } else {
         failedEmbed

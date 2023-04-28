@@ -4,6 +4,7 @@ const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  ComponentType,
 } = require("discord.js");
 const favorite = require("../../schemas/favorite-schema");
 const { QueryType } = require("discord-player");
@@ -121,8 +122,8 @@ module.exports = {
 
       const favoriteString = `**1.** ${song1}\n**2.** ${song2}\n**3.** ${song3}\n**4.** ${song4}\n**5.** ${song5}\n**6.** ${song6}\n**7.** ${song7}\n**8.** ${song8}\n**9.** ${song9}\n**10.** ${song10}`;
 
-      if (interaction.options.getInteget("tracknumber")) {
-        const target = interaction.options.get("tracknumber");
+      if (interaction.options.getInteger("tracknumber")) {
+        const target = interaction.options.getInteger("tracknumber");
         let targetRes;
         if (target === 1) {
           targetRes = song1;
@@ -228,7 +229,7 @@ module.exports = {
             const removeEmbed = new EmbedBuilder()
               .setTitle(`Remove Favorite`)
               .setDescription(
-                `Song #${target} has been removed from your favorite playlist.`
+                `Song **#${target}** has been removed from your favorite playlist.`
               )
               .setColor(0x25bfc4)
               .setThumbnail(
@@ -246,7 +247,11 @@ module.exports = {
               `${interaction.user.tag} just removed their song #${target} from their favorite playlist.`
             );
           })
-          .catch(console.error);
+          .catch((e) => {
+            console.log(
+              `Remove Favortie collector of Favorite List did not recieve any interaction before ending.`
+            );
+          });
 
         embed.setDescription(`**${target}.** ${targetRes}`);
         await interaction.editReply({
@@ -269,8 +274,8 @@ module.exports = {
           iconURL: `https://www.linkpicture.com/q/2753995-201.png`,
           text: "Favorite",
         });
-      if (interaction.options.getInteget("tracknumber")) {
-        const target = interaction.options.get("tracknumber");
+      if (interaction.options.getInteger("tracknumber")) {
+        const target = interaction.options.getInteger("tracknumber");
         if (target === 1) {
           await favorite.updateOne(
             { User: interaction.user.id },
@@ -334,7 +339,7 @@ module.exports = {
         removeEmbed
           .setTitle(`Remove Favorite`)
           .setDescription(
-            `Song #${target} has been removed from your favorite playlist.`
+            `Song **#${target}** has been removed from your favorite playlist.`
           );
         console.log(
           `${interaction.user.tag} just removed their song #${target} from their favorite playlist.`
@@ -386,8 +391,8 @@ module.exports = {
       }
       if (connection === true) {
         let favoriteLength;
-        if (interaction.options.getInteget("tracknumber")) {
-          const target = interaction.options.get("tracknumber");
+        if (interaction.options.getInteger("tracknumber")) {
+          const target = interaction.options.getInteger("tracknumber");
           let url;
           if (target === 1) {
             url = favoriteList.Song1;
@@ -453,7 +458,7 @@ module.exports = {
             embed
               .setThumbnail(song.thumbnail)
               .setDescription(
-                `${interaction.user}\n**${favoriteLength}** songs`
+                `${interaction.user}\nSong **#${favoriteLength}**`
               );
             if (!queue.playing) await queue.play();
 

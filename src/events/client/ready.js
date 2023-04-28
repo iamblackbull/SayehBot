@@ -9,9 +9,7 @@ module.exports = {
   once: true,
   async execute(client) {
     console.log(`SayehBot is online!`);
-    console.log(
-      `Today's date: ${currentDate}.${currentMonth}.${currentYear}`
-    );
+    console.log(`Today's date: ${currentYear}.${currentMonth}.${currentDate}`);
 
     setInterval(client.remindBirthday, 24 * 60 * 60 * 1000);
     setInterval(client.checkStreamS, 1 * 10 * 1000);

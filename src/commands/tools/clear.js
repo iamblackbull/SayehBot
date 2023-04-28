@@ -7,7 +7,7 @@ const {
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("clear")
-    .setDescription("Clear amount of messages (moderators-only)")
+    .setDescription("Clear an amount of messages in a channel")
     .addIntegerOption((options) => {
       return options
         .setName("amount")

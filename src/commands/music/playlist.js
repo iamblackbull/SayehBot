@@ -148,18 +148,7 @@ module.exports = {
           });
           success = true;
           timer = parseInt(result.tracks[0].duration);
-          let song1 = result.tracks[result.tracks.length - 3];
-          if (!song1) {
-            song1 = null;
-          }
-          let song2 = result.tracks[result.tracks.length - 2];
-          if (!song2) {
-            song2 = null;
-          }
-          let song3 = result.tracks[result.tracks.length - 1];
-          if (!song3) {
-            song3 = null;
-          }
+          let song = result.tracks[result.tracks.length - 1];
           const { guild } = interaction;
           let replayList = await replay.findOne({
             guild: guild.id,
@@ -167,27 +156,18 @@ module.exports = {
           if (!replayList) {
             replayList = new replay({
               guild: guild.id,
-              Song1: song1.url,
-              Name1: song1.title,
-              Song2: song2.url,
-              Name2: song2.title,
-              Song3: song3.url,
-              Name3: song3.title,
+              Song: song.url,
+              Name: song.title,
             });
             await replayList.save().catch(console.error);
           } else {
-            await replay.updateOne(
+            replayList = await replay.updateOne(
               { guild: guild.id },
               {
-                Song1: song1.url,
-                Name1: song1.title,
-                Song2: song2.url,
-                Name2: song2.title,
-                Song3: song3.url,
-                Name3: song3.title,
+                Song: song.url,
+                Name: song.title,
               }
             );
-            await replay.save().catch(console.error);
           }
         }
       } else {

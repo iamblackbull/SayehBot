@@ -68,7 +68,6 @@ module.exports = {
         success = true;
         timer = 1;
       } else {
-        timer = parseInt(nextSong.duration);
         const addButton = new ButtonBuilder()
           .setCustomId(`favorite`)
           .setEmoji(`🤍`)
@@ -108,17 +107,29 @@ module.exports = {
             text: `Soundcloud`,
           });
         }
-        await interaction.editReply({
-          embeds: [embed],
-          components: [
-            new ActionRowBuilder()
-              .addComponents(addButton)
-              .addComponents(removeButton)
-              .addComponents(lyricsButton)
-              .addComponents(downloadButton),
-          ],
-        });
+        if (!queue.playing) await queue.play();
         success = true;
+        if (nextSong.duration.length >= 7) {
+          timer = 10;
+        } else {
+          timer = parseInt(nextSong.duration);
+        }
+        if (timer < 10) {
+          await interaction.editReply({
+            embeds: [embed],
+            components: [
+              new ActionRowBuilder()
+                .addComponents(addButton)
+                .addComponents(removeButton)
+                .addComponents(lyricsButton)
+                .addComponents(downloadButton),
+            ],
+          });
+        } else {
+          await interaction.editReply({
+            embeds: [embed],
+          });
+        }
       }
     } else {
       failedEmbed
