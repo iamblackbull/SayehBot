@@ -21,7 +21,7 @@
     "chalk": "^4.1.2",
     "discord-api-types": "^0.37.12",
     "discord-giveaways": "^6.0.1",
-    "discord-player": "^6.1.1",
+    "discord-player": "^5.4.0",
     "discord-xp": "^1.1.16",
     "discord.js": "^14.5.0",
     "dotenv": "^16.0.3",
@@ -45,6 +45,6 @@
     "tracker.gg": "^1.1.2",
     "vandal.js": "^1.2.0",
     "weather-js": "^2.0.0",
-    "ytdl-core": "^4.11.4"
+    "ytdl-core": "github:khlevon/node-ytdl-core#v4.11.4-patch.2"
   }
 }

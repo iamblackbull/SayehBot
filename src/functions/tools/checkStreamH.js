@@ -28,14 +28,14 @@ module.exports = (client) => {
   client.checkStreamH = async () => {
     try {
       await twitch.getStreams({ channel: ["hamiitz"] }).then(async (data) => {
-        const r = data.data[0];
+        const result = data.data[0];
         const guild = await client.guilds.fetch(guildID).catch(console.error);
         const channel = await guild.channels
           .fetch(streamChannelID)
           .catch(console.error);
 
-        if (r !== undefined) {
-          if (r.type === "live") {
+        if (result !== undefined) {
+          if (result.type === "live") {
             if (IsLiveMemory === false) {
               const { title, viewer_count, game_name, user_name } =
                 data.data[0];

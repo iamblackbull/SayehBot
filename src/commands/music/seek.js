@@ -11,7 +11,8 @@ module.exports = {
         .setDescription("Minutes to seek")
         .setMinValue(1)
         .setRequired(true);
-    }),
+    })
+    .setDMPermission(false),
   async execute(interaction, client) {
     const seekEmbed = await interaction.deferReply({
       fetchReply: true,

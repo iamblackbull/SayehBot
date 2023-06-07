@@ -12,9 +12,9 @@ module.exports = {
     console.log(`Today's date: ${currentYear}.${currentMonth}.${currentDate}`);
 
     setInterval(client.remindBirthday, 24 * 60 * 60 * 1000);
-    setInterval(client.checkStreamS, 1 * 10 * 1000);
-    setInterval(client.checkStreamH, 1 * 10 * 1000);
-    setInterval(client.checkVideo, 5 * 10 * 1000);
+    setInterval(client.checkStreamS, 1 * 60 * 1000);
+    setInterval(client.checkStreamH, 1 * 60 * 1000);
+    setInterval(client.checkVideo, 5 * 60 * 1000);
     client.user.setPresence({
       activities: [
         {

@@ -17,7 +17,8 @@ module.exports = {
         .setDescription("Track # to jump to")
         .setMinValue(1)
         .setRequired(true)
-    ),
+    )
+    .setDMPermission(false),
   async execute(interaction, client) {
     const queue = client.player.getQueue(interaction.guildId);
     let trackNum = interaction.options.getInteger("tracknumber");
@@ -61,14 +62,11 @@ module.exports = {
       }
       queue.skipTo(trackNum - 1);
       const nextSong = queue.tracks.at(0);
-      const addButton = new ButtonBuilder()
+
+      const favoriteButton = new ButtonBuilder()
         .setCustomId(`favorite`)
         .setEmoji(`🤍`)
         .setStyle(ButtonStyle.Danger);
-      const removeButton = new ButtonBuilder()
-        .setCustomId(`remove-favorite`)
-        .setEmoji(`💔`)
-        .setStyle(ButtonStyle.Secondary);
       const lyricsButton = new ButtonBuilder()
         .setCustomId(`lyrics`)
         .setEmoji(`🎤`)
@@ -113,8 +111,7 @@ module.exports = {
           embeds: [embed],
           components: [
             new ActionRowBuilder()
-              .addComponents(addButton)
-              .addComponents(removeButton)
+              .addComponents(favoriteButton)
               .addComponents(lyricsButton)
               .addComponents(downloadButton),
           ],

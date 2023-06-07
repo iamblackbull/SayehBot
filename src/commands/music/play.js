@@ -19,12 +19,14 @@ module.exports = {
         .setName("song")
         .setDescription("Input song name or url")
         .setRequired(true)
-    ),
+    )
+    .setDMPermission(false),
   async execute(interaction, client) {
     await interaction.deferReply({
       fetchReply: true,
     });
 
+    let source;
     let song;
     let success = false;
     let timer;
@@ -80,14 +82,10 @@ module.exports = {
       if (connection === true) {
         let embed = new EmbedBuilder();
 
-        const addButton = new ButtonBuilder()
+        const favoriteButton = new ButtonBuilder()
           .setCustomId(`favorite`)
           .setEmoji(`🤍`)
           .setStyle(ButtonStyle.Danger);
-        const removeButton = new ButtonBuilder()
-          .setCustomId(`remove-favorite`)
-          .setEmoji(`💔`)
-          .setStyle(ButtonStyle.Secondary);
         const lyricsButton = new ButtonBuilder()
           .setCustomId(`lyrics`)
           .setEmoji(`🎤`)
@@ -129,16 +127,19 @@ module.exports = {
             )
             .setThumbnail(song.thumbnail);
           if (song.url.includes("youtube")) {
+            source = "allowed";
             embed.setColor(0xff0000).setFooter({
               iconURL: `https://www.iconpacks.net/icons/2/free-youtube-logo-icon-2431-thumb.png`,
               text: `YouTube`,
             });
           } else if (song.url.includes("spotify")) {
+            source = "private";
             embed.setColor(0x34eb58).setFooter({
               iconURL: `https://www.freepnglogos.com/uploads/spotify-logo-png/image-gallery-spotify-logo-21.png`,
-              text: `Spotify`,
+              text: "spotify",
             });
           } else if (song.url.includes("soundcloud")) {
+            source = "allowed";
             embed.setColor(0xeb5534).setFooter({
               iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
               text: `Soundcloud`,
@@ -152,16 +153,26 @@ module.exports = {
             timer = parseInt(song.duration);
           }
           if (timer < 10) {
-            await interaction.editReply({
-              embeds: [embed],
-              components: [
-                new ActionRowBuilder()
-                  .addComponents(addButton)
-                  .addComponents(removeButton)
-                  .addComponents(lyricsButton)
-                  .addComponents(downloadButton),
-              ],
-            });
+            if (source === "allowed") {
+              await interaction.editReply({
+                embeds: [embed],
+                components: [
+                  new ActionRowBuilder()
+                    .addComponents(favoriteButton)
+                    .addComponents(lyricsButton)
+                    .addComponents(downloadButton),
+                ],
+              });
+            } else {
+              await interaction.editReply({
+                embeds: [embed],
+                components: [
+                  new ActionRowBuilder()
+                    .addComponents(favoriteButton)
+                    .addComponents(lyricsButton),
+                ],
+              });
+            }
           } else {
             await interaction.editReply({
               embeds: [embed],

@@ -4,7 +4,8 @@ const { musicChannelID } = process.env;
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("shuffle")
-    .setDescription("Shuffles the queue"),
+    .setDescription("Shuffles the queue")
+    .setDMPermission(false),
   async execute(interaction, client) {
 
     const queue = client.player.getQueue(interaction.guildId);

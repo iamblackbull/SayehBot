@@ -109,7 +109,8 @@ module.exports = {
               {
                 name: `Raid Progress`,
                 value: `${
-                  result.raid_progression[`vault-of-the-incarnates`].summary
+                  result.raid_progression[`aberrus-the-shadowed-crucible`]
+                    .summary
                 }`,
                 inline: true,
               },
@@ -392,12 +393,13 @@ module.exports = {
                   {
                     name: `Raid Progress`,
                     value: `${
-                      result.raid_progression[`vault-of-the-incarnates`].summary
+                      result.raid_progression[`aberrus-the-shadowed-crucible`]
+                        .summary
                     }`,
                     inline: true,
                   },
                   {
-                    name: `Class Realm Rank`,
+                    name: `Realm Class Rank`,
                     value: `${result.mythic_plus_ranks.class.realm}`,
                     inline: true,
                   },
@@ -438,7 +440,9 @@ module.exports = {
         .catch((e) => {
           failedEmbed
             .setTitle(`**No Result**`)
-            .setDescription(`Character might not be max level.`)
+            .setDescription(
+              `Character might not be max level nor has played Dragonflight Season 2.`
+            )
             .setColor(0xffea00)
             .setThumbnail(
               `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`

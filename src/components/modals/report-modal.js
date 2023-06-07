@@ -15,6 +15,7 @@ module.exports = {
 
     const reportList = await report.findOne({
       ReporterId: interaction.user.id,
+      IsCaseOpen: true,
     });
 
     const reason = interaction.fields.getTextInputValue(`reportInput`);
@@ -55,10 +56,13 @@ module.exports = {
       [`✅`].includes(reaction.emoji.name) && user.id === interaction.user.id;
     };
     const collector = msg.createReactionCollector(filter);
-    collector.on("collect", async (reaction, user) => {
+    collector.on("collect", async (user) => {
       if (user.bot) return;
       else {
-        reportList.delete().catch(console.error);
+        await report.updateOne(
+          { ReporterId: interaction.user.id, IsCaseOpen: true },
+          { IsCaseOpen: false }
+        );
         msg.reactions.removeAll().catch(console.error);
 
         embed

@@ -53,7 +53,8 @@ module.exports = {
         .setDescription("Pick any member")
         .setRequired(true);
     })
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
+    .setDMPermission(false),
   async execute(interaction, client) {
     await interaction.deferReply({
       fetchReply: true,

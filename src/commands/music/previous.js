@@ -9,8 +9,8 @@ const { musicChannelID } = process.env;
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("skip")
-    .setDescription("Skip the current song")
+    .setName("previous")
+    .setDescription("Play previously played audio")
     .setDMPermission(false),
   async execute(interaction, client) {
     await interaction.deferReply({
@@ -53,21 +53,19 @@ module.exports = {
     } else if (
       queue.connection.channel.id === interaction.member.voice.channel.id
     ) {
-      queue.skip();
-      const nextSong = queue.tracks.at(0) || null;
-      const currentSong = queue.current;
-      if (nextSong == null || !nextSong) {
-        embed
-          .setTitle("**Previous**")
-          .setDescription(
-            `**[${currentSong.title}](${currentSong.url})**\n**${currentSong.author}**`
-          )
-          .setThumbnail(currentSong.thumbnail);
+      queue.back();
+      const preivousSong = queue.tracks.at(0) || null;
+      if (preivousSong == null || !preivousSong) {
+        failedEmbed
+          .setTitle(`**Action Failed**`)
+          .setDescription(`Unable to play previous audio.`)
+          .setColor(0xffea00)
+          .setThumbnail(
+            `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
+          );
         await interaction.editReply({
           embeds: [embed],
         });
-        success = true;
-        timer = 1;
       } else {
         const favoriteButton = new ButtonBuilder()
           .setCustomId(`favorite`)
@@ -83,22 +81,22 @@ module.exports = {
           .setStyle(ButtonStyle.Primary);
 
         embed
-          .setTitle(`**Next**`)
+          .setTitle(`**Previous**`)
           .setDescription(
-            `**[${nextSong.title}](${nextSong.url})**\n**${nextSong.author}**\n${nextSong.duration}`
+            `**[${preivousSong.title}](${preivousSong.url})**\n**${preivousSong.author}**\n${preivousSong.duration}`
           )
-          .setThumbnail(nextSong.thumbnail);
-        if (nextSong.url.includes("youtube")) {
+          .setThumbnail(preivousSong.thumbnail);
+        if (preivousSong.url.includes("youtube")) {
           embed.setColor(0xff0000).setFooter({
             iconURL: `https://www.iconpacks.net/icons/2/free-youtube-logo-icon-2431-thumb.png`,
             text: `YouTube`,
           });
-        } else if (nextSong.url.includes("spotify")) {
+        } else if (preivousSong.url.includes("spotify")) {
           embed.setColor(0x34eb58).setFooter({
             iconURL: `https://www.freepnglogos.com/uploads/spotify-logo-png/image-gallery-spotify-logo-21.png`,
             text: `Spotify`,
           });
-        } else if (nextSong.url.includes("soundcloud")) {
+        } else if (preivousSong.url.includes("soundcloud")) {
           embed.setColor(0xeb5534).setFooter({
             iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
             text: `Soundcloud`,
@@ -109,7 +107,7 @@ module.exports = {
         if (nextSong.duration.length >= 7) {
           timer = 10;
         } else {
-          timer = parseInt(nextSong.duration);
+          timer = parseInt(preivousSong.duration);
         }
         if (timer < 10) {
           await interaction.editReply({
@@ -150,12 +148,12 @@ module.exports = {
           interaction.editReply({ components: [] });
         } else {
           interaction.deleteReply().catch((e) => {
-            console.log(`Failed to delete Skip interaction.`);
+            console.log(`Failed to delete Replay interaction.`);
           });
         }
       } else {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete unsuccessfull Skip interaction.`);
+          console.log(`Failed to delete unsuccessfull Replay interaction.`);
         });
       }
     }, timer * 60 * 1000);

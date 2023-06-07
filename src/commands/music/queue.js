@@ -10,7 +10,8 @@ module.exports = {
         .setName("page")
         .setDescription("Page number of the queue")
         .setMinValue(1)
-    ),
+    )
+    .setDMPermission(false),
 
   async execute(interaction, client) {
     const queueEmbed = await interaction.deferReply({

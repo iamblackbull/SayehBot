@@ -10,6 +10,7 @@ const chalk = require("chalk");
 const Parser = require("rss-parser");
 const parser = new Parser();
 const fs = require("fs");
+const video = require("../../schemas/video-schema");
 
 module.exports = (client) => {
   client.checkVideo = async () => {
@@ -20,8 +21,20 @@ module.exports = (client) => {
         )
         .catch(console.error);
 
+      const guild = await client.guilds.fetch(guildID).catch(console.error);
       const rawData = fs.readFileSync(`${__dirname}/../../json/video.json`);
       const jsonData = JSON.parse(rawData);
+
+      let videoList = await video.findOne({
+        guild: guild.id,
+      });
+      if (!videoList) {
+        videoList = new video({
+          guild: guild.id,
+          VideoId: data.items[0].id,
+        });
+        await videoList.save().catch(console.error);
+      }
 
       if (jsonData.id !== data.items[0].id) {
         fs.writeFileSync(
@@ -29,7 +42,13 @@ module.exports = (client) => {
           JSON.stringify({ id: data.items[0].id })
         );
 
-        const guild = await client.guilds.fetch(guildID).catch(console.error);
+        videoList = await video.updateOne(
+          { guild: guild.id },
+          {
+            VideoId: data.items[0].id,
+          }
+        );
+
         const channel = await guild.channels
           .fetch(youtubeChannelID)
           .catch(console.error);
@@ -61,7 +80,7 @@ module.exports = (client) => {
           .setLabel(`Watch Video`)
           .setURL(`${link}`)
           .setStyle(ButtonStyle.Link);
-        console.log(`Sayeh just uploaded a new video on YouTube!`)
+        console.log(`Sayeh just uploaded a new video on YouTube!`);
         await channel
           .send({
             embeds: [embed],

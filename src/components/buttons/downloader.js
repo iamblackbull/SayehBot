@@ -15,12 +15,12 @@ module.exports = {
         `https://cdn4.iconfinder.com/data/icons/3d-modeling-printing-volume-2/64/file-processing-512.png`
       );
 
+    const queue = client.player.getQueue(interaction.guildId);
+    if (!queue) return;
+
     await interaction.reply({
       embeds: [embed],
     });
-
-    const queue = client.player.getQueue(interaction.guildId);
-    if (!queue) return;
 
     const url = queue.current.url;
 

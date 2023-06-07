@@ -5,7 +5,8 @@ const { rankChannelID, guildID } = process.env;
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("roll")
-    .setDescription("Roll a random number between 1 - 100"),
+    .setDescription("Roll a random number between 1 - 100")
+    .setDMPermission(false),
   async execute(interaction, client) {
     await interaction.deferReply({
       fetchReply: true,

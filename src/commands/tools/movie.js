@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const movier = require("movier");
+const { movieChannelID } = process.env;
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -15,6 +16,8 @@ module.exports = {
     await interaction.deferReply({
       fetchReply: true,
     });
+
+    let success;
 
     const name = interaction.options.getString("name");
     await movier
@@ -66,9 +69,10 @@ module.exports = {
         await interaction.editReply({
           embeds: [embed],
         });
+        success = true;
       })
       .catch(async (e) => {
-        failedEmbed
+        const failedEmbed = new EmbedBuilder()
           .setTitle(`**No Result**`)
           .setDescription(`Make sure you input a valid movie name.`)
           .setColor(0xffea00)
@@ -78,11 +82,21 @@ module.exports = {
         interaction.editReply({
           embeds: [failedEmbed],
         });
+        success = false;
       });
     setTimeout(() => {
-      interaction.deleteReply().catch((e) => {
-        console.log(`Failed to delete Movie interaction.`);
-      });
+      if (success === true) {
+        if (interaction.channel.id === movieChannelID) return;
+        else {
+          interaction.deleteReply().catch((e) => {
+            console.log(`Failed to delete Movie interaction.`);
+          });
+        }
+      } else {
+        interaction.deleteReply().catch((e) => {
+          console.log(`Failed to delete unsuccessfull Movie interaction.`);
+        });
+      }
     }, 10 * 60 * 1000);
   },
 };

@@ -16,7 +16,8 @@ module.exports = {
         .setDescription("Amount of messages to clear")
         .setRequired(true);
     })
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+    .setDMPermission(false),
   async execute(interaction, client) {
     const member = interaction.member;
 

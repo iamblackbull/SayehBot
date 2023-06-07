@@ -5,7 +5,8 @@ const { musicChannelID } = process.env;
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("leave")
-    .setDescription("Disconnect and reset the queue"),
+    .setDescription("Disconnect and reset the queue")
+    .setDMPermission(false),
   async execute(interaction, client) {
     const voiceChannel = getVoiceConnection(interaction.member.guild.id);
 

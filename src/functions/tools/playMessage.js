@@ -7,7 +7,6 @@ const {
 } = require("discord.js");
 const { QueryType } = require("discord-player");
 require("dotenv").config();
-const { musicChannelID } = process.env;
 const replay = require("../../schemas/replay-schema");
 
 module.exports = (client) => {
@@ -19,13 +18,11 @@ module.exports = (client) => {
     let failedEmbed = new EmbedBuilder();
     let connection = false;
     let song;
-    let success = false;
+    let type;
     let timer;
+    let msg;
 
     if (message.channel.id === `744591209359474728`) {
-      const channel = await guild.channels
-        .fetch(musicChannelID)
-        .catch(console.error);
       if (
         !message.guild.members.me.permissions.has(
           PermissionsBitField.Flags.Speak
@@ -38,9 +35,14 @@ module.exports = (client) => {
           .setThumbnail(
             `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
           );
-        await channel.send({
+        msg = await message.reply({
           embeds: [failedEmbed],
         });
+        setTimeout(() => {
+          msg.delete().catch((e) => {
+            console.log(`Failed to delete unsuccessfull Play message.`);
+          });
+        }, 2 * 60 * 1000);
       } else if (!message.member.voice.channel) {
         failedEmbed
           .setTitle(`**Action Failed**`)
@@ -51,9 +53,14 @@ module.exports = (client) => {
           .setThumbnail(
             `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
           );
-        await channel.send({
+        msg = await message.reply({
           embeds: [failedEmbed],
         });
+        setTimeout(() => {
+          msg.delete().catch((e) => {
+            console.log(`Failed to delete unsuccessfull Play message.`);
+          });
+        }, 2 * 60 * 1000);
       } else {
         const queue = await client.player.createQueue(message.guild, {
           leaveOnEnd: true,
@@ -75,14 +82,10 @@ module.exports = (client) => {
         if (connection === true) {
           let embed = new EmbedBuilder();
 
-          const addButton = new ButtonBuilder()
+          const favoriteButton = new ButtonBuilder()
             .setCustomId(`favorite`)
             .setEmoji(`🤍`)
             .setStyle(ButtonStyle.Danger);
-          const removeButton = new ButtonBuilder()
-            .setCustomId(`remove-favorite`)
-            .setEmoji(`💔`)
-            .setStyle(ButtonStyle.Secondary);
           const lyricsButton = new ButtonBuilder()
             .setCustomId(`lyrics`)
             .setEmoji(`🎤`)
@@ -96,58 +99,49 @@ module.exports = (client) => {
           let result;
           if (url.toLowerCase().startsWith("https")) {
             if (url.toLowerCase().includes("playlist")) {
-              if (url.toLowerCase().includes("youtube")) {
-                result = await client.player.search(url, {
-                  requestedBy: message.author,
-                  searchEngine: QueryType.YOUTUBE_PLAYLIST,
-                });
-              }
-              if (url.toLowerCase().includes("spotify")) {
-                result = await client.player.search(url, {
-                  requestedBy: message.author,
-                  searchEngine: QueryType.SPOTIFY_PLAYLIST,
-                });
-              }
-              if (url.toLowerCase().includes("soundcloud")) {
-                result = await client.player.search(url, {
-                  requestedBy: message.author,
-                  searchEngine: QueryType.SOUNDCLOUD_PLAYLIST,
-                });
-              }
-              const playlist = result.playlist;
-              if (result.tracks[0].duration.length >= 7) {
-                timer = 10;
-              } else {
-                timer = parseInt(result.tracks[0].duration);
-              }
-              await queue.addTracks(result.tracks);
-              embed
-                .setTitle(`🎶 Playlist`)
-                .setDescription(
-                  `**[${playlist.title}](${playlist.url})**\n**${result.tracks.length} songs**`
-                );
-              song = result.tracks[result.tracks.length - 1];
+              type = "playlist";
             } else {
-              result = await client.player.search(url, {
-                requestedBy: message.author,
-                searchEngine: QueryType.AUTO,
-              });
-              song = result.tracks[0];
-              if (song.duration.length >= 7) {
-                timer = 10;
-              } else {
-                timer = parseInt(song.duration);
-              }
-              embed
-                .setTitle(`🎵 Track`)
-                .setDescription(
-                  `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`
-                )
-                .setThumbnail(song.thumbnail);
+              type = "track";
             }
           } else {
+            type = "track";
+          }
+          if (type === "playlist") {
+            if (url.toLowerCase().includes("youtube")) {
+              result = await client.player.search(url, {
+                requestedBy: message.author,
+                searchEngine: QueryType.YOUTUBE_PLAYLIST,
+              });
+            }
+            if (url.toLowerCase().includes("spotify")) {
+              result = await client.player.search(url, {
+                requestedBy: message.author,
+                searchEngine: QueryType.SPOTIFY_PLAYLIST,
+              });
+            }
+            if (url.toLowerCase().includes("soundcloud")) {
+              result = await client.player.search(url, {
+                requestedBy: message.author,
+                searchEngine: QueryType.SOUNDCLOUD_PLAYLIST,
+              });
+            }
+            const playlist = result.playlist;
+            if (result.tracks[0].duration.length >= 7) {
+              timer = 10;
+            } else {
+              timer = parseInt(result.tracks[0].duration);
+            }
+            await queue.addTracks(result.tracks);
+            embed
+              .setTitle(`🎶 Playlist`)
+              .setDescription(
+                `**[${playlist.title}](${playlist.url})**\n**${result.tracks.length} songs**`
+              );
+            song = result.tracks[result.tracks.length - 1];
+          }
+          if (type === "track") {
             result = await client.player.search(url, {
-              requestedBy: interaction.user,
+              requestedBy: message.author,
               searchEngine: QueryType.AUTO,
             });
             song = result.tracks[0];
@@ -191,9 +185,14 @@ module.exports = (client) => {
               .setThumbnail(
                 `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
               );
-            message.reply({
+            msg = await message.reply({
               embeds: [failedEmbed],
             });
+            setTimeout(() => {
+              msg.delete().catch((e) => {
+                console.log(`Failed to delete unsuccessfull Play message.`);
+              });
+            }, 2 * 60 * 1000);
           } else {
             if (song.url.includes("youtube")) {
               embed.setColor(0xff0000).setFooter({
@@ -213,26 +212,23 @@ module.exports = (client) => {
             }
             if (!queue.playing) await queue.play();
 
-            if (url.toLowerCase().includes("playlist")) {
+            if (type === "playlist") {
               await message.reply({
                 embeds: [embed],
               });
             } else {
-              success = true;
-              let msg;
               if (timer < 10) {
-                msg = await interaction.replay({
+                msg = await message.reply({
                   embeds: [embed],
                   components: [
                     new ActionRowBuilder()
-                      .addComponents(addButton)
-                      .addComponents(removeButton)
+                      .addComponents(favoriteButton)
                       .addComponents(lyricsButton)
                       .addComponents(downloadButton),
                   ],
                 });
               } else {
-                msg = await interaction.replay({
+                msg = await message.reply({
                   embeds: [embed],
                 });
               }
@@ -251,18 +247,16 @@ module.exports = (client) => {
             .setThumbnail(
               `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
             );
-          message.reply({
+          msg = await message.reply({
             embeds: [failedEmbed],
           });
+          setTimeout(() => {
+            msg.delete().catch((e) => {
+              console.log(`Failed to delete unsuccessfull Play message.`);
+            });
+          }, 2 * 60 * 1000);
         }
       }
     }
-    setTimeout(() => {
-      if (success === false) {
-        message.delete().catch((e) => {
-          console.log(`Failed to delete unsuccessfull Play message.`);
-        });
-      }
-    }, 2 * 60 * 1000);
   });
 };

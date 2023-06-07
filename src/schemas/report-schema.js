@@ -6,6 +6,7 @@ const reportSchema = new mongoose.Schema({
   TargetId: String,
   TargetName: String,
   Message: String,
+  IsCaseOpen: Boolean,
 });
 
 module.exports = mongoose.model("report", reportSchema);

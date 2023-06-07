@@ -16,7 +16,8 @@ module.exports = {
         .setName("url")
         .setDescription("Input playlist's url")
         .setRequired(true)
-    ),
+    )
+    .setDMPermission(false),
 
   async execute(interaction, client) {
     await interaction.deferReply({

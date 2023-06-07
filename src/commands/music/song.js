@@ -12,7 +12,8 @@ let paused = false;
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("song")
-    .setDescription("Returns info about the current song playing"),
+    .setDescription("Returns info about the current song playing")
+    .setDMPermission(false),
   async execute(interaction, client) {
     const songEmbed = await interaction.deferReply({
       fetchReply: true,
@@ -62,19 +63,15 @@ module.exports = {
       let song = queue.current;
 
       let embed = new EmbedBuilder()
-        .setTitle("▶ **Currently Playing**")
+        .setTitle("**Currently Playing**")
         .setDescription(
           `**[${song.title}](${song.url})**\n**${song.author}**\n` + bar
         )
         .setColor(0x25bfc4);
-      const addButton = new ButtonBuilder()
+      const favoriteButton = new ButtonBuilder()
         .setCustomId(`favorite`)
         .setEmoji(`🤍`)
         .setStyle(ButtonStyle.Danger);
-      const removeButton = new ButtonBuilder()
-        .setCustomId(`remove-favorite`)
-        .setEmoji(`💔`)
-        .setStyle(ButtonStyle.Secondary);
       const lyricsButton = new ButtonBuilder()
         .setCustomId(`lyrics`)
         .setEmoji(`🎤`)
@@ -109,7 +106,7 @@ module.exports = {
               length: 14,
             });
             embed
-              .setTitle("▶ **Currently Playing**")
+              .setTitle("**Currently Playing**")
               .setDescription(
                 `**[${song.title}](${song.url})**\n**${song.author}**\n` + bar
               );
@@ -130,7 +127,7 @@ module.exports = {
               length: 14,
             });
             embed
-              .setTitle("⏸ **Currently Paused**")
+              .setTitle("**Currently Paused**")
               .setDescription(
                 `**[${song.title}](${song.url})**\n**${song.author}**\n` + bar
               );
@@ -170,8 +167,7 @@ module.exports = {
           embeds: [embed],
           components: [
             new ActionRowBuilder()
-              .addComponents(addButton)
-              .addComponents(removeButton)
+              .addComponents(favoriteButton)
               .addComponents(lyricsButton)
               .addComponents(downloadButton),
           ],

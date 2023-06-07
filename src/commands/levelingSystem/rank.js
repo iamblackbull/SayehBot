@@ -18,7 +18,8 @@ module.exports = {
         .setName("user")
         .setDescription("Pick any member")
         .setRequired(false);
-    }),
+    })
+    .setDMPermission(false),
   async execute(interaction, client) {
     await interaction.deferReply({
       fetchReply: true,

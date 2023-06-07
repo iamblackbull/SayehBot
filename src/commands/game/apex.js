@@ -113,16 +113,18 @@ module.exports = {
             });
 
             const saveEmbed = new EmbedBuilder()
-            .setTitle(`Save Account`)
-            .setDescription("Your Apex Account have been saved to the database.")
-            .setColor(0x25bfc4)
-            .setThumbnail(
-              `https://freeiconshop.com/wp-content/uploads/edd/link-open-flat.png`
-            )
-            .setFooter({
-              iconURL: `https://seeklogo.com/images/A/apex-logo-C3478A4601-seeklogo.com.png`,
-              text: `Apex Legends`,
-            });
+              .setTitle(`Save Account`)
+              .setDescription(
+                "Your Apex Account have been saved to the database."
+              )
+              .setColor(0x25bfc4)
+              .setThumbnail(
+                `https://freeiconshop.com/wp-content/uploads/edd/link-open-flat.png`
+              )
+              .setFooter({
+                iconURL: `https://seeklogo.com/images/A/apex-logo-C3478A4601-seeklogo.com.png`,
+                text: `Apex Legends`,
+              });
 
             if (!apexList) {
               apexList = new apex({
@@ -157,7 +159,11 @@ module.exports = {
               );
             }
           })
-          .catch(console.error);
+          .catch((e) => {
+            console.log(
+              `Save collector of Apex did not recieve any interactions before ending.`
+            );
+          });
         interaction.editReply({
           embeds: [embed],
           components: [new ActionRowBuilder().addComponents(saveButton)],

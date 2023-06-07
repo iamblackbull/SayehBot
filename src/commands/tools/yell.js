@@ -9,7 +9,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("yell")
     .setDescription("Yell at everyone!")
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
     .addChannelOption((option) => {
       return option
         .setName("channel")
@@ -21,7 +21,8 @@ module.exports = {
         .setName("message")
         .setDescription("Input the message you want to announce")
         .setRequired(true);
-    }),
+    })
+    .setDMPermission(false),
   async execute(interaction, client) {
     const channel = interaction.options.getChannel("channel");
     const member = interaction.member;

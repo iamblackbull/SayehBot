@@ -73,7 +73,8 @@ module.exports = {
             .setDescription("Provide the message-id of the giveaway")
             .setRequired(true)
         )
-    ),
+    )
+    .setDMPermission(false),
   async execute(interaction, client) {
     const member = interaction.member;
 

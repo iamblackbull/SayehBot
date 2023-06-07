@@ -5,7 +5,8 @@ let paused = false;
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("pause")
-    .setDescription("Pause / Resume the music"),
+    .setDescription("Pause / Resume the music")
+    .setDMPermission(false),
   async execute(interaction, client) {
     const pauseEmbed = await interaction.deferReply({
       fetchReply: true,

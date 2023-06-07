@@ -1,28 +1,32 @@
-const {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-} = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { musicChannelID } = process.env;
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("skip")
-    .setDescription("Skip the current song")
+    .setName("insert")
+    .setDescription("Insert an audio in a certain position in the queue")
+    .addStringOption((option) =>
+      option
+        .setName("song")
+        .setDescription("Input song name or url")
+        .setRequired(true)
+    )
+    .addIntegerOption((option) =>
+      option
+        .setName("tracknumber")
+        .setDescription("Track # to insert")
+        .setMinValue(1)
+        .setRequired(true)
+    )
     .setDMPermission(false),
   async execute(interaction, client) {
-    await interaction.deferReply({
-      fetchReply: true,
-    });
-
     const queue = client.player.getQueue(interaction.guildId);
+    let trackNum = interaction.options.getInteger("tracknumber");
 
-    let failedEmbed = new EmbedBuilder();
-    let embed = new EmbedBuilder().setColor(0xc42525);
-    let success = false;
     let timer;
+    let success = false;
+    let failedEmbed = new EmbedBuilder();
+    let embed = new EmbedBuilder();
 
     if (!queue) {
       failedEmbed
@@ -34,7 +38,7 @@ module.exports = {
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
         );
-      await interaction.editReply({
+      await interaction.reply({
         embeds: [failedEmbed],
       });
     } else if (!interaction.member.voice.channel) {
@@ -47,85 +51,72 @@ module.exports = {
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
         );
-      await interaction.editReply({
+      await interaction.reply({
         embeds: [failedEmbed],
       });
     } else if (
       queue.connection.channel.id === interaction.member.voice.channel.id
     ) {
-      queue.skip();
-      const nextSong = queue.tracks.at(0) || null;
-      const currentSong = queue.current;
-      if (nextSong == null || !nextSong) {
-        embed
-          .setTitle("**Previous**")
-          .setDescription(
-            `**[${currentSong.title}](${currentSong.url})**\n**${currentSong.author}**`
-          )
-          .setThumbnail(currentSong.thumbnail);
-        await interaction.editReply({
-          embeds: [embed],
-        });
-        success = true;
-        timer = 1;
-      } else {
-        const favoriteButton = new ButtonBuilder()
-          .setCustomId(`favorite`)
-          .setEmoji(`🤍`)
-          .setStyle(ButtonStyle.Danger);
-        const lyricsButton = new ButtonBuilder()
-          .setCustomId(`lyrics`)
-          .setEmoji(`🎤`)
-          .setStyle(ButtonStyle.Primary);
-        const downloadButton = new ButtonBuilder()
-          .setCustomId(`downloader`)
-          .setEmoji(`⬇`)
-          .setStyle(ButtonStyle.Primary);
+      if (trackNum > queue.tracks.length) {
+        trackNum = queue.tracks.length + 1;
+      }
 
+      let url = interaction.options.getString("song");
+      const result = await client.player.search(url, {
+        requestedBy: interaction.user,
+        searchEngine: QueryType.AUTO,
+      });
+      if (result.tracks.length === 0) {
+        if (url.toLowerCase().startsWith("https")) {
+          failedEmbed.setDescription(`Make sure you input a valid link.`);
+        } else {
+          failedEmbed.setDescription(`Make sure you input a valid song name.`);
+        }
+        failedEmbed
+          .setTitle(`**No Result**`)
+          .setColor(0xffea00)
+          .setThumbnail(
+            `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
+          );
+        interaction.editReply({
+          embeds: [failedEmbed],
+        });
+      } else {
+        const song = result.tracks[0];
+        await queue.addTrack(song);
         embed
-          .setTitle(`**Next**`)
+          .setTitle(`🎵 Insert at track #${trackNum}`)
           .setDescription(
-            `**[${nextSong.title}](${nextSong.url})**\n**${nextSong.author}**\n${nextSong.duration}`
+            `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`
           )
-          .setThumbnail(nextSong.thumbnail);
-        if (nextSong.url.includes("youtube")) {
+          .setThumbnail(song.thumbnail);
+        if (song.url.includes("youtube")) {
           embed.setColor(0xff0000).setFooter({
             iconURL: `https://www.iconpacks.net/icons/2/free-youtube-logo-icon-2431-thumb.png`,
             text: `YouTube`,
           });
-        } else if (nextSong.url.includes("spotify")) {
+        } else if (song.url.includes("spotify")) {
           embed.setColor(0x34eb58).setFooter({
             iconURL: `https://www.freepnglogos.com/uploads/spotify-logo-png/image-gallery-spotify-logo-21.png`,
             text: `Spotify`,
           });
-        } else if (nextSong.url.includes("soundcloud")) {
+        } else if (song.url.includes("soundcloud")) {
           embed.setColor(0xeb5534).setFooter({
             iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
             text: `Soundcloud`,
           });
         }
+        queue.insert(song, trackNum - 1);
         if (!queue.playing) await queue.play();
         success = true;
-        if (nextSong.duration.length >= 7) {
+        if (song.duration.length >= 7) {
           timer = 10;
         } else {
-          timer = parseInt(nextSong.duration);
+          timer = parseInt(song.duration);
         }
-        if (timer < 10) {
-          await interaction.editReply({
-            embeds: [embed],
-            components: [
-              new ActionRowBuilder()
-                .addComponents(favoriteButton)
-                .addComponents(lyricsButton)
-                .addComponents(downloadButton),
-            ],
-          });
-        } else {
-          await interaction.editReply({
-            embeds: [embed],
-          });
-        }
+        await interaction.editReply({
+          embeds: [embed],
+        });
       }
     } else {
       failedEmbed
@@ -135,7 +126,7 @@ module.exports = {
         .setThumbnail(
           `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
         );
-      await interaction.editReply({
+      await interaction.reply({
         embeds: [failedEmbed],
       });
     }
@@ -150,12 +141,12 @@ module.exports = {
           interaction.editReply({ components: [] });
         } else {
           interaction.deleteReply().catch((e) => {
-            console.log(`Failed to delete Skip interaction.`);
+            console.log(`Failed to delete Insert interaction.`);
           });
         }
       } else {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete unsuccessfull Skip interaction.`);
+          console.log(`Failed to delete unsuccessfull Insert interaction.`);
         });
       }
     }, timer * 60 * 1000);

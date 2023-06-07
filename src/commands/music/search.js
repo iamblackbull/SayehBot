@@ -16,7 +16,8 @@ module.exports = {
         .setName("keyword")
         .setDescription("Input anything to search")
         .setRequired(true)
-    ),
+    )
+    .setDMPermission(false),
   async execute(interaction, client) {
     const searchEmbed = await interaction.deferReply({
       fetchReply: true,
@@ -119,7 +120,14 @@ module.exports = {
             collector.on("collect", async (reaction, user) => {
               if (user.bot) return;
               else {
-                reaction.users.remove(reaction.users.cache.get(user.id));
+                searchEmbed.reactions
+                  .removeAll()
+                  .catch((error) =>
+                    console.error(
+                      chalk.red("Failed to clear reactions from song message."),
+                      error
+                    )
+                  );
                 let song;
                 if (reaction.emoji.name === `▶`) {
                   song = result.tracks[0];
@@ -233,31 +241,31 @@ module.exports = {
                 await interaction.followUp({ embeds: [embed] });
                 if (!queue.playing) await queue.play();
                 success = true;
+                let replayList = await replay.findOne({
+                  guild: guild.id,
+                });
+                if (!replayList) {
+                  replayList = new replay({
+                    guild: guild.id,
+                    Song: song.url,
+                    Name: song.title,
+                  });
+                  await replayList.save().catch(console.error);
+                } else {
+                  replayList = await replay.updateOne(
+                    { guild: guild.id },
+                    {
+                      Song: song.url,
+                      Name: song.title,
+                    }
+                  );
+                }
               }
             });
             await interaction.editReply({
               embeds: [embed],
             });
             success = true;
-            let replayList = await replay.findOne({
-              guild: guild.id,
-            });
-            if (!replayList) {
-              replayList = new replay({
-                guild: guild.id,
-                Song: song.url,
-                Name: song.title,
-              });
-              await replayList.save().catch(console.error);
-            } else {
-              replayList = await replay.updateOne(
-                { guild: guild.id },
-                {
-                  Song: song.url,
-                  Name: song.title,
-                }
-              );
-            }
           }
         }
       } else {
@@ -294,6 +302,6 @@ module.exports = {
           console.log(`Failed to delete unsuccessfull Search interaction.`);
         });
       }
-    }, 10 * 60 * 1000);
+    }, 5 * 60 * 1000);
   },
 };

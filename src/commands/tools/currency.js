@@ -17,12 +17,24 @@ module.exports = {
       .latest()
       .then(async function (result) {
         const rates = `
-        :flag_ae: AED = **${Math.round(result.rates.IRR / result.rates.AED)}** IRR :flag_ir:\n
-        :flag_ca: CAD = **${Math.round(result.rates.IRR / result.rates.CAD)}** IRR :flag_ir:\n
-        :flag_cn: CNY = **${Math.round(result.rates.IRR / result.rates.CNY)}** IRR :flag_ir:\n
-        :flag_eu: EUR = **${Math.round(result.rates.IRR / result.rates.EUR)}** IRR :flag_ir:\n
-        :flag_gb: GBP = **${Math.round(result.rates.IRR / result.rates.GBP)}** IRR :flag_ir:\n
-        :flag_tr: TRY = **${Math.round(result.rates.IRR / result.rates.TRY)}** IRR :flag_ir:\n
+        :flag_ae: AED = **${Math.round(
+          result.rates.IRR / result.rates.AED
+        )}** IRR :flag_ir:\n
+        :flag_ca: CAD = **${Math.round(
+          result.rates.IRR / result.rates.CAD
+        )}** IRR :flag_ir:\n
+        :flag_cn: CNY = **${Math.round(
+          result.rates.IRR / result.rates.CNY
+        )}** IRR :flag_ir:\n
+        :flag_eu: EUR = **${Math.round(
+          result.rates.IRR / result.rates.EUR
+        )}** IRR :flag_ir:\n
+        :flag_gb: GBP = **${Math.round(
+          result.rates.IRR / result.rates.GBP
+        )}** IRR :flag_ir:\n
+        :flag_tr: TRY = **${Math.round(
+          result.rates.IRR / result.rates.TRY
+        )}** IRR :flag_ir:\n
         :flag_us: USD = **${result.rates.IRR}** IRR :flag_ir:
         `;
         const embed = new EmbedBuilder()
@@ -31,7 +43,9 @@ module.exports = {
           .setThumbnail(
             `https://freepngimg.com/download/money/48807-7-exchange-png-file-hd.png`
           )
-          .setDescription(rates)
+          .setDescription(
+            `Data is based on official reports of goverment and obviously not legit.\n${rates}`
+          )
           .setTimestamp(Date.now())
           .setFooter({
             iconURL: `https://static.vecteezy.com/system/resources/previews/019/051/628/original/gold-coin-money-symbol-icon-png.png`,

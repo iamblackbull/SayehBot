@@ -7,12 +7,12 @@ module.exports = {
     name: `lyrics`,
   },
   async execute(interaction, client) {
+    let queue = client.player.getQueue(interaction.guildId);
+    if (!queue) return;
+
     const lyricsEmbed = await interaction.deferReply({
       fetchReply: true,
     });
-
-    let queue = client.player.getQueue(interaction.guildId);
-    if (!queue) return;
 
     const songTitle = queue.current.title;
 

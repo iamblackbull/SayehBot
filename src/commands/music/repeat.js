@@ -5,7 +5,8 @@ let repeatMode = false;
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("repeat")
-    .setDescription("Toggle repeat mode of the queue"),
+    .setDescription("Toggle repeat mode of the queue")
+    .setDMPermission(false),
   async execute(interaction, client) {
     const repeatEmbed = await interaction.deferReply({
       fetchReply: true,

@@ -9,7 +9,8 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("simjoin")
     .setDescription("Simulate a new member join to server")
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
+    .setDMPermission(false),
   async execute(interaction, client) {
     let embed = new EmbedBuilder()
       .setTitle(`Welcome Simulation`)

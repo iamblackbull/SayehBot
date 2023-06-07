@@ -12,10 +12,12 @@ const report = require("../../schemas/report-schema");
 module.exports = {
   data: new ContextMenuCommandBuilder()
     .setName("report message")
-    .setType(ApplicationCommandType.Message),
+    .setType(ApplicationCommandType.Message)
+    .setDMPermission(false),
   async execute(interaction, client) {
     let reportList = await report.findOne({
       ReporterId: interaction.user.id,
+      IsCaseOpen: true,
     });
     if (!reportList) {
       const modal = new ModalBuilder()
@@ -41,6 +43,7 @@ module.exports = {
         TargetId: msg.author.id,
         TargetName: `${msg.author.username}#${msg.author.discriminator}`,
         Message: msg.content,
+        IsCaseOpen: true,
       });
       await reportList.save().catch(console.error);
     } else {

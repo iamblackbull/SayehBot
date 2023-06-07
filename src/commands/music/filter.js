@@ -67,7 +67,8 @@ module.exports = {
             value: "remove",
           }
         );
-    }),
+    })
+    .setDMPermission(false),
   async execute(interaction, client) {
     const filterEmbed = await interaction.deferReply({
       fetchReply: true,

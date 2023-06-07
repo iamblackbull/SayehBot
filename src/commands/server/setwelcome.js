@@ -16,7 +16,8 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("setwelcome")
     .setDescription("Set Welcome channel of server")
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
+    .setDMPermission(false),
   async execute(interaction, client) {
     const { guild, channel } = interaction;
 

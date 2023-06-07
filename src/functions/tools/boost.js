@@ -14,16 +14,18 @@ module.exports = (client) => {
         .get(boostChannelID)
         .send(`🚀 ${newMember.user} just boosted the server! 💜`);
       const user = await Levels.fetch(newMember.user.id, newMember.guild.id);
+      const neededXp = Levels.xpFor(parseInt(user.level + 1));
+      const XP = neededXp + 1;
       if (1 < user.level < 60) {
         try {
-          const neededXp = Levels.xpFor(parseInt(user.level + 1));
-          const XP = neededXp + 1;
           const hasLevelUp = await Levels.appendXp(
             newMember.user.id,
             newMember.guild.id,
             XP
           );
-          console.log(`${newMember.user.tag} gained ${XP} XP for boosting the server.`);
+          console.log(
+            `${newMember.user.tag} gained ${XP} XP for boosting the server.`
+          );
           if (hasLevelUp) {
             const user = await Levels.fetch(
               newMember.user.id,

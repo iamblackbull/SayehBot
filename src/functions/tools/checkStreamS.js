@@ -15,6 +15,7 @@ const {
   TWTICH_CLIENT_SECRET,
   TWITCH_CLIENT_Oauth,
 } = process.env;
+const stream = require("../../schemas/stream-schema");
 
 const twitch = new TwitchAPI({
   client_id: TWITCH_CLIENT_ID,
@@ -28,16 +29,28 @@ module.exports = (client) => {
   client.checkStreamS = async () => {
     try {
       await twitch.getStreams({ channel: ["sayeh"] }).then(async (data) => {
-        const r = data.data[0];
+        const result = data.data[0];
         const guild = await client.guilds.fetch(guildID).catch(console.error);
         const channel = await guild.channels
           .fetch(streamChannelID)
           .catch(console.error);
+        let streamList = await stream.findOne({
+          guild: guild.id,
+          Streamer: "sayeh",
+        });
+        if (!streamList) {
+          streamList = new stream({
+            guild: guild.id,
+            Streamer: "sayeh",
+            IsLive: false,
+          });
+          await streamList.save().catch(console.error);
+        }
 
-        if (r !== undefined) {
-          if (r.type === "live") {
+        if (result !== undefined) {
+          if (result.type === "live") {
             if (IsLiveMemory === false) {
-              const { title, viewer_count, game_name, user_name } =
+              const { title, viewer_count, game_name, user_name, user_id } =
                 data.data[0];
               let embed = new EmbedBuilder()
                 .setTitle(title || null)
@@ -91,6 +104,13 @@ module.exports = (client) => {
                 ],
                 status: "online",
               });
+              streamList = await stream.updateOne(
+                {
+                  guild: guild.id,
+                  Streamer: "sayeh",
+                },
+                { StreamerID: user_id, IsLive: true }
+              );
               setTimeout(async () => {
                 embed.setImage(
                   `https://static-cdn.jtvnw.net/ttv-static/404_preview-1920x1080.jpg`
@@ -102,6 +122,13 @@ module.exports = (client) => {
             } else if (IsLiveMemory === true) return;
           } else if (IsLiveMemory === true) {
             IsLiveMemory = false;
+            streamList = await stream.updateOne(
+              {
+                guild: guild.id,
+                Streamer: "sayeh",
+              },
+              { IsLive: false }
+            );
             client.user.setPresence({
               activities: [
                 {
@@ -115,6 +142,13 @@ module.exports = (client) => {
           }
         } else if (IsLiveMemory === true) {
           IsLiveMemory = false;
+          streamList = await stream.updateOne(
+            {
+              guild: guild.id,
+              Streamer: "sayeh",
+            },
+            { IsLive: false }
+          );
           client.user.setPresence({
             activities: [
               {

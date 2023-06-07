@@ -12,7 +12,7 @@ const { musicChannelID } = process.env;
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("favortie")
+    .setName("favorite")
     .setDescription("Returns user favortie playlist")
     .addStringOption((option) => {
       return option
@@ -43,7 +43,8 @@ module.exports = {
         .setMinValue(1)
         .setMaxValue(10)
         .setRequired(false);
-    }),
+    })
+    .setDMPermission(false),
   async execute(interaction, client) {
     const favoriteEmbed = await interaction.deferReply({
       fetchReply: true,
@@ -68,7 +69,7 @@ module.exports = {
       failedEmbed
         .setTitle(`**Action Failed**`)
         .setDescription(
-          `You don't have a favorite playlist. Like at least 1 song to create your own playlist.`
+          `You don't have a favorite playlist. Like at least **1** song to create your own playlist.`
         )
         .setColor(0xffea00)
         .setThumbnail(
@@ -157,7 +158,7 @@ module.exports = {
         }
 
         const removeButton = new ButtonBuilder()
-          .setCustomId(`remove-list-favorite`)
+          .setCustomId(`remove-favorite`)
           .setEmoji(`💔`)
           .setStyle(ButtonStyle.Secondary);
         favoriteEmbed
@@ -249,7 +250,7 @@ module.exports = {
           })
           .catch((e) => {
             console.log(
-              `Remove Favortie collector of Favorite List did not recieve any interaction before ending.`
+              `Remove Favortie collector of Favorite List did not recieve any interactions before ending.`
             );
           });
 

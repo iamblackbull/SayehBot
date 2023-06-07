@@ -8,7 +8,8 @@ let success = false;
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("leaderboard")
-    .setDescription("Returns top 10 users in the leaderboard"),
+    .setDescription("Returns top 10 users in the leaderboard")
+    .setDMPermission(false),
 
   async execute(interaction, client) {
     await interaction.deferReply({
