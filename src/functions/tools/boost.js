@@ -24,7 +24,7 @@ module.exports = (client) => {
             XP
           );
           console.log(
-            `${newMember.user.tag} gained ${XP} XP for boosting the server.`
+            `${newMember.user.username} gained ${XP} XP for boosting the server.`
           );
           if (hasLevelUp) {
             const user = await Levels.fetch(
@@ -32,7 +32,7 @@ module.exports = (client) => {
               newMember.guild.id
             );
             console.log(
-              `${newMember.user.tag} just advanced to level ${user.level}`
+              `${newMember.user.username} just advanced to level ${user.level}`
             );
             channel.send(
               `🎊 ${newMember.user} just advanced to level **${user.level}** 🙌`
@@ -40,7 +40,7 @@ module.exports = (client) => {
           }
         } catch (error) {
           console.log(
-            `Failed to give ${XP} XP to the booster ${newMember.user.tag}`
+            `Failed to give ${XP} XP to the booster ${newMember.user.username}`
           );
         }
       }

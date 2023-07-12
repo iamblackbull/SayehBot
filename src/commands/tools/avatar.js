@@ -15,7 +15,7 @@ module.exports = {
     const avatar = user.displayAvatarURL({ size: 1024, dynamic: true });
 
     const embed = new EmbedBuilder()
-      .setAuthor({ name: user.tag, iconURL: avatar, url: avatar })
+      .setAuthor({ name: user.username, iconURL: avatar, url: avatar })
       .setColor(0x25bfc4)
       .setImage(avatar);
 

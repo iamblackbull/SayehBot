@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { QueryType } = require("discord-player");
 const { musicChannelID } = process.env;
 
 module.exports = {
@@ -20,6 +21,10 @@ module.exports = {
     )
     .setDMPermission(false),
   async execute(interaction, client) {
+    await interaction.deferReply({
+      fetchReply: true,
+    });
+
     const queue = client.player.getQueue(interaction.guildId);
     let trackNum = interaction.options.getInteger("tracknumber");
 
@@ -38,7 +43,7 @@ module.exports = {
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
         );
-      await interaction.reply({
+      await interaction.editReply({
         embeds: [failedEmbed],
       });
     } else if (!interaction.member.voice.channel) {
@@ -51,7 +56,7 @@ module.exports = {
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
         );
-      await interaction.reply({
+      await interaction.editReply({
         embeds: [failedEmbed],
       });
     } else if (
@@ -83,7 +88,6 @@ module.exports = {
         });
       } else {
         const song = result.tracks[0];
-        await queue.addTrack(song);
         embed
           .setTitle(`🎵 Insert at track #${trackNum}`)
           .setDescription(
@@ -126,7 +130,7 @@ module.exports = {
         .setThumbnail(
           `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
         );
-      await interaction.reply({
+      await interaction.editReply({
         embeds: [failedEmbed],
       });
     }

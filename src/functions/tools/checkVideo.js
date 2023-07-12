@@ -10,9 +10,15 @@ const chalk = require("chalk");
 const Parser = require("rss-parser");
 const parser = new Parser();
 const fs = require("fs");
+const { mongoose } = require("mongoose");
 const video = require("../../schemas/video-schema");
+let connection;
+let newVideo = false;
 
 module.exports = (client) => {
+  mongoose.connection.readyState === 1
+    ? (connection = true)
+    : (connection = false);
   client.checkVideo = async () => {
     try {
       const data = await parser
@@ -36,19 +42,37 @@ module.exports = (client) => {
         await videoList.save().catch(console.error);
       }
 
-      if (jsonData.id !== data.items[0].id) {
+      if (connection === true) {
+        if (videoList.VideoId !== data.items[0].id) {
+          videoList = await video.updateOne(
+            { guild: guild.id },
+            {
+              VideoId: data.items[0].id,
+            }
+          );
+          if (jsonData.id === data.items[0].id) {
+            return;
+          } else {
+            fs.writeFileSync(
+              `${__dirname}/../../json/video.json`,
+              JSON.stringify({ id: data.items[0].id })
+            );
+            newVideo = true;
+          }
+        } else {
+          newVideo = false;
+        }
+      } else if (jsonData.id !== data.items[0].id) {
         fs.writeFileSync(
           `${__dirname}/../../json/video.json`,
           JSON.stringify({ id: data.items[0].id })
         );
+        newVideo = true;
+      } else {
+        newVideo = false;
+      }
 
-        videoList = await video.updateOne(
-          { guild: guild.id },
-          {
-            VideoId: data.items[0].id,
-          }
-        );
-
+      if (newVideo === true) {
         const channel = await guild.channels
           .fetch(youtubeChannelID)
           .catch(console.error);
@@ -88,7 +112,7 @@ module.exports = (client) => {
             components: [new ActionRowBuilder().addComponents(youtubeButton)],
           })
           .catch(console.error);
-      }
+      } else return;
     } catch (error) {
       console.log(chalk.red(`Connection to YouTube API failed...`));
     }

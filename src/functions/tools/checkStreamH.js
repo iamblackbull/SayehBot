@@ -15,14 +15,17 @@ const {
   TWTICH_CLIENT_SECRET,
   TWITCH_CLIENT_Oauth,
 } = process.env;
+const stream = require("../../schemas/stream-schema");
 
 const twitch = new TwitchAPI({
   client_id: TWITCH_CLIENT_ID,
   client_secret: TWTICH_CLIENT_SECRET,
   access_token: TWITCH_CLIENT_Oauth,
-  scopes: ["user_read channel_editor"],
+  scopes: ["user:read", "channel:edit"],
 });
 let IsLiveMemory = false;
+let embed;
+let msg;
 
 module.exports = (client) => {
   client.checkStreamH = async () => {
@@ -33,13 +36,25 @@ module.exports = (client) => {
         const channel = await guild.channels
           .fetch(streamChannelID)
           .catch(console.error);
+        let streamList = await stream.findOne({
+          guild: guild.id,
+          Streamer: "hamiitz",
+        });
+        if (!streamList) {
+          streamList = new stream({
+            guild: guild.id,
+            Streamer: "hamiitz",
+            IsLive: false,
+          });
+          await streamList.save().catch(console.error);
+        }
 
         if (result !== undefined) {
           if (result.type === "live") {
-            if (IsLiveMemory === false) {
+            if (streamList.IsLive === false) {
               const { title, viewer_count, game_name, user_name } =
                 data.data[0];
-              let embed = new EmbedBuilder()
+              embed = new EmbedBuilder()
                 .setTitle(title || null)
                 .setURL(`https://www.twitch.tv/${user_name}`)
                 .setDescription(
@@ -68,7 +83,7 @@ module.exports = (client) => {
                 .setLabel(`Watch Stream`)
                 .setURL(`https://www.twitch.tv/${user_name}`)
                 .setStyle(ButtonStyle.Link);
-              const msg = await channel
+              msg = await channel
                 .send({
                   embeds: [embed],
                   content: `Hey @everyone\n **${user_name}** is now LIVE on Twitch 😍🔔\n❖ ──・──・──・──・──・── ❖\n\n استریم داخل توییچ شروع شد \n\n https://www.twitch.tv/${user_name} \n\n `,
@@ -91,17 +106,29 @@ module.exports = (client) => {
                 ],
                 status: "online",
               });
-              setTimeout(async () => {
-                embed.setImage(
-                  `https://static-cdn.jtvnw.net/ttv-static/404_preview-1920x1080.jpg`
-                );
-                await msg.edit({
-                  embeds: [embed],
-                });
-              }, 4 * 60 * 60 * 1000);
-            } else if (IsLiveMemory === true) return;
-          } else if (IsLiveMemory === true) {
+              streamList = await stream.updateOne(
+                {
+                  guild: guild.id,
+                  Streamer: "hamiitz",
+                },
+                { StreamerID: user_id, IsLive: true }
+              );
+            } else if (streamList.IsLive === true) return;
+          } else if (streamList.IsLive === true) {
+            embed.setImage(
+              `https://static-cdn.jtvnw.net/ttv-static/404_preview-1920x1080.jpg`
+            );
+            await msg.edit({
+              embeds: [embed],
+            });
             IsLiveMemory = false;
+            streamList = await stream.updateOne(
+              {
+                guild: guild.id,
+                Streamer: "hamiitz",
+              },
+              { IsLive: false }
+            );
             client.user.setPresence({
               activities: [
                 {
@@ -111,10 +138,23 @@ module.exports = (client) => {
               ],
               status: "online",
             });
-            console.log(chalk.rgb(107, 3, 252)(`Hamid has gone Offline.`));
+            console.log(chalk.rgb(107, 3, 252)(`Hamiitz has gone Offline.`));
           }
-        } else if (IsLiveMemory === true) {
+        } else if (streamList.IsLive === true) {
+          embed.setImage(
+            `https://static-cdn.jtvnw.net/ttv-static/404_preview-1920x1080.jpg`
+          );
+          await msg.edit({
+            embeds: [embed],
+          });
           IsLiveMemory = false;
+          streamList = await stream.updateOne(
+            {
+              guild: guild.id,
+              Streamer: "hamiitz",
+            },
+            { IsLive: false }
+          );
           client.user.setPresence({
             activities: [
               {
@@ -124,11 +164,11 @@ module.exports = (client) => {
             ],
             status: "online",
           });
-          console.log(chalk.rgb(107, 3, 252)(`Hamid has gone Offline.`));
+          console.log(chalk.rgb(107, 3, 252)(`Hamiitz has gone Offline.`));
         }
       });
     } catch (error) {
-      console.log(chalk.red(`Connection to Twitch API (Hamid) failed...`));
+      console.log(chalk.red(`Connection to Twitch API (Hamiitz) failed...`));
     }
   };
 };

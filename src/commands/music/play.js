@@ -13,7 +13,7 @@ const replay = require("../../schemas/replay-schema");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("play")
-    .setDescription("Play audios from YouTube / Spotify / Soundcloud")
+    .setDescription("Play tracks from YouTube / Spotify / Soundcloud")
     .addStringOption((option) =>
       option
         .setName("song")
@@ -127,7 +127,7 @@ module.exports = {
             )
             .setThumbnail(song.thumbnail);
           if (song.url.includes("youtube")) {
-            source = "allowed";
+            source = "public";
             embed.setColor(0xff0000).setFooter({
               iconURL: `https://www.iconpacks.net/icons/2/free-youtube-logo-icon-2431-thumb.png`,
               text: `YouTube`,
@@ -139,7 +139,7 @@ module.exports = {
               text: "spotify",
             });
           } else if (song.url.includes("soundcloud")) {
-            source = "allowed";
+            source = "public";
             embed.setColor(0xeb5534).setFooter({
               iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
               text: `Soundcloud`,
@@ -153,7 +153,7 @@ module.exports = {
             timer = parseInt(song.duration);
           }
           if (timer < 10) {
-            if (source === "allowed") {
+            if (source === "public") {
               await interaction.editReply({
                 embeds: [embed],
                 components: [

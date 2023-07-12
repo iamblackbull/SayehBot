@@ -15,33 +15,36 @@ module.exports = {
     .setType(ApplicationCommandType.Message)
     .setDMPermission(false),
   async execute(interaction, client) {
+    const modal = new ModalBuilder()
+      .setCustomId(`report-modal`)
+      .setTitle(`Report Message`);
+
+    const reportInput = new TextInputBuilder()
+      .setCustomId("reportInput")
+      .setLabel(`Why you want to report this message?`)
+      .setRequired(true)
+      .setStyle(TextInputStyle.Paragraph);
+
+    modal.addComponents(new ActionRowBuilder().addComponents(reportInput));
+    await interaction.showModal(modal);
+
+    const msg = await interaction.channel.messages.fetch(interaction.targetId);
+
     let reportList = await report.findOne({
       ReporterId: interaction.user.id,
+      TargetId: msg.author.id,
+      Message: msg.content,
       IsCaseOpen: true,
     });
+
     if (!reportList) {
-      const modal = new ModalBuilder()
-        .setCustomId(`report-modal`)
-        .setTitle(`Report Message`);
-
-      const reportInput = new TextInputBuilder()
-        .setCustomId("reportInput")
-        .setLabel(`Why you want to report this message?`)
-        .setRequired(true)
-        .setStyle(TextInputStyle.Paragraph);
-
-      modal.addComponents(new ActionRowBuilder().addComponents(reportInput));
-      await interaction.showModal(modal);
-
-      const msg = await interaction.channel.messages.fetch(
-        interaction.targetId
-      );
-
+      const id = new Date().getTime().toString();
       reportList = new report({
+        CaseId: id,
         ReporterId: interaction.user.id,
-        ReporterName: interaction.user.tag,
+        ReporterName: interaction.user.username,
         TargetId: msg.author.id,
-        TargetName: `${msg.author.username}#${msg.author.discriminator}`,
+        TargetName: msg.author.username,
         Message: msg.content,
         IsCaseOpen: true,
       });
@@ -50,7 +53,7 @@ module.exports = {
       const failedEmbed = new EmbedBuilder()
         .setTitle(`**Action Failed**`)
         .setDescription(
-          `You can only have **1** open report case at a time. Please wait until your current case is closed.`
+          `You have already reported this message. You will be notifed as soon as a moderator responed to your report.`
         )
         .setColor(0xffea00)
         .setThumbnail(

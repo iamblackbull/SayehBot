@@ -138,7 +138,7 @@ module.exports = {
                 ephemeral: true,
               });
               console.log(
-                `${interaction.user.tag} just saved their Apex Account to the database.`
+                `${interaction.user.username} just saved their Apex Account to the database.`
               );
             } else {
               apexList = await apex.findOneAndDelete({
@@ -155,7 +155,7 @@ module.exports = {
                 ephemeral: true,
               });
               console.log(
-                `${interaction.user.tag} just edited their Apex Account in the database.`
+                `${interaction.user.username} just edited their Apex Account in the database.`
               );
             }
           })

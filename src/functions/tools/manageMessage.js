@@ -36,11 +36,11 @@ module.exports = (client) => {
         message.guild.id,
         finalXp
       );
-      console.log(`${message.author.tag} gained ${finalXp} XP.`);
+      console.log(`${message.author.username} gained ${finalXp} XP.`);
       if (hasLevelUp) {
         const user = await Levels.fetch(message.author.id, message.guild.id);
         console.log(
-          `${message.author.tag} just advanced to level ${user.level}.`
+          `${message.author.username} just advanced to level ${user.level}.`
         );
         await channel.send(
           `🎊 ${message.author} just advanced to level **${user.level}** 🙌`
@@ -52,12 +52,12 @@ module.exports = (client) => {
         message.guild.id,
         randomXp
       );
-      console.log(`${message.author.tag} gained ${randomXp} XP.`);
+      console.log(`${message.author.username} gained ${randomXp} XP.`);
 
       if (hasLevelUp) {
         const user = await Levels.fetch(message.author.id, message.guild.id);
         console.log(
-          `${message.author.tag} just advanced to level ${user.level}.`
+          `${message.author.username} just advanced to level ${user.level}.`
         );
         await channel.send(
           `🎊 ${message.author} just advanced to level **${user.level}** 🙌`
@@ -82,7 +82,7 @@ module.exports = (client) => {
         return;
       else {
         console.log(
-          `Deleted a message contained a link in ${message.channel.name} by ${message.author.tag}`
+          `Deleted a message contained a link in ${message.channel.name} by ${message.author.username}`
         );
         message.delete();
       }
@@ -99,6 +99,7 @@ module.exports = (client) => {
         "fuck",
         "porn",
         "nude",
+        "horny",
         "کص",
         "کیر",
         "کون",
@@ -109,12 +110,13 @@ module.exports = (client) => {
         "سکس",
         "گایید",
         "پورن",
+        "حشری",
       ].includes(message.content.toLowerCase())
     ) {
       if (member.permissions.has(PermissionFlagsBits.ManageMessages)) return;
       else {
         console.log(
-          `Deleted a message contained a banned word in ${message.channel.name} by ${message.author.tag}`
+          `Deleted a message contained a banned word in ${message.channel.name} by ${message.author.username}`
         );
         message.delete();
       }

@@ -12,15 +12,22 @@ module.exports = {
     });
     try {
       client().then(async function (body) {
-        embed
-          .setTitle(body.title)
-          .setColor(0x256fc4)
-          .setURL(`${body.hdurl}`)
-          .setImage(`${body.hdurl}`)
-          .setFooter({
-            iconURL: `https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/2449px-NASA_logo.svg.png`,
-            text: `NASA `,
-          });
+        let mode;
+        if (body.hdurl) {
+          mode = "picture";
+        } else {
+          mode = "video";
+        }
+        embed.setTitle(body.title).setColor(0x256fc4).setFooter({
+          iconURL: `https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/2449px-NASA_logo.svg.png`,
+          text: `NASA `,
+        });
+        if (mode === "picture") {
+          embed.setURL(`${body.hdurl}`).setImage(`${body.hdurl}`);
+        }
+        if (mode === "video") {
+          embed.setURL(`${body.url}`);
+        }
         if (body.explanation.length > 1200) {
           embed.setDescription(body.explanation.slice(0, 1200));
         } else {
@@ -34,9 +41,7 @@ module.exports = {
       console.log(error);
       let failedEmbed = new EmbedBuilder()
         .setTitle(`**No Response**`)
-        .setDescription(
-          `NASA API did not respond. Please try again later.`
-        )
+        .setDescription(`NASA API did not respond. Please try again later.`)
         .setColor(0xffea00)
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`

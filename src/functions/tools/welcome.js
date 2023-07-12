@@ -58,7 +58,7 @@ module.exports = (client) => {
     ctx.fillStyle = "#1e3e6b";
     ctx.font = "40px BubbleGum";
     ctx.textAlign = "center";
-    text = `${member.user.tag}`;
+    text = `${member.user.username}`;
     ctx.fillText(text.toUpperCase(), 512, 410);
 
     ctx.fillStyle = "#56237d";
@@ -80,7 +80,7 @@ module.exports = (client) => {
       files: [attachment],
     });
     console.log(
-      `New member joined: ${member.user.tag} (Member #${guild.memberCount})`
+      `New member joined: ${member.user.username} (Member #${guild.memberCount})`
     );
   });
   client.on("guildMemberRemove", async (member) => {
@@ -88,7 +88,7 @@ module.exports = (client) => {
     const channel = guild.channels.cache.get(leaveChannelID);
 
     channel.send({
-      content: `**${member.user.tag}** left the server.`,
+      content: `**${member.user.username}** left the server.`,
     });
   });
 };

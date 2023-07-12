@@ -21,9 +21,11 @@ const twitch = new TwitchAPI({
   client_id: TWITCH_CLIENT_ID,
   client_secret: TWTICH_CLIENT_SECRET,
   access_token: TWITCH_CLIENT_Oauth,
-  scopes: ["user_read channel_editor"],
+  scopes: ["user:read", "channel:edit"],
 });
 let IsLiveMemory = false;
+let embed;
+let msg;
 
 module.exports = (client) => {
   client.checkStreamS = async () => {
@@ -49,10 +51,10 @@ module.exports = (client) => {
 
         if (result !== undefined) {
           if (result.type === "live") {
-            if (IsLiveMemory === false) {
+            if (streamList.IsLive === false) {
               const { title, viewer_count, game_name, user_name, user_id } =
                 data.data[0];
-              let embed = new EmbedBuilder()
+              embed = new EmbedBuilder()
                 .setTitle(title || null)
                 .setURL(`https://www.twitch.tv/${user_name}`)
                 .setDescription(
@@ -81,7 +83,7 @@ module.exports = (client) => {
                 .setLabel(`Watch Stream`)
                 .setURL(`https://www.twitch.tv/${user_name}`)
                 .setStyle(ButtonStyle.Link);
-              const msg = await channel
+              msg = await channel
                 .send({
                   embeds: [embed],
                   content: `Hey @everyone\n **${user_name}** is now LIVE on Twitch 😍🔔\n❖ ──・──・──・──・──・── ❖\n\n استریم داخل توییچ شروع شد \n\n https://www.twitch.tv/${user_name} \n\n `,
@@ -111,16 +113,14 @@ module.exports = (client) => {
                 },
                 { StreamerID: user_id, IsLive: true }
               );
-              setTimeout(async () => {
-                embed.setImage(
-                  `https://static-cdn.jtvnw.net/ttv-static/404_preview-1920x1080.jpg`
-                );
-                await msg.edit({
-                  embeds: [embed],
-                });
-              }, 4 * 60 * 60 * 1000);
-            } else if (IsLiveMemory === true) return;
-          } else if (IsLiveMemory === true) {
+            } else if (streamList.IsLive === true) return;
+          } else if (streamList.IsLive === true) {
+            embed.setImage(
+              `https://static-cdn.jtvnw.net/ttv-static/404_preview-1920x1080.jpg`
+            );
+            await msg.edit({
+              embeds: [embed],
+            });
             IsLiveMemory = false;
             streamList = await stream.updateOne(
               {
@@ -140,7 +140,13 @@ module.exports = (client) => {
             });
             console.log(chalk.rgb(107, 3, 252)(`Sayeh has gone Offline.`));
           }
-        } else if (IsLiveMemory === true) {
+        } else if (streamList.IsLive === true) {
+          embed.setImage(
+            `https://static-cdn.jtvnw.net/ttv-static/404_preview-1920x1080.jpg`
+          );
+          await msg.edit({
+            embeds: [embed],
+          });
           IsLiveMemory = false;
           streamList = await stream.updateOne(
             {

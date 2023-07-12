@@ -23,6 +23,7 @@ module.exports = {
     const target = reportList.TargetName;
     const reporter = interaction.user;
     const avatar = reporter.displayAvatarURL({ size: 1024, dynamic: true });
+    const id = reportList.CaseId;
 
     let embed = new EmbedBuilder()
       .setTitle(`**Report Case**`)
@@ -32,7 +33,7 @@ module.exports = {
       .setThumbnail(
         `https://cdn2.iconfinder.com/data/icons/medicine-colored-outline-part-2-v-2/128/ic_medical_card-512.png`
       )
-      .setAuthor({ name: reporter.tag, iconURL: avatar, url: avatar })
+      .setAuthor({ name: reporter.username, iconURL: avatar, url: avatar })
       .addFields(
         { name: `Reporter`, value: `${reporter}`, inline: true },
         { name: `Target`, value: `${target}`, inline: true }
@@ -60,7 +61,7 @@ module.exports = {
       if (user.bot) return;
       else {
         await report.updateOne(
-          { ReporterId: interaction.user.id, IsCaseOpen: true },
+          { CaseId: id, ReporterId: interaction.user.id, IsCaseOpen: true },
           { IsCaseOpen: false }
         );
         msg.reactions.removeAll().catch(console.error);
@@ -90,7 +91,7 @@ module.exports = {
       embeds: [successEmbed],
       ephemeral: true,
     });
-    console.log(`${interaction.user.tag} just reported ${target}.`);
+    console.log(`${interaction.user.username} just reported ${target}.`);
     setTimeout(() => {
       msg.delete().catch((e) => {
         console.log(`Failed to delete Report modal message.`);

@@ -164,7 +164,7 @@ module.exports = {
               `https://cdn0.iconfinder.com/data/icons/small-n-flat/24/678087-heart-512.png`
             );
           console.log(
-            `${interaction.user.tag} just added a song to their favorite playlist.`
+            `${interaction.user.username} just added a song to their favorite playlist.`
           );
         } else if (favoriteMode === "remove") {
           embed
@@ -176,7 +176,7 @@ module.exports = {
               `https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Broken_heart.svg/586px-Broken_heart.svg.png`
             );
           console.log(
-            `${interaction.user.tag} just removed a song from their favorite playlist.`
+            `${interaction.user.username} just removed a song from their favorite playlist.`
           );
         } else if (favoriteMode === "full") {
           embed

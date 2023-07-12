@@ -3,7 +3,7 @@ require("dotenv").config();
 const { DBTOKEN, rankChannelID } = process.env;
 const Levels = require("discord-xp");
 Levels.setURL(DBTOKEN);
-let success = false;
+const { mongoose } = require("mongoose");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -16,17 +16,25 @@ module.exports = {
       fetchReply: true,
     });
 
-    let failedEmbed = new EmbedBuilder();
+    let failedEmbed = new EmbedBuilder().setColor(0xffea00);
+    let success = false;
 
-    const rawLeaderboard = await Levels.fetchLeaderboard(
-      interaction.guild.id,
-      10
-    );
-    if (rawLeaderboard.length < 1) {
+    if (mongoose.connection.readyState !== 1) {
+      failedEmbed
+        .setTitle(`**Connection Timed out!**`)
+        .setDescription(
+          `Connection to database has been timed out. please try again later.`
+        )
+        .setThumbnail(
+          `https://cdn.iconscout.com/icon/premium/png-256-thumb/error-in-internet-959268.png`
+        );
+      interaction.editReply({
+        embeds: [failedEmbed],
+      });
+    } else if (rawLeaderboard.length < 1) {
       failedEmbed
         .setTitle(`**Action Failed**`)
         .setDescription(`Leaderboard is empty.`)
-        .setColor(0xffea00)
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
         );
@@ -34,6 +42,10 @@ module.exports = {
         embeds: [failedEmbed],
       });
     } else {
+      const rawLeaderboard = await Levels.fetchLeaderboard(
+        interaction.guild.id,
+        10
+      );
       const leaderboard = await Levels.computeLeaderboard(
         client,
         rawLeaderboard
@@ -57,11 +69,18 @@ module.exports = {
     setTimeout(() => {
       if (success === true) {
         if (interaction.channel.id === rankChannelID) return;
+        else {
+          interaction.deleteReply().catch((e) => {
+            console.log(`Failed to delete Leaderboard interaction.`);
+          });
+        }
       } else {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete Leaderboard interaction.`);
+          console.log(
+            `Failed to delete unsuccessfull Leaderboard interaction.`
+          );
         });
       }
-    }, 10 * 60 * 1000);
+    }, 5 * 60 * 1000);
   },
 };

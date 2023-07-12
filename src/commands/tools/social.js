@@ -23,6 +23,10 @@ module.exports = {
       .setLabel(`Instagram`)
       .setURL(`https://www.instagram.com/sayeh_game`)
       .setStyle(ButtonStyle.Link);
+    const telegramButton = new ButtonBuilder()
+      .setLabel("Telegram")
+      .setURL(`https://t.me/sayeh_game`)
+      .setStyle(ButtonStyle.Link);
 
     let embed = new EmbedBuilder()
       .setTitle(`Follow & Subscribe now!`)
@@ -30,7 +34,7 @@ module.exports = {
       .setFields(
         { name: `Twitch`, value: `/Sayeh`, inline: true },
         { name: `YouTube`, value: `@Say3h`, inline: true },
-        { name: `Instagram`, value: `@sayeh_game`, inline: true }
+        { name: `Telegram`, value: `@sayeh_game`, inline: true }
       )
       .setColor(0x25bfc4)
       .setURL(`https://twitch.tv/Sayeh`)
@@ -48,7 +52,7 @@ module.exports = {
         new ActionRowBuilder()
           .addComponents(twitchButton)
           .addComponents(youtubeButton)
-          .addComponents(instagramButton),
+          .addComponents(telegramButton),
       ],
     });
     setTimeout(() => {

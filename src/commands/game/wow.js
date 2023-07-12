@@ -479,7 +479,7 @@ module.exports = {
                 ephemeral: true,
               });
               console.log(
-                `${interaction.user.tag} just saved their WOW Character to the database.`
+                `${interaction.user.username} just saved their WOW Character to the database.`
               );
             } else {
               wowList = await wow.findOneAndDelete({
@@ -497,7 +497,7 @@ module.exports = {
                 ephemeral: true,
               });
               console.log(
-                `${interaction.user.tag} just edited their WOW Character in the database.`
+                `${interaction.user.userrname} just edited their WOW Character in the database.`
               );
             }
           })

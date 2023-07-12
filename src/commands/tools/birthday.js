@@ -1,3 +1,4 @@
+const { mongoose } = require("mongoose");
 const birthday = require("../../schemas/birthday-schema");
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
@@ -43,14 +44,13 @@ module.exports = {
     month = parseInt(month);
     year = parseInt(year);
 
-    let failedEmbed = new EmbedBuilder();
+    let failedEmbed = new EmbedBuilder().setColor(0xffea00);
 
     if (month == 2) {
       if (day > 28) {
         failedEmbed
           .setTitle(`**Invalid Date**`)
           .setDescription(`Please specify a valid date.`)
-          .setColor(0xffea00)
           .setThumbnail(`https://img.icons8.com/color/512/calendar--v1.png`);
         interaction.reply({
           embeds: [failedEmbed],
@@ -61,7 +61,6 @@ module.exports = {
         failedEmbed
           .setTitle(`**Invalid Date**`)
           .setDescription(`Please specify a valid date.`)
-          .setColor(0xffea00)
           .setThumbnail(`https://img.icons8.com/color/512/calendar--v1.png`);
         interaction.reply({
           embeds: [failedEmbed],
@@ -72,7 +71,6 @@ module.exports = {
         failedEmbed
           .setTitle(`**Invalid Date**`)
           .setDescription(`Please specify a valid date.`)
-          .setColor(0xffea00)
           .setThumbnail(`https://img.icons8.com/color/512/calendar--v1.png`);
         interaction.reply({
           embeds: [failedEmbed],
@@ -82,7 +80,6 @@ module.exports = {
           failedEmbed
             .setTitle(`**Invalid Date**`)
             .setDescription(`Please specify a valid date.`)
-            .setColor(0xffea00)
             .setThumbnail(`https://img.icons8.com/color/512/calendar--v1.png`);
           interaction.reply({
             embeds: [failedEmbed],
@@ -90,67 +87,81 @@ module.exports = {
         }
       }
     } else {
-      let embed = new EmbedBuilder();
-      let birthdayProfile = await birthday.findOne({
-        User: interaction.user.id,
-      });
-      if (!birthdayProfile) {
-        birthdayProfile = new birthday({
-          User: interaction.user.id,
-          Birthday: `${day} / ${month}`,
-          Day: `${day}`,
-          Month: `${month}`,
-          Year: `${year}`,
-          Age: `${age}`,
-        });
-
-        embed
-          .setTitle(`Save Birthday`)
+      if (mongoose.connection.readyState !== 1) {
+        failedEmbed
+          .setTitle(`**Connection Timed out!**`)
           .setDescription(
-            `**${birthdayProfile.Day} / ${birthdayProfile.Month} / ${birthdayProfile.Year}** (Age **${birthdayProfile.Age}**)\n has been added to the database.`
+            `Connection to database has been timed out. please try again later.`
           )
-          .setColor(0x25bfc4)
           .setThumbnail(
-            `https://cdn-icons-png.flaticon.com/512/4525/4525667.png`
+            `https://cdn.iconscout.com/icon/premium/png-256-thumb/error-in-internet-959268.png`
           );
-
-        await birthdayProfile.save().catch(console.error);
-        await interaction.reply({
-          embeds: [embed],
+        interaction.reply({
+          embeds: [failedEmbed],
         });
-        console.log(
-          `${interaction.user.tag} saved a birthday date to database!`
-        );
       } else {
-        birthdayProfile = await birthday.findOneAndDelete({
+        let embed = new EmbedBuilder();
+        let birthdayProfile = await birthday.findOne({
           User: interaction.user.id,
         });
-        const newBirthdayProfile = new birthday({
-          User: interaction.user.id,
-          Birthday: `${day} / ${month}`,
-          Day: `${day}`,
-          Month: `${month}`,
-          Year: `${year}`,
-          Age: `${age}`,
-        });
+        if (!birthdayProfile) {
+          birthdayProfile = new birthday({
+            User: interaction.user.id,
+            Birthday: `${day} / ${month}`,
+            Day: `${day}`,
+            Month: `${month}`,
+            Year: `${year}`,
+            Age: `${age}`,
+          });
 
-        embed
-          .setTitle(`Edit Birthday`)
-          .setDescription(
-            `**${newBirthdayProfile.Day} / ${newBirthdayProfile.Month} / ${newBirthdayProfile.Year}** (Age **${newBirthdayProfile.Age}**)\n has been saved to the database.`
-          )
-          .setColor(0x25bfc4)
-          .setThumbnail(
-            `https://cdn-icons-png.flaticon.com/512/4525/4525667.png`
+          embed
+            .setTitle(`Save Birthday`)
+            .setDescription(
+              `**${birthdayProfile.Day} / ${birthdayProfile.Month} / ${birthdayProfile.Year}** (Age **${birthdayProfile.Age}**)\n has been added to the database.`
+            )
+            .setColor(0x25bfc4)
+            .setThumbnail(
+              `https://cdn-icons-png.flaticon.com/512/4525/4525667.png`
+            );
+
+          await birthdayProfile.save().catch(console.error);
+          await interaction.reply({
+            embeds: [embed],
+          });
+          console.log(
+            `${interaction.user.username} saved a birthday date to database!`
           );
+        } else {
+          birthdayProfile = await birthday.findOneAndDelete({
+            User: interaction.user.id,
+          });
+          const newBirthdayProfile = new birthday({
+            User: interaction.user.id,
+            Birthday: `${day} / ${month}`,
+            Day: `${day}`,
+            Month: `${month}`,
+            Year: `${year}`,
+            Age: `${age}`,
+          });
 
-        await newBirthdayProfile.save().catch(console.error);
-        await interaction.reply({
-          embeds: [embed],
-        });
-        console.log(
-          `${interaction.user.tag} edited a birthday date in database!`
-        );
+          embed
+            .setTitle(`Edit Birthday`)
+            .setDescription(
+              `**${newBirthdayProfile.Day} / ${newBirthdayProfile.Month} / ${newBirthdayProfile.Year}** (Age **${newBirthdayProfile.Age}**)\n has been saved to the database.`
+            )
+            .setColor(0x25bfc4)
+            .setThumbnail(
+              `https://cdn-icons-png.flaticon.com/512/4525/4525667.png`
+            );
+
+          await newBirthdayProfile.save().catch(console.error);
+          await interaction.reply({
+            embeds: [embed],
+          });
+          console.log(
+            `${interaction.user.username} edited a birthday date in database!`
+          );
+        }
       }
     }
     setTimeout(() => {

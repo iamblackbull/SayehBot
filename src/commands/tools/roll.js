@@ -70,7 +70,7 @@ module.exports = {
             embeds: [gambleEmbed],
           });
           console.log(
-            `${interaction.user.tag} won ${winXp} XP by rolling ${roll} `
+            `${interaction.user.username} won ${winXp} XP by rolling ${roll} `
           );
           if (hasLevelUp) {
             const user = await Levels.fetch(
@@ -78,7 +78,7 @@ module.exports = {
               interaction.guild.id
             );
             console.log(
-              `${interaction.user.tag} just advanced to level ${user.level}`
+              `${interaction.user.uesrname} just advanced to level ${user.level}`
             );
             channel.send(
               `🎊 ${interaction.user} just advanced to level **${user.level}** 🙌`
@@ -109,7 +109,7 @@ module.exports = {
             embeds: [gambleEmbed],
           });
           console.log(
-            `${interaction.user.tag} lost ${loseXp} XP by rolling ${roll} `
+            `${interaction.user.username} lost ${loseXp} XP by rolling ${roll} `
           );
         }
       } else if (roll === 50) {
@@ -130,7 +130,7 @@ module.exports = {
                 `https://cdn1.iconfinder.com/data/icons/casino-and-gambling-4/50/Casino_and_Gambling_Colored-09-512.png`
               );
             console.log(
-              `${interaction.user.tag} won ${Xp} XP by rolling ${roll} `
+              `${interaction.user.username} won ${Xp} XP by rolling ${roll} `
             );
             if (hasLevelUp) {
               const user = await Levels.fetch(
@@ -138,7 +138,7 @@ module.exports = {
                 interaction.guild.id
               );
               console.log(
-                `${interaction.user.tag} just advanced to level ${user.level}`
+                `${interaction.user.username} just advanced to level ${user.level}`
               );
               channel.send(
                 `🎊 ${interaction.user} just advanced to level **${user.level}** 🙌`
@@ -161,7 +161,7 @@ module.exports = {
                 `https://www.inventicons.com/uploads/iconset/669/wm/512/Deslikelose-78.png`
               );
             console.log(
-              `${interaction.user.tag} lost ${Xp} XP by rolling ${roll} `
+              `${interaction.user.username} lost ${Xp} XP by rolling ${roll} `
             );
           }
           await interaction.editReply({
@@ -190,7 +190,7 @@ module.exports = {
             embeds: [gambleEmbed],
           });
           console.log(
-            `${interaction.user.tag} won ${winXp} XP by rolling ${roll} `
+            `${interaction.user.username} won ${winXp} XP by rolling ${roll} `
           );
           if (hasLevelUp) {
             const user = await Levels.fetch(
@@ -198,7 +198,7 @@ module.exports = {
               interaction.guild.id
             );
             console.log(
-              `${interaction.user.tag} just advanced to level ${user.level}`
+              `${interaction.user.username} just advanced to level ${user.level}`
             );
             channel.send(
               `🎊 ${interaction.user} just advanced to level **${user.level}** 🙌`
@@ -226,7 +226,7 @@ module.exports = {
             embeds: [gambleEmbed],
           });
           console.log(
-            `${interaction.user.tag} won ${winXp} XP by rolling ${roll} `
+            `${interaction.user.username} won ${winXp} XP by rolling ${roll} `
           );
           if (hasLevelUp) {
             const user = await Levels.fetch(
@@ -234,7 +234,7 @@ module.exports = {
               interaction.guild.id
             );
             console.log(
-              `${interaction.user.tag} just advanced to level ${user.level}`
+              `${interaction.user.username} just advanced to level ${user.level}`
             );
             channel.send(
               `🎊 ${interaction.user} just advanced to level **${user.level}** 🙌`
@@ -265,7 +265,7 @@ module.exports = {
             embeds: [gambleEmbed],
           });
           console.log(
-            `${interaction.user.tag} lost ${loseXp} XP by rolling ${roll} `
+            `${interaction.user.username} lost ${loseXp} XP by rolling ${roll} `
           );
         }
       } else if (roll === 7) {
@@ -289,7 +289,7 @@ module.exports = {
             embeds: [gambleEmbed],
           });
           console.log(
-            `${interaction.user.tag} won ${winXp} XP by rolling ${roll} `
+            `${interaction.user.username} won ${winXp} XP by rolling ${roll} `
           );
           if (hasLevelUp) {
             const user = await Levels.fetch(
@@ -297,7 +297,7 @@ module.exports = {
               interaction.guild.id
             );
             console.log(
-              `${interaction.user.tag} just advanced to level ${user.level}`
+              `${interaction.user.username} just advanced to level ${user.level}`
             );
             channel.send(
               `🎊 ${interaction.user} just advanced to level **${user.level}** 🙌`
@@ -328,7 +328,7 @@ module.exports = {
             embeds: [gambleEmbed],
           });
           console.log(
-            `${interaction.user.tag} lost ${loseXp} XP by rolling ${roll} `
+            `${interaction.user.username} lost ${loseXp} XP by rolling ${roll} `
           );
         }
       } else if (roll === 39) {
@@ -355,7 +355,7 @@ module.exports = {
             embeds: [gambleEmbed],
           });
           console.log(
-            `${interaction.user.tag} lost ${loseXp} XP by rolling ${roll} `
+            `${interaction.user.username} lost ${loseXp} XP by rolling ${roll} `
           );
         }
       }
