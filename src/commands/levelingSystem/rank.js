@@ -33,7 +33,7 @@ module.exports = {
       failedEmbed
         .setTitle(`**Connection Timed out!**`)
         .setDescription(
-          `Connection to database has been timed out. please try again later.`
+          `Connection to database has been timed out.\nTry again later with </rank:1051248003723304963>.`
         )
         .setThumbnail(
           `https://cdn.iconscout.com/icon/premium/png-256-thumb/error-in-internet-959268.png`
@@ -52,7 +52,7 @@ module.exports = {
         const finalXp = neededXp - passedXp;
         const canvas = new Canvas.createCanvas(1000, 300);
         const ctx = canvas.getContext("2d");
-        bar_width = 600;
+        const barWidth = 600;
         const background = await Canvas.loadImage(
           path.join(__dirname, "../../Images/image8.png")
         );
@@ -77,39 +77,40 @@ module.exports = {
         ctx.lineJoin = "round";
         ctx.lineWidth = 50;
 
-        ctx.strokeRect(298, 199, bar_width, 0);
+        ctx.strokeRect(298, 199, barWidth, 0);
 
         ctx.strokeStyle = "black";
-        ctx.strokeRect(300, 200, bar_width, 0);
+        ctx.strokeRect(300, 200, barWidth, 0);
 
         ctx.strokeStyle = "#56237d";
         if (user.level < 60) {
           ctx.strokeRect(
             300,
             200,
-            (bar_width * (user.xp - passedXp)) / finalXp,
+            (barWidth * (user.xp - passedXp)) / finalXp,
             0
           );
         } else {
-          ctx.strokeRect(300, 200, bar_width, 0);
+          ctx.strokeRect(300, 200, barWidth, 0);
         }
 
-        if (target.username.length <= 10) {
-          ctx.font = "70px BubbleGum";
-          ctx.fillStyle = "#56237d";
+        if (target.id === "481094367407374348") {
+          ctx.font = "90px Space Silhouette Font";
+          ctx.fillText("SAYEH", 280, 150);
+        } else {
+          if (target.username.length <= 10) {
+            ctx.font = "70px BubbleGum";
+          } else if (
+            target.username.length > 10 &&
+            target.username.length <= 15
+          ) {
+            ctx.font = "50px BubbleGum";
+          } else {
+            ctx.font = "35px BubbleGum";
+          }
           ctx.fillText(target.username, 280, 150);
         }
-        if (target.username.length > 10) {
-          if (target.username.length > 15) {
-            ctx.font = "35px BubbleGum";
-            ctx.fillStyle = "#56237d";
-            ctx.fillText(target.username, 280, 150);
-          } else {
-            ctx.font = "50px BubbleGum";
-            ctx.fillStyle = "#56237d";
-            ctx.fillText(target.username, 280, 150);
-          }
-        }
+        ctx.fillStyle = "#56237d";
 
         ctx.font = "35px BubbleGum";
         ctx.fillStyle = "#56237d";
@@ -150,7 +151,7 @@ module.exports = {
         if (user.level < 60) {
           xpLine = `${user.xp - passedXp}/${finalXp} XP`;
         } else {
-          xpLine = `MAX`;
+          xpLine = "MAX";
         }
 
         if (xpLine.length <= 10) {
@@ -188,7 +189,9 @@ module.exports = {
       } else {
         failedEmbed
           .setTitle(`**Action Failed**`)
-          .setDescription(`${target} has not gained enough xp.`)
+          .setDescription(
+            `${target} has not gained enough xp. User should at least send **1** message in the server.`
+          )
           .setThumbnail(
             `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
           );
@@ -197,19 +200,17 @@ module.exports = {
         });
       }
     }
+    const timeoutDuration = success ? 5 * 60 * 1000 : 2 * 60 * 1000;
+    const timeoutLog = success
+      ? "Failed to delete Rank interaction."
+      : "Failed to delete unsuccessfull Rank interaction.";
     setTimeout(() => {
-      if (success === true) {
-        if (interaction.channel.id === rankChannelID) return;
-        else {
-          interaction.deleteReply().catch((e) => {
-            console.log(`Failed to delete Rank interaction.`);
-          });
-        }
-      } else {
+      if (success && interaction.channel.id === rankChannelID) return;
+      else {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete unsuccessfull Rank interaction.`);
+          console.log(timeoutLog);
         });
       }
-    }, 5 * 60 * 1000);
+    }, timeoutDuration);
   },
 };

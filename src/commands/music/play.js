@@ -6,21 +6,44 @@ const {
   ButtonBuilder,
   ButtonStyle,
 } = require("discord.js");
-const { QueryType } = require("discord-player");
+const { useMainPlayer, useTimeline, QueryType } = require("discord-player");
 const { musicChannelID } = process.env;
 const replay = require("../../schemas/replay-schema");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("play")
-    .setDescription("Play tracks from YouTube / Spotify / Soundcloud")
+    .setDescription("Play a track from YouTube / Spotify / Soundcloud")
     .addStringOption((option) =>
       option
-        .setName("song")
+        .setName("query")
         .setDescription("Input song name or url")
         .setRequired(true)
+        .setAutocomplete(true)
     )
     .setDMPermission(false),
+
+  async autocompleteRun(interaction, client) {
+    const player = useMainPlayer();
+    const query = interaction.options.getString("query", true);
+    if (!query) return;
+
+    const results = await player.search(query, {
+      requestedBy: interaction.user,
+      searchEngine: QueryType.AUTO,
+    });
+    let respond = results.tracks.slice(0, 5).map((song) => ({
+      name: `${song.title} -- ${song.author} \`[${song.duration}]\``,
+      value: song.url,
+    }));
+
+    try {
+      await interaction.respond(respond);
+    } catch (error) {
+      return;
+    }
+  },
+
   async execute(interaction, client) {
     await interaction.deferReply({
       fetchReply: true,
@@ -30,7 +53,6 @@ module.exports = {
     let song;
     let success = false;
     let timer;
-    let connection = false;
     let failedEmbed = new EmbedBuilder();
 
     if (
@@ -62,24 +84,35 @@ module.exports = {
         embeds: [failedEmbed],
       });
     } else {
-      const queue = await client.player.createQueue(interaction.guild, {
-        leaveOnEnd: true,
-        leaveOnEmpty: true,
-        leaveOnEndCooldown: 5 * 60 * 1000,
-        leaveOnEmptyCooldown: 5 * 60 * 1000,
-        smoothVolume: true,
-        ytdlOptions: {
-          quality: "highestaudio",
-          highWaterMark: 1 << 25,
-        },
-      });
+      let queue = client.player.nodes.get(interaction.guildId);
+      if (!queue) {
+        queue = await client.player.nodes.create(interaction.guild, {
+          metadata: {
+            channel: interaction.channel,
+            client: interaction.guild.members.me,
+            requestedBy: interaction.user,
+          },
+          useLegacyFFmpeg: false,
+          leaveOnEnd: true,
+          leaveOnEmpty: true,
+          leaveOnEndCooldown: 5 * 60 * 1000,
+          leaveOnEmptyCooldown: 5 * 1000,
+          smoothVolume: true,
+          ytdlOptions: {
+            filter: "audioonly",
+            quality: "highestaudio",
+            highWaterMark: 1 << 25,
+          },
+        });
+      }
       if (!queue.connection) {
         await queue.connect(interaction.member.voice.channel);
       }
-      if (queue.connection.channel.id === interaction.member.voice.channel.id) {
-        connection = true;
-      }
-      if (connection === true) {
+      const connection =
+        queue.connection.joinConfig.channelId ===
+        interaction.member.voice.channel.id;
+
+      if (connection) {
         let embed = new EmbedBuilder();
 
         const favoriteButton = new ButtonBuilder()
@@ -93,15 +126,17 @@ module.exports = {
         const downloadButton = new ButtonBuilder()
           .setCustomId(`downloader`)
           .setEmoji(`⬇`)
-          .setStyle(ButtonStyle.Primary);
+          .setStyle(ButtonStyle.Secondary);
 
-        let url = interaction.options.getString("song");
-        const result = await client.player.search(url, {
+        const player = useMainPlayer();
+        const query = interaction.options.getString("query", true);
+        const result = await player.search(query, {
           requestedBy: interaction.user,
           searchEngine: QueryType.AUTO,
         });
+
         if (result.tracks.length === 0) {
-          if (url.toLowerCase().startsWith("https")) {
+          if (query.toLowerCase().startsWith("https")) {
             failedEmbed.setDescription(`Make sure you input a valid link.`);
           } else {
             failedEmbed.setDescription(
@@ -118,8 +153,12 @@ module.exports = {
             embeds: [failedEmbed],
           });
         } else {
+          const entry = queue.tasksQueue.acquire();
+          await entry.getTask();
+
           song = result.tracks[0];
           await queue.addTrack(song);
+
           embed
             .setTitle(`🎵 Track`)
             .setDescription(
@@ -145,14 +184,28 @@ module.exports = {
               text: `Soundcloud`,
             });
           }
-          if (!queue.playing) await queue.play();
+
+          if (!queue.node.isPlaying()) await queue.node.play();
+          await queue.tasksQueue.release();
+
           success = true;
+
+          const { timestamp } = useTimeline(interaction.guildId);
           if (song.duration.length >= 7) {
-            timer = 10;
+            timer = 10 * 60;
           } else {
-            timer = parseInt(song.duration);
+            const duration = song.duration;
+            const convertor = duration.split(":");
+            const totalTimer = +convertor[0] * 60 + +convertor[1];
+
+            const currentDuration = timestamp.current.label;
+            const currentConvertor = currentDuration.split(":");
+            const currentTimer =
+              +currentConvertor[0] * 60 + +currentConvertor[1];
+
+            timer = totalTimer - currentTimer;
           }
-          if (timer < 10) {
+          if (timer < 10 * 60) {
             if (source === "public") {
               await interaction.editReply({
                 embeds: [embed],
@@ -212,25 +265,20 @@ module.exports = {
         });
       }
     }
-    if (success === false) {
-      timer = 5;
-    }
-    if (timer > 10) timer = 10;
-    if (timer < 1) timer = 1;
+    success ? timer : (timer = 2 * 60);
+    if (timer > 10 * 60) timer = 10 * 60;
+    if (timer < 1 * 60) timer = 1 * 60;
+    const timeoutLog = success
+      ? "Failed to delete Play interaction."
+      : "Failed to delete unsuccessfull Play interaction.";
     setTimeout(() => {
-      if (success === true) {
-        if (interaction.channel.id === musicChannelID) {
-          interaction.editReply({ components: [] });
-        } else {
-          interaction.deleteReply().catch((e) => {
-            console.log(`Failed to delete Play interaction.`);
-          });
-        }
+      if (success && interaction.channel.id === musicChannelID) {
+        interaction.editReply({ components: [] });
       } else {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete unsuccessfull Play interaction.`);
+          console.log(timeoutLog);
         });
       }
-    }, timer * 60 * 1000);
+    }, timer * 1000);
   },
 };

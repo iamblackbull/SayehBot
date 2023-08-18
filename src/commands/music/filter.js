@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { AudioFilters } = require("discord-player");
+const { AudioFilters, useTimeline } = require("discord-player");
 const { musicChannelID } = process.env;
 let filterMode = false;
 
@@ -74,6 +74,7 @@ module.exports = {
       fetchReply: true,
     });
 
+    let timer;
     let success = false;
     let embed = new EmbedBuilder()
       .setColor(0xc42577)
@@ -81,13 +82,13 @@ module.exports = {
 
     let failedEmbed = new EmbedBuilder();
 
-    const queue = client.player.getQueue(interaction.guildId);
+    const queue = client.player.nodes.get(interaction.guildId);
 
     if (!queue) {
       failedEmbed
         .setTitle(`**Action Failed**`)
         .setDescription(
-          `Queue is empty. Add at least 1 song to the queue to use this command.`
+          `Queue is empty. Add at least 1 song to the queue to use this command.\nTry again with </filter:1047903144752984073>.`
         )
         .setColor(0xffea00)
         .setThumbnail(
@@ -110,10 +111,11 @@ module.exports = {
         embeds: [failedEmbed],
       });
     } else if (
-      queue.connection.channel.id === interaction.member.voice.channel.id
+      queue.connection.joinConfig.channelId ===
+      interaction.member.voice.channel.id
     ) {
       if (interaction.options.get("effect").value === "8d") {
-        queue.setFilters({ "8D": true });
+        queue.filters.ffmpeg.toggle("8D");
         filterMode = true;
         embed
           .setThumbnail(
@@ -121,7 +123,7 @@ module.exports = {
           )
           .setDescription("**8D** filter has been added to the queue.");
       } else if (interaction.options.get("effect").value === "bassboost") {
-        queue.setFilters({ bassboost_low: true });
+        queue.filters.ffmpeg.toggle(bassboost_low);
         filterMode = true;
         embed
           .setThumbnail(
@@ -129,7 +131,7 @@ module.exports = {
           )
           .setDescription("**Bassboost** filter has been added to the queue.");
       } else if (interaction.options.get("effect").value === "reverse") {
-        queue.setFilters({ reverse: true });
+        queue.filters.ffmpeg.toggle(reverse);
         filterMode = true;
         embed
           .setThumbnail(
@@ -137,13 +139,13 @@ module.exports = {
           )
           .setDescription("**Reverse** filter has been added to the queue.");
       } else if (interaction.options.get("effect").value === "vaporwave") {
-        queue.setFilters({ vaporwave: true });
+        queue.filters.ffmpeg.toggle(vaporwave);
         filterMode = true;
         embed
           .setThumbnail(`https://img.icons8.com/nolan/512/vaporwave.png`)
           .setDescription("**Vaporwave** filter has been added to the queue.");
       } else if (interaction.options.get("effect").value === "nightcore") {
-        queue.setFilters({ nightcore: true });
+        queue.filters.ffmpeg.toggle(nightcore);
         filterMode = true;
         embed
           .setThumbnail(
@@ -151,7 +153,7 @@ module.exports = {
           )
           .setDescription("**Nightcore** filter has been added to the queue.");
       } else if (interaction.options.get("effect").value === "fadein") {
-        queue.setFilters({ fadein: true });
+        queue.filters.ffmpeg.toggle(fadein);
         filterMode = true;
         embed
           .setThumbnail(
@@ -159,7 +161,7 @@ module.exports = {
           )
           .setDescription("**Fade-In** filter has been added to the queue.");
       } else if (interaction.options.get("effect").value === "karaoke") {
-        queue.setFilters({ karaoke: true });
+        queue.filters.ffmpeg.toggle(karaoke);
         filterMode = true;
         embed
           .setThumbnail(
@@ -167,7 +169,7 @@ module.exports = {
           )
           .setDescription("**Karaoke** filter has been added to the queue.");
       } else if (interaction.options.get("effect").value === "vibrato") {
-        queue.setFilters({ vibrato: true });
+        queue.filters.ffmpeg.toggle(vibrato);
         filterMode = true;
         embed
           .setThumbnail(
@@ -175,7 +177,7 @@ module.exports = {
           )
           .setDescription("**Vibrato** filter has been added to the queue.");
       } else if (interaction.options.get("effect").value === "earrape") {
-        queue.setFilters({ earrape: true });
+        queue.filters.ffmpeg.toggle(earrape);
         filterMode = true;
         embed
           .setThumbnail(`https://m.media-amazon.com/images/I/41P7AJjvdxL.png`)
@@ -266,27 +268,40 @@ module.exports = {
         embeds: [failedEmbed],
       });
     }
+
+    const { timestamp } = useTimeline(interaction.guildId);
+    const duration = timestamp.total.label;
+    const convertor = duration.split(":");
+    const totalTimer = +convertor[0] * 60 + +convertor[1];
+
+    const currentDuration = timestamp.current.label;
+    const currentConvertor = currentDuration.split(":");
+    const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
+
+    timer = totalTimer - currentTimer;
+
+    if (timer > 10 * 60) timer = 10 * 60;
+    if (timer < 1 * 60) timer = 1 * 60;
+
+    const timeoutDuration = success ? timer * 1000 : 2 * 60 * 1000;
+    const timeoutLog = success
+      ? "Failed to delete Filter interaction."
+      : "Failed to delete unsuccessfull Filter interaction.";
     setTimeout(() => {
-      if (success === true) {
-        if (interaction.channel.id === musicChannelID) {
-          filterEmbed.reactions
-            .removeAll()
-            .catch((error) =>
-              console.error(
-                chalk.red("Failed to clear reactions from song message."),
-                error
-              )
-            );
-        } else {
-          interaction.deleteReply().catch((e) => {
-            console.log(`Failed to delete Filter interaction.`);
-          });
-        }
+      if (success && interaction.channel.id === musicChannelID) {
+        filterEmbed.reactions
+          .removeAll()
+          .catch((error) =>
+            console.error(
+              chalk.red("Failed to clear reactions from Filter interaction."),
+              error
+            )
+          );
       } else {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete unsuccessfull Filter interaction.`);
+          console.log(timeoutLog);
         });
       }
-    }, 5 * 60 * 1000);
+    }, timeoutDuration);
   },
 };

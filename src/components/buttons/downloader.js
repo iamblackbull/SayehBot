@@ -15,14 +15,14 @@ module.exports = {
         `https://cdn4.iconfinder.com/data/icons/3d-modeling-printing-volume-2/64/file-processing-512.png`
       );
 
-    const queue = client.player.getQueue(interaction.guildId);
+    const queue = client.player.nodes.get(interaction.guildId);
     if (!queue) return;
 
     await interaction.reply({
       embeds: [embed],
     });
 
-    const url = queue.current.url;
+    const url = queue.currentTrack.url;
 
     const stream = downloader.download(url);
     stream.pipe(fs.createWriteStream(`./${interaction.user.id}.mp3`));
@@ -38,7 +38,7 @@ module.exports = {
         embed = new EmbedBuilder()
           .setTitle(`**Action Failed**`)
           .setDescription(
-            `Failed to export file. Song's publisher may have blocked this process.`
+            `Failed to export file. Track's publisher may have blocked this process.`
           )
           .setColor(0xffea00)
           .setThumbnail(

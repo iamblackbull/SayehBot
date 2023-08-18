@@ -50,7 +50,7 @@ module.exports = {
       if (day > 28) {
         failedEmbed
           .setTitle(`**Invalid Date**`)
-          .setDescription(`Please specify a valid date.`)
+          .setDescription(`Please specify a valid date.\nTry again with </birthday:1047903145218547870>.`)
           .setThumbnail(`https://img.icons8.com/color/512/calendar--v1.png`);
         interaction.reply({
           embeds: [failedEmbed],
@@ -60,7 +60,7 @@ module.exports = {
       if (day > 30) {
         failedEmbed
           .setTitle(`**Invalid Date**`)
-          .setDescription(`Please specify a valid date.`)
+          .setDescription(`Please specify a valid date.\nTry again with </birthday:1047903145218547870>.`)
           .setThumbnail(`https://img.icons8.com/color/512/calendar--v1.png`);
         interaction.reply({
           embeds: [failedEmbed],
@@ -70,7 +70,7 @@ module.exports = {
       if (month > currentMonth) {
         failedEmbed
           .setTitle(`**Invalid Date**`)
-          .setDescription(`Please specify a valid date.`)
+          .setDescription(`Please specify a valid date.\nTry again with </birthday:1047903145218547870>.`)
           .setThumbnail(`https://img.icons8.com/color/512/calendar--v1.png`);
         interaction.reply({
           embeds: [failedEmbed],
@@ -79,7 +79,7 @@ module.exports = {
         if (day > currentDate) {
           failedEmbed
             .setTitle(`**Invalid Date**`)
-            .setDescription(`Please specify a valid date.`)
+            .setDescription(`Please specify a valid date.\nTry again with </birthday:1047903145218547870>.`)
             .setThumbnail(`https://img.icons8.com/color/512/calendar--v1.png`);
           interaction.reply({
             embeds: [failedEmbed],

@@ -9,17 +9,12 @@ const { youtubeChannelID, guildID } = process.env;
 const chalk = require("chalk");
 const Parser = require("rss-parser");
 const parser = new Parser();
-const fs = require("fs");
 const { mongoose } = require("mongoose");
 const video = require("../../schemas/video-schema");
-let connection;
-let newVideo = false;
 
 module.exports = (client) => {
-  mongoose.connection.readyState === 1
-    ? (connection = true)
-    : (connection = false);
   client.checkVideo = async () => {
+    if (mongoose.connection.readyState !== 1) return;
     try {
       const data = await parser
         .parseURL(
@@ -28,8 +23,6 @@ module.exports = (client) => {
         .catch(console.error);
 
       const guild = await client.guilds.fetch(guildID).catch(console.error);
-      const rawData = fs.readFileSync(`${__dirname}/../../json/video.json`);
-      const jsonData = JSON.parse(rawData);
 
       let videoList = await video.findOne({
         guild: guild.id,
@@ -42,44 +35,21 @@ module.exports = (client) => {
         await videoList.save().catch(console.error);
       }
 
-      if (connection === true) {
-        if (videoList.VideoId !== data.items[0].id) {
-          videoList = await video.updateOne(
-            { guild: guild.id },
-            {
-              VideoId: data.items[0].id,
-            }
-          );
-          if (jsonData.id === data.items[0].id) {
-            return;
-          } else {
-            fs.writeFileSync(
-              `${__dirname}/../../json/video.json`,
-              JSON.stringify({ id: data.items[0].id })
-            );
-            newVideo = true;
+      if (videoList.VideoId !== data.items[0].id) {
+        videoList = await video.updateOne(
+          { guild: guild.id },
+          {
+            VideoId: data.items[0].id,
           }
-        } else {
-          newVideo = false;
-        }
-      } else if (jsonData.id !== data.items[0].id) {
-        fs.writeFileSync(
-          `${__dirname}/../../json/video.json`,
-          JSON.stringify({ id: data.items[0].id })
         );
-        newVideo = true;
-      } else {
-        newVideo = false;
-      }
 
-      if (newVideo === true) {
         const channel = await guild.channels
           .fetch(youtubeChannelID)
           .catch(console.error);
 
         const { title, link, id, author } = data.items[0];
         const embed = new EmbedBuilder({
-          title: title,
+          title: `**${title}**`,
           url: link,
           description: `Sayeh published a video on YouTube!`,
           color: 0xff0000,
@@ -104,11 +74,11 @@ module.exports = (client) => {
           .setLabel(`Watch Video`)
           .setURL(`${link}`)
           .setStyle(ButtonStyle.Link);
-        console.log(`Sayeh just uploaded a new video on YouTube!`);
+        console.log(`Sayeh just published a new video on YouTube!`);
         await channel
           .send({
             embeds: [embed],
-            content: `@everyone Sayeh just uploaded a new video! 😍🔔 \n**${title}** \n${link}`,
+            content: `Hey @everyone\n**Sayeh** just published a new video! 😍🔔\n\n## ${title}\n\n${link}`,
             components: [new ActionRowBuilder().addComponents(youtubeButton)],
           })
           .catch(console.error);

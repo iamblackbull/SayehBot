@@ -11,7 +11,18 @@ let failedEmbed = new EmbedBuilder()
 module.exports = {
   name: "interactionCreate",
   async execute(interaction, client) {
-    if (interaction.isChatInputCommand()) {
+    if (interaction.isAutocomplete()) {
+      const { commands } = client;
+      const { commandName } = interaction;
+      const command = commands.get(commandName);
+      if (!command) return;
+
+      try {
+        await command.autocompleteRun(interaction, client);
+      } catch (error) {
+        return;
+      }
+    } else if (interaction.isChatInputCommand()) {
       const { commands } = client;
       const { commandName } = interaction;
       const command = commands.get(commandName);
@@ -33,7 +44,7 @@ module.exports = {
         }
         setTimeout(() => {
           interaction.deleteReply().catch(console.error);
-        }, 5 * 60 * 1000);
+        }, 2 * 60 * 1000);
       }
     } else if (interaction.isContextMenuCommand()) {
       const { commands } = client;
@@ -60,7 +71,7 @@ module.exports = {
         }
         setTimeout(() => {
           interaction.deleteReply().catch(console.error);
-        }, 5 * 60 * 1000);
+        }, 2 * 60 * 1000);
       }
     } else if (interaction.isButton()) {
       const { buttons } = client;
@@ -73,10 +84,10 @@ module.exports = {
 
       try {
         await button.execute(interaction, client);
-      } catch (err) {
-        console.log(err);
+      } catch (error) {
+        console.log(error);
       }
-    } else if (interaction.type == InteractionType.ModalSubmit) {
+    } else if (interaction.isModalSubmit()) {
       const { modals } = client;
       const { customId } = interaction;
       const modal = modals.get(customId);

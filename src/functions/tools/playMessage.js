@@ -7,6 +7,7 @@ const {
 } = require("discord.js");
 const { QueryType } = require("discord-player");
 require("dotenv").config();
+const { musicChannelID } = process.env;
 const replay = require("../../schemas/replay-schema");
 
 module.exports = (client) => {
@@ -16,13 +17,13 @@ module.exports = (client) => {
     const { guild } = message;
 
     let failedEmbed = new EmbedBuilder();
-    let connection = false;
     let song;
     let type;
     let timer;
     let msg;
+    let source;
 
-    if (message.channel.id === `744591209359474728`) {
+    if (message.channel.id === musicChannelID) {
       if (
         !message.guild.members.me.permissions.has(
           PermissionsBitField.Flags.Speak
@@ -62,24 +63,32 @@ module.exports = (client) => {
           });
         }, 2 * 60 * 1000);
       } else {
-        const queue = await client.player.createQueue(message.guild, {
-          leaveOnEnd: true,
-          leaveOnEmpty: true,
-          leaveOnEndCooldown: 5 * 60 * 1000,
-          leaveOnEmptyCooldown: 5 * 60 * 1000,
-          smoothVolume: true,
-          ytdlOptions: {
-            quality: "highestaudio",
-            highWaterMark: 1 << 25,
-          },
-        });
+        let queue = client.player.nodes.get(interaction.guildId);
+        if (!queue) {
+          queue = await client.player.nodes.create(message.guild, {
+            metadata: {
+              channel: interaction.channel,
+              client: interaction.guild.members.me,
+              requestedBy: interaction.user,
+            },
+            leaveOnEnd: true,
+            leaveOnEmpty: true,
+            leaveOnEndCooldown: 5 * 60 * 1000,
+            leaveOnEmptyCooldown: 5 * 60 * 1000,
+            smoothVolume: true,
+            ytdlOptions: {
+              quality: "highestaudio",
+              highWaterMark: 1 << 25,
+            },
+          });
+        }
         if (!queue.connection) {
           await queue.connect(message.member.voice.channel);
         }
-        if (queue.connection.channel.id === message.member.voice.channel.id) {
-          connection = true;
-        }
-        if (connection === true) {
+        const connection =
+          queue.connection.joinConfig.channelId ===
+          interaction.member.voice.channel.id;
+        if (connection) {
           let embed = new EmbedBuilder();
 
           const favoriteButton = new ButtonBuilder()
@@ -93,19 +102,18 @@ module.exports = (client) => {
           const downloadButton = new ButtonBuilder()
             .setCustomId(`downloader`)
             .setEmoji(`⬇`)
-            .setStyle(ButtonStyle.Primary);
+            .setStyle(ButtonStyle.Secondary);
 
           let url = message.content;
           let result;
-          if (url.toLowerCase().startsWith("https")) {
-            if (url.toLowerCase().includes("playlist")) {
-              type = "playlist";
-            } else {
-              type = "track";
-            }
-          } else {
-            type = "track";
-          }
+
+          if (
+            url.toLowerCase().startsWith("https") &&
+            url.toLowerCase().includes("playlist")
+          )
+            type = "playlist";
+          else type = "track";
+
           if (type === "playlist") {
             if (url.toLowerCase().includes("youtube")) {
               result = await client.player.search(url, {
@@ -127,11 +135,13 @@ module.exports = (client) => {
             }
             const playlist = result.playlist;
             if (result.tracks[0].duration.length >= 7) {
-              timer = 10;
+              timer = 10 * 60;
             } else {
-              timer = parseInt(result.tracks[0].duration);
+              const duration = result.tracks[0].duration;
+              const convertor = duration.split(":");
+              timer = +convertor[0] * 60 + +convertor[1];
             }
-            await queue.addTracks(result.tracks);
+            await queue.addTrack(result.tracks);
             embed
               .setTitle(`🎶 Playlist`)
               .setDescription(
@@ -146,9 +156,11 @@ module.exports = (client) => {
             });
             song = result.tracks[0];
             if (song.duration.length >= 7) {
-              timer = 10;
+              timer = 10 * 60;
             } else {
-              timer = parseInt(song.duration);
+              const duration = song.duration;
+              const convertor = duration.split(":");
+              timer = +convertor[0] * 60 + +convertor[1];
             }
             await queue.addTrack(song);
             embed
@@ -195,48 +207,62 @@ module.exports = (client) => {
             }, 2 * 60 * 1000);
           } else {
             if (song.url.includes("youtube")) {
+              source = "public";
               embed.setColor(0xff0000).setFooter({
                 iconURL: `https://www.iconpacks.net/icons/2/free-youtube-logo-icon-2431-thumb.png`,
                 text: `YouTube`,
               });
             } else if (song.url.includes("spotify")) {
+              source = "private";
               embed.setColor(0x34eb58).setFooter({
                 iconURL: `https://www.freepnglogos.com/uploads/spotify-logo-png/image-gallery-spotify-logo-21.png`,
                 text: `Spotify`,
               });
             } else if (song.url.includes("soundcloud")) {
+              source = "public";
               embed.setColor(0xeb5534).setFooter({
                 iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
                 text: `Soundcloud`,
               });
             }
-            if (!queue.playing) await queue.play();
+            if (!queue.node.isPlaying()) await queue.node.play();
 
             if (type === "playlist") {
               await message.reply({
                 embeds: [embed],
               });
             } else {
-              if (timer < 10) {
-                msg = await message.reply({
-                  embeds: [embed],
-                  components: [
-                    new ActionRowBuilder()
-                      .addComponents(favoriteButton)
-                      .addComponents(lyricsButton)
-                      .addComponents(downloadButton),
-                  ],
-                });
+              if (timer < 10 * 60) {
+                if (source === "public") {
+                  msg = await message.reply({
+                    embeds: [embed],
+                    components: [
+                      new ActionRowBuilder()
+                        .addComponents(favoriteButton)
+                        .addComponents(lyricsButton)
+                        .addComponents(downloadButton),
+                    ],
+                  });
+                } else {
+                  msg = await message.reply({
+                    embeds: [embed],
+                    components: [
+                      new ActionRowBuilder()
+                        .addComponents(favoriteButton)
+                        .addComponents(lyricsButton),
+                    ],
+                  });
+                }
               } else {
                 msg = await message.reply({
                   embeds: [embed],
                 });
               }
-              if (timer > 10) timer = 10;
-              if (timer < 1) timer = 1;
+              if (timer > 10 * 60) timer = 10 * 60;
+              if (timer < 1 * 60) timer = 1 * 60;
               setTimeout(() => {
                 msg.edit({ components: [] });
-              }, timer * 60 * 1000);
+              }, timer * 1000);
             }
           }
         } else {

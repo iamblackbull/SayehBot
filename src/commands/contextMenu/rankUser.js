@@ -47,7 +47,7 @@ module.exports = {
         const finalXp = neededXp - passedXp;
         const canvas = new Canvas.createCanvas(1000, 300);
         const ctx = canvas.getContext("2d");
-        bar_width = 600;
+        const barWidth = 600;
         const background = await Canvas.loadImage(
           path.join(__dirname, "../../Images/image8.png")
         );
@@ -72,39 +72,40 @@ module.exports = {
         ctx.lineJoin = "round";
         ctx.lineWidth = 50;
 
-        ctx.strokeRect(298, 199, bar_width, 0);
+        ctx.strokeRect(298, 199, barWidth, 0);
 
         ctx.strokeStyle = "black";
-        ctx.strokeRect(300, 200, bar_width, 0);
+        ctx.strokeRect(300, 200, barWidth, 0);
 
         ctx.strokeStyle = "#56237d";
         if (user.level < 60) {
           ctx.strokeRect(
             300,
             200,
-            (bar_width * (user.xp - passedXp)) / finalXp,
+            (barWidth * (user.xp - passedXp)) / finalXp,
             0
           );
         } else {
-          ctx.strokeRect(300, 200, bar_width, 0);
+          ctx.strokeRect(300, 200, barWidth, 0);
         }
 
-        if (target.username.length <= 10) {
-          ctx.font = "70px BubbleGum";
-          ctx.fillStyle = "#56237d";
+        if (target.id === "481094367407374348") {
+          ctx.font = "90px Space Silhouette Font";
+          ctx.fillText("SAYEH", 280, 150);
+        } else {
+          if (target.username.length <= 10) {
+            ctx.font = "70px BubbleGum";
+          } else if (
+            target.username.length > 10 &&
+            target.username.length <= 15
+          ) {
+            ctx.font = "50px BubbleGum";
+          } else {
+            ctx.font = "35px BubbleGum";
+          }
           ctx.fillText(target.username, 280, 150);
         }
-        if (target.username.length > 10) {
-          if (target.username.length > 15) {
-            ctx.font = "35px BubbleGum";
-            ctx.fillStyle = "#56237d";
-            ctx.fillText(target.username, 280, 150);
-          } else {
-            ctx.font = "50px BubbleGum";
-            ctx.fillStyle = "#56237d";
-            ctx.fillText(target.username, 280, 150);
-          }
-        }
+        ctx.fillStyle = "#56237d";
 
         ctx.font = "35px BubbleGum";
         ctx.fillStyle = "#56237d";
@@ -193,19 +194,17 @@ module.exports = {
         });
       }
     }
+    const timeoutDuration = success ? 5 * 60 * 1000 : 2 * 60 * 1000;
+    const timeoutLog = success
+      ? "Failed to delete Rank context menu interaction."
+      : "Failed to delete unsuccessfull Rank context menu interaction.";
     setTimeout(() => {
-      if (success === true) {
-        if (interaction.channel.id === rankChannelID) return;
-        else {
-          interaction.deleteReply().catch((e) => {
-            console.log(`Failed to delete Rank context menu.`);
-          });
-        }
-      } else {
+      if (success && interaction.channel.id === rankChannelID) return;
+      else {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete unsuccessfull Rank context menu.`);
+          console.log(timeoutLog);
         });
       }
-    }, 5 * 60 * 1000);
+    }, timeoutDuration);
   },
 };

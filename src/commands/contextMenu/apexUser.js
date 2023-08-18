@@ -19,6 +19,7 @@ module.exports = {
       fetchReply: true,
     });
 
+    let success = false;
     let failedEmbed = new EmbedBuilder().setColor(0xffea00);
 
     if (mongoose.connection.readyState !== 1) {
@@ -99,6 +100,7 @@ module.exports = {
             interaction.editReply({
               embeds: [embed],
             });
+            success = true;
           })
           .catch((e) => {
             failedEmbed
@@ -113,10 +115,14 @@ module.exports = {
           });
       }
     }
+    const timeoutDuration = success ? 5 * 60 * 1000 : 2 * 60 * 1000;
+    const timeoutLog = success
+      ? "Failed to delete Apex context menu interaction."
+      : "Failed to delete unsuccessfull Apex context menu interaction.";
     setTimeout(() => {
       interaction.deleteReply().catch((e) => {
-        console.log(`Failed to delete Apex context menu.`);
+        console.log(timeoutLog);
       });
-    }, 10 * 60 * 1000);
+    }, timeoutDuration);
   },
 };

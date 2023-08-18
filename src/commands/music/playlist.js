@@ -24,7 +24,6 @@ module.exports = {
       fetchReply: true,
     });
 
-    let connection = false;
     let success = false;
     let timer;
     let failedEmbed = new EmbedBuilder();
@@ -58,24 +57,32 @@ module.exports = {
         embeds: [failedEmbed],
       });
     } else {
-      const queue = await client.player.createQueue(interaction.guild, {
-        leaveOnEnd: true,
-        leaveOnEmpty: true,
-        leaveOnEndCooldown: 5 * 60 * 1000,
-        leaveOnEmptyCooldown: 5 * 60 * 1000,
-        smoothVolume: true,
-        ytdlOptions: {
-          quality: "highestaudio",
-          highWaterMark: 1 << 25,
-        },
-      });
+      let queue = client.player.nodes.get(interaction.guildId);
+      if (!queue) {
+        queue = await client.player.nodes.create(interaction.guild, {
+          metadata: {
+            channel: interaction.channel,
+            client: interaction.guild.members.me,
+            requestedBy: interaction.user,
+          },
+          leaveOnEnd: true,
+          leaveOnEmpty: true,
+          leaveOnEndCooldown: 5 * 60 * 1000,
+          leaveOnEmptyCooldown: 5 * 60 * 1000,
+          smoothVolume: true,
+          ytdlOptions: {
+            quality: "highestaudio",
+            highWaterMark: 1 << 25,
+          },
+        });
+      }
       if (!queue.connection) {
         await queue.connect(interaction.member.voice.channel);
       }
-      if (queue.connection.channel.id === interaction.member.voice.channel.id) {
-        connection = true;
-      }
-      if (connection === true) {
+      const connection =
+        queue.connection.joinConfig.channelId ===
+        interaction.member.voice.channel.id;
+      if (connection) {
         let embed = new EmbedBuilder()
           .setTitle(`🎶 Playlist`)
           .setColor(0x256fc4);
@@ -139,16 +146,24 @@ module.exports = {
           });
         } else {
           const playlist = result.playlist;
-          await queue.addTracks(result.tracks);
-          embed.setDescription(
-            `**[${playlist.title}](${playlist.url})**\n**${result.tracks.length} songs**`
-          );
-          if (!queue.playing) await queue.play();
+          await queue.addTrack(result.tracks);
+          embed
+            .setDescription(
+              `**[${playlist.title}](${playlist.url})**\n**${result.tracks.length} songs**`
+            )
+            .setThumbnail(playlist.thumbnail);
+          if (!queue.node.isPlaying()) await queue.node.play();
           await interaction.editReply({
             embeds: [embed],
           });
           success = true;
-          timer = parseInt(result.tracks[0].duration);
+          if (result.tracks[0].duration.length >= 7) {
+            timer = 10 * 60;
+          } else {
+            const duration = result.tracks[0].duration;
+            const convertor = duration.split(":");
+            timer = +convertor[0] * 60 + +convertor[1];
+          }
           let song = result.tracks[result.tracks.length - 1];
           const { guild } = interaction;
           let replayList = await replay.findOne({
@@ -184,25 +199,20 @@ module.exports = {
         });
       }
     }
-    if (success === false) {
-      timer = 5;
-    }
-    if (timer > 10) timer = 10;
-    if (timer < 1) timer = 1;
+    success ? timer : (timer = 2 * 60);
+    if (timer > 10 * 60) timer = 10 * 60;
+    if (timer < 1 * 60) timer = 1 * 60;
+    const timeoutLog = success
+      ? "Failed to delete Playlist interaction."
+      : "Failed to delete unsuccessfull Playlist interaction.";
     setTimeout(() => {
-      if (success === true) {
-        if (interaction.channel.id === musicChannelID) {
-          interaction.editReply({ components: [] });
-        } else {
-          interaction.deleteReply().catch((e) => {
-            console.log(`Failed to delete Playlist interaction.`);
-          });
-        }
+      if (success && interaction.channel.id === musicChannelID) {
+        interaction.editReply({ components: [] });
       } else {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete unsuccessfull Playlist interaction.`);
+          console.log(timeoutLog);
         });
       }
-    }, timer * 60 * 1000);
+    }, timer * 1000);
   },
 };

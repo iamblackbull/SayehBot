@@ -1,4 +1,10 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} = require("discord.js");
 const { QueryType } = require("discord-player");
 const { musicChannelID } = process.env;
 
@@ -25,27 +31,34 @@ module.exports = {
       fetchReply: true,
     });
 
-    const queue = client.player.getQueue(interaction.guildId);
-    let trackNum = interaction.options.getInteger("tracknumber");
-
+    let source;
     let timer;
     let success = false;
     let failedEmbed = new EmbedBuilder();
     let embed = new EmbedBuilder();
+    let empty = false;
 
+    let trackNum = interaction.options.getInteger("tracknumber");
+
+    let queue = client.player.nodes.get(interaction.guildId);
     if (!queue) {
-      failedEmbed
-        .setTitle(`**Action Failed**`)
-        .setDescription(
-          `Queue is empty. Add at least 1 song to the queue to use this command.`
-        )
-        .setColor(0xffea00)
-        .setThumbnail(
-          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-        );
-      await interaction.editReply({
-        embeds: [failedEmbed],
+      queue = await client.player.nodes.create(interaction.guild, {
+        metadata: {
+          channel: interaction.channel,
+          client: interaction.guild.members.me,
+          requestedBy: interaction.user,
+        },
+        leaveOnEnd: true,
+        leaveOnEmpty: true,
+        leaveOnEndCooldown: 5 * 60 * 1000,
+        leaveOnEmptyCooldown: 5 * 60 * 1000,
+        smoothVolume: true,
+        ytdlOptions: {
+          quality: "highestaudio",
+          highWaterMark: 1 << 25,
+        },
       });
+      empty = true;
     } else if (!interaction.member.voice.channel) {
       failedEmbed
         .setTitle(`**Action Failed**`)
@@ -60,10 +73,11 @@ module.exports = {
         embeds: [failedEmbed],
       });
     } else if (
-      queue.connection.channel.id === interaction.member.voice.channel.id
+      queue.connection.joinConfig.channelId ===
+      interaction.member.voice.channel.id
     ) {
-      if (trackNum > queue.tracks.length) {
-        trackNum = queue.tracks.length + 1;
+      if (trackNum > queue.tracks.size) {
+        trackNum = queue.tracks.size + 1;
       }
 
       let url = interaction.options.getString("song");
@@ -87,40 +101,95 @@ module.exports = {
           embeds: [failedEmbed],
         });
       } else {
+        const favoriteButton = new ButtonBuilder()
+          .setCustomId(`favorite`)
+          .setEmoji(`🤍`)
+          .setStyle(ButtonStyle.Danger);
+        const lyricsButton = new ButtonBuilder()
+          .setCustomId(`lyrics`)
+          .setEmoji(`🎤`)
+          .setStyle(ButtonStyle.Primary);
+        const downloadButton = new ButtonBuilder()
+          .setCustomId(`downloader`)
+          .setEmoji(`⬇`)
+          .setStyle(ButtonStyle.Secondary);
+
         const song = result.tracks[0];
+
+        if (empty === true) {
+          embed.setTitle(`🎵 Track`);
+          await queue.addTrack(song);
+        } else {
+          embed.setTitle(`🎵 Insert track #${trackNum}`);
+          await queue.insertTrack(song, trackNum - 1);
+        }
+
         embed
-          .setTitle(`🎵 Insert at track #${trackNum}`)
           .setDescription(
             `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`
           )
           .setThumbnail(song.thumbnail);
+
         if (song.url.includes("youtube")) {
+          source = "public";
           embed.setColor(0xff0000).setFooter({
             iconURL: `https://www.iconpacks.net/icons/2/free-youtube-logo-icon-2431-thumb.png`,
             text: `YouTube`,
           });
         } else if (song.url.includes("spotify")) {
+          source = "private";
           embed.setColor(0x34eb58).setFooter({
             iconURL: `https://www.freepnglogos.com/uploads/spotify-logo-png/image-gallery-spotify-logo-21.png`,
             text: `Spotify`,
           });
         } else if (song.url.includes("soundcloud")) {
+          source = "public";
           embed.setColor(0xeb5534).setFooter({
             iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
             text: `Soundcloud`,
           });
         }
-        queue.insert(song, trackNum - 1);
-        if (!queue.playing) await queue.play();
+        if (!queue.node.isPlaying()) await queue.node.play();
         success = true;
         if (song.duration.length >= 7) {
-          timer = 10;
+          timer = 10 * 60;
         } else {
-          timer = parseInt(song.duration);
+          const duration = song.duration;
+          const convertor = duration.split(":");
+          timer = +convertor[0] * 60 + +convertor[1];
         }
-        await interaction.editReply({
-          embeds: [embed],
-        });
+        if (empty === true) {
+          if (timer < 10 * 60) {
+            if (source === "public") {
+              await interaction.editReply({
+                embeds: [embed],
+                components: [
+                  new ActionRowBuilder()
+                    .addComponents(favoriteButton)
+                    .addComponents(lyricsButton)
+                    .addComponents(downloadButton),
+                ],
+              });
+            } else {
+              await interaction.editReply({
+                embeds: [embed],
+                components: [
+                  new ActionRowBuilder()
+                    .addComponents(favoriteButton)
+                    .addComponents(lyricsButton),
+                ],
+              });
+            }
+          } else {
+            await interaction.editReply({
+              embeds: [embed],
+            });
+          }
+        } else {
+          await interaction.editReply({
+            embeds: [embed],
+          });
+        }
       }
     } else {
       failedEmbed
@@ -134,25 +203,20 @@ module.exports = {
         embeds: [failedEmbed],
       });
     }
-    if (success === false) {
-      timer = 5;
-    }
-    if (timer > 10) timer = 10;
-    if (timer < 1) timer = 1;
+    success ? timer : (timer = 2 * 60);
+    if (timer > 10 * 60) timer = 10 * 60;
+    if (timer < 1 * 60) timer = 1 * 60;
+    const timeoutLog = success
+      ? "Failed to delete Insert interaction."
+      : "Failed to delete unsuccessfull Insert interaction.";
     setTimeout(() => {
-      if (success === true) {
-        if (interaction.channel.id === musicChannelID) {
-          interaction.editReply({ components: [] });
-        } else {
-          interaction.deleteReply().catch((e) => {
-            console.log(`Failed to delete Insert interaction.`);
-          });
-        }
+      if (success && interaction.channel.id === musicChannelID) {
+        interaction.editReply({ components: [] });
       } else {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete unsuccessfull Insert interaction.`);
+          console.log(timeoutLog);
         });
       }
-    }, timer * 60 * 1000);
+    }, timer * 1000);
   },
 };

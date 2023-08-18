@@ -6,6 +6,7 @@ const {
   ButtonStyle,
 } = require("discord.js");
 const chalk = require("chalk");
+const { useTimeline } = require("discord-player");
 const { musicChannelID } = process.env;
 let paused = false;
 
@@ -19,11 +20,11 @@ module.exports = {
       fetchReply: true,
     });
 
-    let queue = client.player.getQueue(interaction.guildId);
-
+    let source;
     let failedEmbed = new EmbedBuilder();
     let success = false;
     let timer;
+    let queue = client.player.nodes.get(interaction.guildId);
 
     if (!queue) {
       failedEmbed
@@ -52,15 +53,16 @@ module.exports = {
         embeds: [failedEmbed],
       });
     } else if (
-      queue.connection.channel.id === interaction.member.voice.channel.id
+      queue.connection.joinConfig.channelId ===
+      interaction.member.voice.channel.id
     ) {
-      let bar = queue.createProgressBar({
+      let bar = queue.node.createProgressBar({
         timecodes: true,
         queue: false,
         length: 14,
       });
 
-      let song = queue.current;
+      let song = queue.currentTrack;
 
       let embed = new EmbedBuilder()
         .setTitle("**Currently Playing**")
@@ -79,7 +81,7 @@ module.exports = {
       const downloadButton = new ButtonBuilder()
         .setCustomId(`downloader`)
         .setEmoji(`⬇`)
-        .setStyle(ButtonStyle.Primary);
+        .setStyle(ButtonStyle.Secondary);
 
       songEmbed.react(`▶`);
       songEmbed.react(`⏸`);
@@ -99,8 +101,8 @@ module.exports = {
             if (paused === false) return;
             queue.setPaused(false);
             paused = false;
-            song = queue.current;
-            bar = queue.createProgressBar({
+            song = queue.currentTrack;
+            bar = queue.node.createProgressBar({
               timecodes: true,
               queue: false,
               length: 14,
@@ -120,8 +122,8 @@ module.exports = {
             if (paused === true) return;
             queue.setPaused(true);
             paused = true;
-            song = queue.current;
-            bar = queue.createProgressBar({
+            song = queue.currentTrack;
+            bar = queue.node.createProgressBar({
               timecodes: true,
               queue: false,
               length: 14,
@@ -137,10 +139,10 @@ module.exports = {
             success = true;
           } else if (reaction.emoji.name === `⏭`) {
             if (!queue) return;
-            queue.skip();
-            if (!queue.playing) await queue.play();
-            song = queue.current;
-            bar = queue.createProgressBar({
+            queue.node.skip();
+            if (!queue.node.isPlaying()) await queue.node.play();
+            song = queue.currentTrack;
+            bar = queue.node.createProgressBar({
               timecodes: true,
               queue: false,
               length: 14,
@@ -156,22 +158,45 @@ module.exports = {
         }
       });
 
+      if (song.url.includes("spotify")) source = "private";
+      else source = "public";
+
       success = true;
+      const { timestamp } = useTimeline(interaction.guildId);
       if (song.duration.length >= 7) {
-        timer = 10;
+        timer = 10 * 60;
       } else {
-        timer = parseInt(song.duration);
+        const duration = song.duration;
+        const convertor = duration.split(":");
+        const totalTimer = +convertor[0] * 60 + +convertor[1];
+
+        const currentDuration = timestamp.current.label;
+        const currentConvertor = currentDuration.split(":");
+        const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
+
+        timer = totalTimer - currentTimer;
       }
-      if (timer < 10) {
-        await interaction.editReply({
-          embeds: [embed],
-          components: [
-            new ActionRowBuilder()
-              .addComponents(favoriteButton)
-              .addComponents(lyricsButton)
-              .addComponents(downloadButton),
-          ],
-        });
+      if (timer < 10 * 60) {
+        if (source === "public") {
+          await interaction.editReply({
+            embeds: [embed],
+            components: [
+              new ActionRowBuilder()
+                .addComponents(favoriteButton)
+                .addComponents(lyricsButton)
+                .addComponents(downloadButton),
+            ],
+          });
+        } else {
+          await interaction.editReply({
+            embeds: [embed],
+            components: [
+              new ActionRowBuilder()
+                .addComponents(favoriteButton)
+                .addComponents(lyricsButton),
+            ],
+          });
+        }
       } else {
         await interaction.editReply({
           embeds: [embed],
@@ -189,33 +214,28 @@ module.exports = {
         embeds: [failedEmbed],
       });
     }
-    if (success === false) {
-      timer = 5;
-    }
-    if (timer > 10) timer = 10;
-    if (timer < 1) timer = 1;
+    success ? timer : (timer = 2 * 60);
+    if (timer > 10 * 60) timer = 10 * 60;
+    if (timer < 1 * 60) timer = 1 * 60;
+    const timeoutLog = success
+      ? "Failed to delete Song interaction."
+      : "Failed to delete unsuccessfull Song interaction.";
     setTimeout(() => {
-      if (success === true) {
-        if (interaction.channel.id === musicChannelID) {
-          interaction.editReply({ components: [] });
-          songEmbed.reactions
-            .removeAll()
-            .catch((error) =>
-              console.error(
-                chalk.red("Failed to clear reactions from song message."),
-                error
-              )
-            );
-        } else {
-          interaction.deleteReply().catch((e) => {
-            console.log(`Failed to delete Song interaction.`);
-          });
-        }
+      if (success && interaction.channel.id === musicChannelID) {
+        interaction.editReply({ components: [] });
+        songEmbed.reactions
+          .removeAll()
+          .catch((error) =>
+            console.error(
+              chalk.red("Failed to clear reactions from Song interaction."),
+              error
+            )
+          );
       } else {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete unsuccessfull Song interaction.`);
+          console.log(timeoutLog);
         });
       }
-    }, timer * 60 * 1000);
+    }, timer * 1000);
   },
 };

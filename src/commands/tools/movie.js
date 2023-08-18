@@ -17,7 +17,7 @@ module.exports = {
       fetchReply: true,
     });
 
-    let success;
+    let success = false;
 
     const name = interaction.options.getString("name");
     await movier
@@ -74,7 +74,9 @@ module.exports = {
       .catch(async (e) => {
         const failedEmbed = new EmbedBuilder()
           .setTitle(`**No Result**`)
-          .setDescription(`Make sure you input a valid movie name.`)
+          .setDescription(
+            `Make sure you input a valid movie name.\n Try again with </movie:1100722765587284051>.`
+          )
           .setColor(0xffea00)
           .setThumbnail(
             `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
@@ -82,19 +84,15 @@ module.exports = {
         interaction.editReply({
           embeds: [failedEmbed],
         });
-        success = false;
       });
+    const timeoutLog = success
+      ? "Failed to delete Movie interaction."
+      : "Failed to delete unsuccessfull Movie interaction.";
     setTimeout(() => {
-      if (success === true) {
-        if (interaction.channel.id === movieChannelID) return;
-        else {
-          interaction.deleteReply().catch((e) => {
-            console.log(`Failed to delete Movie interaction.`);
-          });
-        }
-      } else {
+      if (success && interaction.channel.id === movieChannelID) return;
+      else {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete unsuccessfull Movie interaction.`);
+          console.log(timeoutLog);
         });
       }
     }, 10 * 60 * 1000);

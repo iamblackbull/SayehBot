@@ -14,6 +14,7 @@ module.exports = {
       fetchReply: true,
     });
 
+    let success = false;
     const songTitle = interaction.options.getString("song");
 
     await genius.songs
@@ -87,6 +88,7 @@ module.exports = {
           interaction.editReply({
             embeds: [embed],
           });
+          success = true;
         } else if (lyrics.length <= 1200) {
           embed.setDescription(lyrics).setFooter({
             iconURL: `https://images.genius.com/0ca83e3130e1303a7f78ba351e3091cd.1000x1000x1.png`,
@@ -100,7 +102,9 @@ module.exports = {
       .catch((e) => {
         const failedEmbed = new EmbedBuilder()
           .setTitle(`**No Result**`)
-          .setDescription(`Make sure you input a valid song name.`)
+          .setDescription(
+            `Make sure you input a valid song name.\nTry again with </lyrics:1100831574787891240>`
+          )
           .setColor(0xffea00)
           .setThumbnail(
             `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
@@ -109,10 +113,14 @@ module.exports = {
           embeds: [failedEmbed],
         });
       });
+    const timeoutDuration = success ? 10 * 60 * 1000 : 2 * 60 * 1000;
+    const timeoutLog = success
+      ? "Failed to delete Lyrics interaction."
+      : "Failed to delete unsuccessfull Lyrics interaction.";
     setTimeout(() => {
       interaction.deleteReply().catch((e) => {
-        console.log(`Failed to delete Lyrics interaction.`);
+        console.log(timeoutLog);
       });
-    }, 10 * 60 * 1000);
+    }, timeoutDuration);
   },
 };

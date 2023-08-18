@@ -48,7 +48,7 @@ module.exports = {
           )
           .setTimestamp(Date.now())
           .setFooter({
-            iconURL: `https://static.vecteezy.com/system/resources/previews/019/051/628/original/gold-coin-money-symbol-icon-png.png`,
+            iconURL: `https://www.freepnglogos.com/uploads/dollar-sign-png/dollar-sign-finance-dollar-financial-world-image-pixabay-0.png`,
             text: `Currencies`,
           });
         await interaction.editReply({
@@ -59,7 +59,7 @@ module.exports = {
         const failedEmbed = new EmbedBuilder()
           .setTitle(`**No Response**`)
           .setDescription(
-            `Currency API did not respond. Please try again later.`
+            `Currency API did not respond.\nTry again later with </currency:1100722765587284050>.`
           )
           .setColor(0xffea00)
           .setThumbnail(

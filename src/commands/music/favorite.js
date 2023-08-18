@@ -42,7 +42,6 @@ module.exports = {
           `Input the number of the track you want from your favorite playlist`
         )
         .setMinValue(1)
-        .setMaxValue(10)
         .setRequired(false);
     })
     .setDMPermission(false),
@@ -51,7 +50,7 @@ module.exports = {
       fetchReply: true,
     });
 
-    let connection = false;
+    let target = interaction.options.getInteger("tracknumber");
     let success = false;
     let timer;
     let failedEmbed = new EmbedBuilder();
@@ -63,12 +62,31 @@ module.exports = {
         text: "Favorite",
       });
 
+    const favoriteButton = new ButtonBuilder()
+      .setCustomId(`favorite`)
+      .setEmoji(`🤍`)
+      .setStyle(ButtonStyle.Danger);
+    const lyricsButton = new ButtonBuilder()
+      .setCustomId(`lyrics`)
+      .setEmoji(`🎤`)
+      .setStyle(ButtonStyle.Primary);
+    const downloadButton = new ButtonBuilder()
+      .setCustomId(`downloader`)
+      .setEmoji(`⬇`)
+      .setStyle(ButtonStyle.Secondary);
+    const continueButton = new ButtonBuilder()
+      .setCustomId(`continue`)
+      .setLabel(`Continue`)
+      .setStyle(ButtonStyle.Success);
+    const cancelButton = new ButtonBuilder()
+      .setCustomId(`cancel`)
+      .setLabel(`Cancel`)
+      .setStyle(ButtonStyle.Danger);
+
     if (mongoose.connection.readyState !== 1) {
       failedEmbed
         .setTitle(`**Connection Timed out!**`)
-        .setDescription(
-          `Connection to database has been timed out. please try again later.`
-        )
+        .setDescription(`Connection to database has been timed out.`)
         .setColor(0xffea00)
         .setThumbnail(
           `https://cdn.iconscout.com/icon/premium/png-256-thumb/error-in-internet-959268.png`
@@ -84,301 +102,7 @@ module.exports = {
         failedEmbed
           .setTitle(`**Action Failed**`)
           .setDescription(
-            `You don't have a favorite playlist. Like at least **1** song to create your own playlist.`
-          )
-          .setColor(0xffea00)
-          .setThumbnail(
-            `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-          );
-        interaction.editReply({
-          embeds: [failedEmbed],
-        });
-      } else if (interaction.options.get("action").value === "list") {
-        let song1 = `[${favoriteList.Name1}](${favoriteList.Song1})`;
-        let song2 = `[${favoriteList.Name2}](${favoriteList.Song2})`;
-        let song3 = `[${favoriteList.Name3}](${favoriteList.Song3})`;
-        let song4 = `[${favoriteList.Name4}](${favoriteList.Song4})`;
-        let song5 = `[${favoriteList.Name5}](${favoriteList.Song5})`;
-        let song6 = `[${favoriteList.Name6}](${favoriteList.Song6})`;
-        let song7 = `[${favoriteList.Name7}](${favoriteList.Song7})`;
-        let song8 = `[${favoriteList.Name8}](${favoriteList.Song8})`;
-        let song9 = `[${favoriteList.Name9}](${favoriteList.Song9})`;
-        let song10 = `[${favoriteList.Name10}](${favoriteList.Song10})`;
-
-        if (!favoriteList.Name1) {
-          song1 = `Empty`;
-        }
-        if (!favoriteList.Name2) {
-          song2 = `Empty`;
-        }
-        if (!favoriteList.Name3) {
-          song3 = `Empty`;
-        }
-        if (!favoriteList.Name4) {
-          song4 = `Empty`;
-        }
-        if (!favoriteList.Name5) {
-          song5 = `Empty`;
-        }
-        if (!favoriteList.Name6) {
-          song6 = `Empty`;
-        }
-        if (!favoriteList.Name7) {
-          song7 = `Empty`;
-        }
-        if (!favoriteList.Name8) {
-          song8 = `Empty`;
-        }
-        if (!favoriteList.Name9) {
-          song9 = `Empty`;
-        }
-        if (!favoriteList.Name10) {
-          song10 = `Empty`;
-        }
-
-        const favoriteString = `**1.** ${song1}\n**2.** ${song2}\n**3.** ${song3}\n**4.** ${song4}\n**5.** ${song5}\n**6.** ${song6}\n**7.** ${song7}\n**8.** ${song8}\n**9.** ${song9}\n**10.** ${song10}`;
-
-        if (interaction.options.getInteger("tracknumber")) {
-          const target = interaction.options.getInteger("tracknumber");
-          let targetRes;
-          if (target === 1) {
-            targetRes = song1;
-          }
-          if (target === 2) {
-            targetRes = song2;
-          }
-          if (target === 3) {
-            targetRes = song3;
-          }
-          if (target === 4) {
-            targetRes = song4;
-          }
-          if (target === 5) {
-            targetRes = song5;
-          }
-          if (target === 6) {
-            targetRes = song6;
-          }
-          if (target === 7) {
-            targetRes = song7;
-          }
-          if (target === 8) {
-            targetRes = song8;
-          }
-          if (target === 9) {
-            targetRes = song9;
-          }
-          if (target === 10) {
-            targetRes = song10;
-          }
-
-          const removeButton = new ButtonBuilder()
-            .setCustomId(`remove-favorite`)
-            .setEmoji(`💔`)
-            .setStyle(ButtonStyle.Secondary);
-          favoriteEmbed
-            .awaitMessageComponent({
-              componentType: ComponentType.Button,
-              time: 5 * 60 * 1000,
-            })
-            .then(async (interaction) => {
-              if (target === 1) {
-                await favorite.updateOne(
-                  { User: interaction.user.id },
-                  { Song1: null, Name1: null }
-                );
-              }
-              if (target === 2) {
-                await favorite.updateOne(
-                  { User: interaction.user.id },
-                  { Song2: null, Name2: null }
-                );
-              }
-              if (target === 3) {
-                await favorite.updateOne(
-                  { User: interaction.user.id },
-                  { Song3: null, Name3: null }
-                );
-              }
-              if (target === 4) {
-                await favorite.updateOne(
-                  { User: interaction.user.id },
-                  { Song4: null, Name4: null }
-                );
-              }
-              if (target === 5) {
-                await favorite.updateOne(
-                  { User: interaction.user.id },
-                  { Song5: null, Name5: null }
-                );
-              }
-              if (target === 6) {
-                await favorite.updateOne(
-                  { User: interaction.user.id },
-                  { Song6: null, Name6: null }
-                );
-              }
-              if (target === 7) {
-                await favorite.updateOne(
-                  { User: interaction.user.id },
-                  { Song7: null, Name7: null }
-                );
-              }
-              if (target === 8) {
-                await favorite.updateOne(
-                  { User: interaction.user.id },
-                  { Song8: null, Name8: null }
-                );
-              }
-              if (target === 9) {
-                await favorite.updateOne(
-                  { User: interaction.user.id },
-                  { Song9: null, Name9: null }
-                );
-              }
-              if (target === 10) {
-                await favorite.updateOne(
-                  { User: interaction.user.id },
-                  { Song10: null, Name10: null }
-                );
-              }
-              const removeEmbed = new EmbedBuilder()
-                .setTitle(`Remove Favorite`)
-                .setDescription(
-                  `Song **#${target}** has been removed from your favorite playlist.`
-                )
-                .setColor(0x25bfc4)
-                .setThumbnail(
-                  `https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Broken_heart.svg/586px-Broken_heart.svg.png`
-                )
-                .setFooter({
-                  iconURL: `https://www.linkpicture.com/q/2753995-201.png`,
-                  text: "Favorite",
-                });
-              await interaction.reply({
-                embeds: [removeEmbed],
-                ephemeral: true,
-              });
-              console.log(
-                `${interaction.user.username} just removed their song #${target} from their favorite playlist.`
-              );
-            })
-            .catch((e) => {
-              console.log(
-                `Remove Favortie collector of Favorite List did not recieve any interactions before ending.`
-              );
-            });
-
-          embed.setDescription(`**${target}.** ${targetRes}`);
-          await interaction.editReply({
-            embeds: [embed],
-            components: [new ActionRowBuilder().addComponents(removeButton)],
-          });
-        } else {
-          embed.setDescription(`${favoriteString}`);
-          await interaction.editReply({
-            embeds: [embed],
-          });
-        }
-      } else if (interaction.options.get("action").value === "remove") {
-        let removeEmbed = new EmbedBuilder()
-          .setColor(0x25bfc4)
-          .setThumbnail(
-            `https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Broken_heart.svg/586px-Broken_heart.svg.png`
-          )
-          .setFooter({
-            iconURL: `https://www.linkpicture.com/q/2753995-201.png`,
-            text: "Favorite",
-          });
-        if (interaction.options.getInteger("tracknumber")) {
-          const target = interaction.options.getInteger("tracknumber");
-          if (target === 1) {
-            await favorite.updateOne(
-              { User: interaction.user.id },
-              { Song1: null, Name1: null }
-            );
-          }
-          if (target === 2) {
-            await favorite.updateOne(
-              { User: interaction.user.id },
-              { Song2: null, Name2: null }
-            );
-          }
-          if (target === 3) {
-            await favorite.updateOne(
-              { User: interaction.user.id },
-              { Song3: null, Name3: null }
-            );
-          }
-          if (target === 4) {
-            await favorite.updateOne(
-              { User: interaction.user.id },
-              { Song4: null, Name4: null }
-            );
-          }
-          if (target === 5) {
-            await favorite.updateOne(
-              { User: interaction.user.id },
-              { Song5: null, Name5: null }
-            );
-          }
-          if (target === 6) {
-            await favorite.updateOne(
-              { User: interaction.user.id },
-              { Song6: null, Name6: null }
-            );
-          }
-          if (target === 7) {
-            await favorite.updateOne(
-              { User: interaction.user.id },
-              { Song7: null, Name7: null }
-            );
-          }
-          if (target === 8) {
-            await favorite.updateOne(
-              { User: interaction.user.id },
-              { Song8: null, Name8: null }
-            );
-          }
-          if (target === 9) {
-            await favorite.updateOne(
-              { User: interaction.user.id },
-              { Song9: null, Name9: null }
-            );
-          }
-          if (target === 10) {
-            await favorite.updateOne(
-              { User: interaction.user.id },
-              { Song10: null, Name10: null }
-            );
-          }
-          removeEmbed
-            .setTitle(`Remove Favorite`)
-            .setDescription(
-              `Song **#${target}** has been removed from your favorite playlist.`
-            );
-          console.log(
-            `${interaction.user.username} just removed their song #${target} from their favorite playlist.`
-          );
-        } else {
-          await favorite.findOneAndDelete({
-            User: interaction.user.id,
-          });
-          removeEmbed
-            .setTitle(`Clear Favorite`)
-            .setDescription(`Your favorite playlist has been cleared.`);
-          console.log(
-            `${interaction.user.username} just cleared their favorite playlist.`
-          );
-        }
-        await interaction.editReply({
-          embeds: [removeEmbed],
-        });
-      } else if (!interaction.member.voice.channel) {
-        failedEmbed
-          .setTitle(`**Action Failed**`)
-          .setDescription(
-            `You need to be in a voice channel to use this command.`
+            `You don't have a favorite playlist. Like at least **1** song to create your own playlist.\nTry again with </favorite:1108681222764367962>.`
           )
           .setColor(0xffea00)
           .setThumbnail(
@@ -388,116 +112,245 @@ module.exports = {
           embeds: [failedEmbed],
         });
       } else {
-        const queue = await client.player.createQueue(interaction.guild, {
-          leaveOnEnd: true,
-          leaveOnEmpty: true,
-          leaveOnEndCooldown: 5 * 60 * 1000,
-          leaveOnEmptyCooldown: 5 * 60 * 1000,
-          smoothVolume: true,
-          ytdlOptions: {
-            quality: "highestaudio",
-            highWaterMark: 1 << 25,
-          },
-        });
-        if (!queue.connection) {
-          await queue.connect(interaction.member.voice.channel);
-        }
-        if (
-          queue.connection.channel.id === interaction.member.voice.channel.id
-        ) {
-          connection = true;
-        }
-        if (connection === true) {
-          let favoriteLength;
-          if (interaction.options.getInteger("tracknumber")) {
-            const target = interaction.options.getInteger("tracknumber");
-            let url;
-            if (target === 1) {
-              url = favoriteList.Song1;
-              favoriteLength = 1;
-            }
-            if (target === 2) {
-              url = favoriteList.Song2;
-              favoriteLength = 2;
-            }
-            if (target === 3) {
-              url = favoriteList.Song3;
-              favoriteLength = 3;
-            }
-            if (target === 4) {
-              url = favoriteList.Song4;
-              favoriteLength = 4;
-            }
-            if (target === 5) {
-              url = favoriteList.Song5;
-              favoriteLength = 5;
-            }
-            if (target === 6) {
-              url = favoriteList.Song6;
-              favoriteLength = 6;
-            }
-            if (target === 7) {
-              url = favoriteList.Song7;
-              favoriteLength = 7;
-            }
-            if (target === 8) {
-              url = favoriteList.Song8;
-              favoriteLength = 8;
-            }
-            if (target === 9) {
-              url = favoriteList.Song9;
-              favoriteLength = 9;
-            }
-            if (target === 10) {
-              url = favoriteList.Song10;
-              favoriteLength = 10;
-            }
-            const result = await client.player.search(url, {
-              requestedBy: interaction.user,
-              searchEngine: QueryType.AUTO,
-            });
-            if (result.tracks.length === 0) {
-              failedEmbed
-                .setTitle(`**No Result**`)
-                .setDescription(
-                  `Make sure you have a valid song at position **${favoriteLength}** in your playlist.`
-                )
-                .setColor(0xffea00)
-                .setThumbnail(
-                  `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
-                );
-              interaction.editReply({
-                embeds: [failedEmbed],
-              });
-            } else {
-              let song = result.tracks[0];
-              timer = parseInt(song.duration);
-              await queue.addTrack(song);
-              embed
-                .setThumbnail(song.thumbnail)
-                .setDescription(
-                  `${interaction.user}\nSong **#${favoriteLength}**`
-                );
-              if (!queue.playing) await queue.play();
+        const mappedURLs = favoriteList.Playlist.map(
+          (song, index) => `**${index + 1}.** ${song.Url}`
+        ).join("\n");
 
-              await interaction.editReply({
-                embeds: [embed],
-              });
-              success = true;
-            }
+        const playlist = favoriteList.Playlist.map((song) => song.Url).join(
+          "\n"
+        );
+
+        const splitPlaylist = playlist.split("\n");
+        const playlistLength = splitPlaylist.length;
+
+        const result = await client.player.search(playlist, {
+          requestedBy: interaction.user,
+          searchEngine: QueryType.AUTO,
+        });
+
+        const songs = result.tracks;
+        const mappedSongs = songs
+          .map(
+            (song, index) =>
+              `**${index + 1}.** [${song.title} -- ${song.author}](${song.url})`
+          )
+          .join("\n");
+
+        const splitMappedSongs = mappedSongs.split("\n");
+        const mappedSongsLength = splitMappedSongs.length;
+
+        if (interaction.options.get("action").value === "list") {
+          if (target) {
+            if (target > mappedSongsLength) target = mappedSongsLength;
+            const targetSong = splitMappedSongs[target - 1];
+
+            embed.setDescription(`${targetSong}`);
+            await interaction.editReply({
+              embeds: [embed],
+            });
           } else {
-            if (favoriteList.Song1) {
-              let url = favoriteList.Song1;
-              favoriteLength = 1;
+            embed.setDescription(`${mappedSongs}`);
+            await interaction.editReply({
+              embeds: [embed],
+            });
+          }
+        } else if (interaction.options.get("action").value === "remove") {
+          let warningEmbed = new EmbedBuilder()
+            .setThumbnail(
+              `https://cdn3.iconfinder.com/data/icons/flat-common-4/32/delete-warning-512.png`
+            )
+            .setColor(0xffea00);
+          if (target) {
+            if (target > playlistLength) target = playlistLength;
+            const targetURL = splitPlaylist[target - 1];
+            const targetSong = splitMappedSongs[target - 1];
+
+            warningEmbed
+              .setTitle("**Deletion Warning**")
+              .setDescription(
+                `You are about to remove this track from your playlist:\n**[${targetSong}](${targetURL})**\nAre you sure you want to continue?`
+              );
+            await interaction.editReply({
+              embeds: [warningEmbed],
+              components: [
+                new ActionRowBuilder()
+                  .addComponents(cancelButton)
+                  .addComponents(continueButton),
+              ],
+            });
+            favoriteEmbed
+              .awaitMessageComponent({
+                componentType: ComponentType.Button,
+                time: 5 * 60 * 1000,
+              })
+              .then(async (messageComponentInteraction) => {
+                if (
+                  messageComponentInteraction.customId === `continue` &&
+                  messageComponentInteraction.user.id === favoriteList.User
+                ) {
+                  const favoriteSongs = favoriteList.Playlist;
+                  const songIndex = favoriteSongs.findIndex(
+                    (favSong) => favSong.Url === targetURL
+                  );
+                  favoriteSongs.splice(songIndex, 1);
+                  await favoriteList.save().catch(console.error);
+
+                  embed
+                    .setTitle(`**Delete Track**`)
+                    .setThumbnail(
+                      `https://static.wikia.nocookie.net/logopedia/images/f/fe/Recycle_Bin_Windows_11_empty.png/revision/latest/scale-to-width-down/250?cb=20210616182845`
+                    )
+                    .setDescription(
+                      `**[${targetSong}](${targetURL})**\nhas been removed from your favorite playlist.`
+                    );
+
+                  console.log(
+                    `${messageComponentInteraction.user.username} just removed track #${target} from their favorite playlist.`
+                  );
+
+                  await messageComponentInteraction.editReply({
+                    embeds: [embed],
+                  });
+                } else if (
+                  messageComponentInteraction.customId === `cancel` &&
+                  messageComponentInteraction.user.id === favoriteList.User
+                ) {
+                  embed
+                    .setTitle(`**Deletion Canceled**`)
+                    .setThumbnail(
+                      `https://cdn-icons-png.flaticon.com/512/5268/5268671.png`
+                    )
+                    .setDescription(`Deletion process has been canceled.`);
+                  await messageComponentInteraction.editReply({
+                    embeds: [embed],
+                  });
+                }
+              })
+              .catch((e) => {
+                console.log(
+                  `Delete collector of Favorite did not receive any interactions before ending.`
+                );
+              });
+          } else {
+            warningEmbed
+              .setTitle("**Clearation Warning**")
+              .setDescription(
+                "You are about to **clear your playlist completely!**\nAre you sure you want to continue?"
+              );
+            await interaction.editReply({
+              embeds: [warningEmbed],
+              components: [
+                new ActionRowBuilder()
+                  .addComponents(cancelButton)
+                  .addComponents(continueButton),
+              ],
+            });
+            favoriteEmbed
+              .awaitMessageComponent({
+                componentType: ComponentType.Button,
+                time: 5 * 60 * 1000,
+              })
+              .then(async (messageComponentInteraction) => {
+                if (
+                  messageComponentInteraction.customId === `continue` &&
+                  messageComponentInteraction.user.id === favoriteList.User
+                ) {
+                  await favorite.findOneAndDelete({
+                    User: messageComponentInteraction.user.id,
+                  });
+
+                  embed
+                    .setTitle(`**Clear Playlist**`)
+                    .setThumbnail(
+                      `https://static.wikia.nocookie.net/logopedia/images/f/fe/Recycle_Bin_Windows_11_empty.png/revision/latest/scale-to-width-down/250?cb=20210616182845`
+                    )
+                    .setDescription(`Your playlist has been cleared.`);
+
+                  console.log(
+                    `${messageComponentInteraction.user.username} just cleared their favorite playlist.`
+                  );
+
+                  await messageComponentInteraction.editReply({
+                    embeds: [embed],
+                  });
+                } else if (
+                  messageComponentInteraction.customId === `cancel` &&
+                  messageComponentInteraction.user.id === favoriteList.User
+                ) {
+                  embed
+                    .setTitle(`**Clearation Canceled**`)
+                    .setThumbnail(
+                      `https://cdn-icons-png.flaticon.com/512/5268/5268671.png`
+                    )
+                    .setDescription(`Clearation process has been canceled.`);
+
+                  await messageComponentInteraction.editReply({
+                    embeds: [embed],
+                  });
+                }
+              })
+              .catch((e) => {
+                console.log(e);
+                console.log(
+                  `Clear collector of Favorite did not receive any interactions before ending.`
+                );
+              });
+          }
+        } else if (!interaction.member.voice.channel) {
+          failedEmbed
+            .setTitle(`**Action Failed**`)
+            .setDescription(
+              `You need to be in a voice channel to use this command.`
+            )
+            .setColor(0xffea00)
+            .setThumbnail(
+              `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
+            );
+          await interaction.editReply({
+            embeds: [failedEmbed],
+          });
+        } else {
+          let queue = client.player.nodes.get(interaction.guildId);
+          if (!queue) {
+            queue = await client.player.nodes.create(interaction.guild, {
+              metadata: {
+                channel: interaction.channel,
+                client: interaction.guild.members.me,
+                requestedBy: interaction.user,
+              },
+              leaveOnEnd: true,
+              leaveOnEmpty: true,
+              leaveOnEndCooldown: 5 * 60 * 1000,
+              leaveOnEmptyCooldown: 5 * 60 * 1000,
+              smoothVolume: true,
+              ytdlOptions: {
+                quality: "highestaudio",
+                highWaterMark: 1 << 25,
+              },
+            });
+          }
+          if (!queue.connection) {
+            await queue.connect(interaction.member.voice.channel);
+          }
+          const connection =
+            queue.connection.joinConfig.channelId ===
+            interaction.member.voice.channel.id;
+          if (connection) {
+            let url;
+            if (target) {
+              if (target > playlistLength) target = playlistLength;
+              url = splitPlaylist[target - 1];
+
               const result = await client.player.search(url, {
                 requestedBy: interaction.user,
                 searchEngine: QueryType.AUTO,
               });
+
               if (result.tracks.length === 0) {
                 failedEmbed
                   .setTitle(`**No Result**`)
                   .setDescription(
-                    `Make sure you have a valid song at position **${favoriteLength}** in your playlist.`
+                    `Make sure you have a valid track at position **${target}** in your playlist.\nTry again with </favorite:1108681222764367962>.`
                   )
                   .setColor(0xffea00)
                   .setThumbnail(
@@ -507,313 +360,125 @@ module.exports = {
                   embeds: [failedEmbed],
                 });
               } else {
-                let song = result.tracks[0];
-                timer = parseInt(song.duration);
+                const song = result.tracks[0];
+                if (song.duration.length >= 7) {
+                  timer = 10 * 60;
+                } else {
+                  const duration = song.duration;
+                  const convertor = duration.split(":");
+                  timer = +convertor[0] * 60 + +convertor[1];
+                }
                 await queue.addTrack(song);
-                embed.setThumbnail(song.thumbnail);
+                embed
+                  .setThumbnail(song.thumbnail)
+                  .setDescription(
+                    `**[${song.title}](${song.url})**\n**${song.author}**\n${interaction.user}'s Playlist, Track #${target}`
+                  );
+                if (!queue.node.isPlaying()) await queue.node.play();
 
-                if (favoriteList.Song2) {
-                  url = favoriteList.Song2;
-                  favoriteLength = 2;
-                  const result = await client.player.search(url, {
-                    requestedBy: interaction.user,
-                    searchEngine: QueryType.AUTO,
-                  });
-                  if (result.tracks.length === 0) {
-                    failedEmbed
-                      .setTitle(`**No Result**`)
-                      .setDescription(
-                        `Make sure you have a valid song at position **${favoriteLength}** in your playlist.`
-                      )
-                      .setColor(0xffea00)
-                      .setThumbnail(
-                        `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
-                      );
-                    interaction.editReply({
-                      embeds: [failedEmbed],
+                let source;
+                if (song.url.includes("spotify")) source = "private";
+                else source = "public";
+
+                if (timer < 10 * 60) {
+                  if (source === "public") {
+                    await interaction.editReply({
+                      embeds: [embed],
+                      components: [
+                        new ActionRowBuilder()
+                          .addComponents(favoriteButton)
+                          .addComponents(lyricsButton)
+                          .addComponents(downloadButton),
+                      ],
                     });
                   } else {
-                    let song = result.tracks[0];
-                    await queue.addTrack(song);
-
-                    if (favoriteList.Song3) {
-                      url = favoriteList.Song3;
-                      favoriteLength = 3;
-                      const result = await client.player.search(url, {
-                        requestedBy: interaction.user,
-                        searchEngine: QueryType.AUTO,
-                      });
-                      if (result.tracks.length === 0) {
-                        failedEmbed
-                          .setTitle(`**No Result**`)
-                          .setDescription(
-                            `Make sure you have a valid song at position **${favoriteLength}** in your playlist.`
-                          )
-                          .setColor(0xffea00)
-                          .setThumbnail(
-                            `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
-                          );
-                        interaction.editReply({
-                          embeds: [failedEmbed],
-                        });
-                      } else {
-                        let song = result.tracks[0];
-                        await queue.addTrack(song);
-
-                        if (favoriteList.Song4) {
-                          url = favoriteList.Song4;
-                          favoriteLength = 4;
-                          const result = await client.player.search(url, {
-                            requestedBy: interaction.user,
-                            searchEngine: QueryType.AUTO,
-                          });
-                          if (result.tracks.length === 0) {
-                            failedEmbed
-                              .setTitle(`**No Result**`)
-                              .setDescription(
-                                `Make sure you have a valid song at position **${favoriteLength}** in your playlist.`
-                              )
-                              .setColor(0xffea00)
-                              .setThumbnail(
-                                `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
-                              );
-                            interaction.editReply({
-                              embeds: [failedEmbed],
-                            });
-                          } else {
-                            let song = result.tracks[0];
-                            await queue.addTrack(song);
-
-                            if (favoriteList.Song5) {
-                              url = favoriteList.Song5;
-                              favoriteLength = 5;
-                              const result = await client.player.search(url, {
-                                requestedBy: interaction.user,
-                                searchEngine: QueryType.AUTO,
-                              });
-                              if (result.tracks.length === 0) {
-                                failedEmbed
-                                  .setTitle(`**No Result**`)
-                                  .setDescription(
-                                    `Make sure you have a valid song at position **${favoriteLength}** in your playlist.`
-                                  )
-                                  .setColor(0xffea00)
-                                  .setThumbnail(
-                                    `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
-                                  );
-                                interaction.editReply({
-                                  embeds: [failedEmbed],
-                                });
-                              } else {
-                                let song = result.tracks[0];
-                                await queue.addTrack(song);
-
-                                if (favoriteList.Song6) {
-                                  url = favoriteList.Song6;
-                                  favoriteLength = 6;
-                                  const result = await client.player.search(
-                                    url,
-                                    {
-                                      requestedBy: interaction.user,
-                                      searchEngine: QueryType.AUTO,
-                                    }
-                                  );
-                                  if (result.tracks.length === 0) {
-                                    failedEmbed
-                                      .setTitle(`**No Result**`)
-                                      .setDescription(
-                                        `Make sure you have a valid song at position **${favoriteLength}** in your playlist.`
-                                      )
-                                      .setColor(0xffea00)
-                                      .setThumbnail(
-                                        `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
-                                      );
-                                    interaction.editReply({
-                                      embeds: [failedEmbed],
-                                    });
-                                  } else {
-                                    let song = result.tracks[0];
-                                    await queue.addTrack(song);
-
-                                    if (favoriteList.Song7) {
-                                      url = favoriteList.Song7;
-                                      favoriteLength = 7;
-                                      const result = await client.player.search(
-                                        url,
-                                        {
-                                          requestedBy: interaction.user,
-                                          searchEngine: QueryType.AUTO,
-                                        }
-                                      );
-                                      if (result.tracks.length === 0) {
-                                        failedEmbed
-                                          .setTitle(`**No Result**`)
-                                          .setDescription(
-                                            `Make sure you have a valid song at position **${favoriteLength}** in your playlist.`
-                                          )
-                                          .setColor(0xffea00)
-                                          .setThumbnail(
-                                            `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
-                                          );
-                                        interaction.editReply({
-                                          embeds: [failedEmbed],
-                                        });
-                                      } else {
-                                        let song = result.tracks[0];
-                                        await queue.addTrack(song);
-
-                                        if (favoriteList.Song8) {
-                                          url = favoriteList.Song8;
-                                          favoriteLength = 8;
-                                          const result =
-                                            await client.player.search(url, {
-                                              requestedBy: interaction.user,
-                                              searchEngine: QueryType.AUTO,
-                                            });
-                                          if (result.tracks.length === 0) {
-                                            failedEmbed
-                                              .setTitle(`**No Result**`)
-                                              .setDescription(
-                                                `Make sure you have a valid song at position **${favoriteLength}** in your playlist.`
-                                              )
-                                              .setColor(0xffea00)
-                                              .setThumbnail(
-                                                `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
-                                              );
-                                            interaction.editReply({
-                                              embeds: [failedEmbed],
-                                            });
-                                          } else {
-                                            let song = result.tracks[0];
-                                            await queue.addTrack(song);
-
-                                            if (favoriteList.Song9) {
-                                              url = favoriteList.Song9;
-                                              favoriteLength = 9;
-                                              const result =
-                                                await client.player.search(
-                                                  url,
-                                                  {
-                                                    requestedBy:
-                                                      interaction.user,
-                                                    searchEngine:
-                                                      QueryType.AUTO,
-                                                  }
-                                                );
-                                              if (result.tracks.length === 0) {
-                                                failedEmbed
-                                                  .setTitle(`**No Result**`)
-                                                  .setDescription(
-                                                    `Make sure you have a valid song at position **${favoriteLength}** in your playlist.`
-                                                  )
-                                                  .setColor(0xffea00)
-                                                  .setThumbnail(
-                                                    `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
-                                                  );
-                                                interaction.editReply({
-                                                  embeds: [failedEmbed],
-                                                });
-                                              } else {
-                                                let song = result.tracks[0];
-                                                await queue.addTrack(song);
-
-                                                if (favoriteList.Song10) {
-                                                  url = favoriteList.Song10;
-                                                  favoriteLength = 10;
-                                                  const result =
-                                                    await client.player.search(
-                                                      url,
-                                                      {
-                                                        requestedBy:
-                                                          interaction.user,
-                                                        searchEngine:
-                                                          QueryType.AUTO,
-                                                      }
-                                                    );
-                                                  if (
-                                                    result.tracks.length === 0
-                                                  ) {
-                                                    failedEmbed
-                                                      .setTitle(`**No Result**`)
-                                                      .setDescription(
-                                                        `Make sure you have a valid song at position **${favoriteLength}** in your playlist.`
-                                                      )
-                                                      .setColor(0xffea00)
-                                                      .setThumbnail(
-                                                        `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
-                                                      );
-                                                    interaction.editReply({
-                                                      embeds: [failedEmbed],
-                                                    });
-                                                  } else {
-                                                    let song = result.tracks[0];
-                                                    await queue.addTrack(song);
-
-                                                    embed.setDescription(
-                                                      `${interaction.user}\n**${favoriteLength}** songs`
-                                                    );
-                                                    if (!queue.playing)
-                                                      await queue.play();
-
-                                                    await interaction.editReply(
-                                                      {
-                                                        embeds: [embed],
-                                                      }
-                                                    );
-                                                    success = true;
-                                                  }
-                                                }
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
+                    await interaction.editReply({
+                      embeds: [embed],
+                      components: [
+                        new ActionRowBuilder()
+                          .addComponents(favoriteButton)
+                          .addComponents(lyricsButton),
+                      ],
+                    });
                   }
+                } else {
+                  await interaction.editReply({
+                    embeds: [embed],
+                  });
                 }
+                success = true;
+              }
+            } else {
+              const result = await client.player.search(playlist, {
+                requestedBy: interaction.user,
+                searchEngine: QueryType.AUTO,
+              });
+              if (result.tracks.length === 0) {
+                failedEmbed
+                  .setTitle(`**No Result**`)
+                  .setDescription(
+                    `Make sure you have a valid track url in your playlist.\nTry again with </favorite:1108681222764367962>.`
+                  )
+                  .setColor(0xffea00)
+                  .setThumbnail(
+                    `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
+                  );
+                interaction.editReply({
+                  embeds: [failedEmbed],
+                });
+              } else {
+                await queue.addTrack(result.tracks);
+                let favoriteLength = queue.tracks.size;
+                const song = result.tracks[0];
+                if (song.duration.length >= 7) {
+                  timer = 10 * 60;
+                } else {
+                  const duration = song.duration;
+                  const convertor = duration.split(":");
+                  timer = +convertor[0] * 60 + +convertor[1];
+                }
+                embed
+                  .setThumbnail(song.thumbnail)
+                  .setDescription(
+                    `**${interaction.user}'s Playlist**\n**${favoriteLength}** tracks`
+                  );
+                if (!queue.node.isPlaying()) await queue.node.play();
+
+                await interaction.editReply({
+                  embeds: [embed],
+                });
+                success = true;
               }
             }
+          } else {
+            failedEmbed
+              .setTitle(`**Busy**`)
+              .setDescription(`Bot is busy in another voice channel.`)
+              .setColor(0x256fc4)
+              .setThumbnail(
+                `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
+              );
+            interaction.editReply({
+              embeds: [failedEmbed],
+            });
           }
-        } else {
-          failedEmbed
-            .setTitle(`**Busy**`)
-            .setDescription(`Bot is busy in another voice channel.`)
-            .setColor(0x256fc4)
-            .setThumbnail(
-              `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
-            );
-          interaction.editReply({
-            embeds: [failedEmbed],
-          });
         }
       }
     }
-    if (success === false) {
-      timer = 5;
-    }
-    if (timer > 10) timer = 10;
-    if (timer < 1) timer = 1;
+    success ? timer : (timer = 2 * 60);
+    if (timer > 10 * 60) timer = 10 * 60;
+    if (timer < 1 * 60) timer = 1 * 60;
+    const timeoutLog = success
+      ? "Failed to delete Favorite interaction."
+      : "Failed to delete unsuccessfull Favorite interaction.";
     setTimeout(() => {
-      if (success === true) {
-        if (interaction.channel.id === musicChannelID) return;
-        else {
-          interaction.deleteReply().catch((e) => {
-            console.log(`Failed to delete Favortie interaction.`);
-          });
-        }
+      if (success && interaction.channel.id === musicChannelID) {
+        interaction.editReply({ components: [] });
       } else {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete unsuccessfull Favorite interaction.`);
+          console.log(timeoutLog);
         });
       }
-    }, timer * 60 * 1000);
+    }, timer * 1000);
   },
 };

@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { useTimeline } = require("discord-player");
 const { musicChannelID } = process.env;
 
 module.exports = {
@@ -18,7 +19,7 @@ module.exports = {
       fetchReply: true,
     });
     let mins = interaction.options.getInteger("minutes");
-    const queue = client.player.getQueue(interaction.guildId);
+    const queue = client.player.nodes.get(interaction.guildId);
 
     let failedEmbed = new EmbedBuilder();
     let success = false;
@@ -51,9 +52,10 @@ module.exports = {
         embeds: [failedEmbed],
       });
     } else if (
-      queue.connection.channel.id === interaction.member.voice.channel.id
+      queue.connection.joinConfig.channelId ===
+      interaction.member.voice.channel.id
     ) {
-      const song = queue.current;
+      const song = queue.currentTrack;
       queue.seek(parseInt(mins) * 60 * 1000);
       let embed = new EmbedBuilder()
         .setTitle(`⏩ Seek`)
@@ -83,7 +85,20 @@ module.exports = {
       });
       await interaction.editReply({ embeds: [embed] });
       success = true;
-      timer = parseInt(song.duration);
+      const { timestamp } = useTimeline(interaction.guildId);
+      if (song.duration.length >= 7) {
+        timer = 10 * 60;
+      } else {
+        const duration = song.duration;
+        const convertor = duration.split(":");
+        const totalTimer = +convertor[0] * 60 + +convertor[1];
+
+        const currentDuration = timestamp.current.label;
+        const currentConvertor = currentDuration.split(":");
+        const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
+
+        timer = totalTimer - currentTimer;
+      }
     } else {
       failedEmbed
         .setTitle(`**Busy**`)
@@ -96,33 +111,27 @@ module.exports = {
         embeds: [failedEmbed],
       });
     }
-    if (success === false) {
-      timer = 5;
-    }
-    if (timer > 10) timer = 10;
-    if (timer < 1) timer = 1;
+    success ? timer : (timer = 2 * 60);
+    if (timer > 10 * 60) timer = 10 * 60;
+    if (timer < 1 * 60) timer = 1 * 60;
+    const timeoutLog = success
+      ? "Failed to delete Seek interaction."
+      : "Failed to delete unsuccessfull Seek interaction.";
     setTimeout(() => {
-      if (success === true) {
-        if (interaction.channel.id === musicChannelID) {
-          interaction.editReply({ components: [] });
-          seekEmbed.reactions
-            .removeAll()
-            .catch((error) =>
-              console.error(
-                chalk.red("Failed to clear reactions from song message."),
-                error
-              )
-            );
-        } else {
-          interaction.deleteReply().catch((e) => {
-            console.log(`Failed to delete Seek interaction.`);
-          });
-        }
+      if (success && interaction.channel.id === musicChannelID) {
+        seekEmbed.reactions
+          .removeAll()
+          .catch((error) =>
+            console.error(
+              chalk.red("Failed to clear reactions from Seek interaction."),
+              error
+            )
+          );
       } else {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete unsuccessfull Seek interaction.`);
+          console.log(timeoutLog);
         });
       }
-    }, timer * 60 * 1000);
+    }, timer * 1000);
   },
 };

@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { NASA_API_KEY } = process.env;
 const apod = require("nasa-apod");
 
 module.exports = {
@@ -8,7 +9,7 @@ module.exports = {
   async execute(interaction, client) {
     let embed = new EmbedBuilder();
     client = new apod.Client({
-      apiKey: "WIm2ehX0oD8dhbeNTgIBYRmyuxswJMYE5SGZLWjM",
+      apiKey: NASA_API_KEY,
     });
     try {
       client().then(async function (body) {
@@ -41,7 +42,7 @@ module.exports = {
       console.log(error);
       let failedEmbed = new EmbedBuilder()
         .setTitle(`**No Response**`)
-        .setDescription(`NASA API did not respond. Please try again later.`)
+        .setDescription(`NASA API did not respond. Please try again later with </space:1050160950583513189>.`)
         .setColor(0xffea00)
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`

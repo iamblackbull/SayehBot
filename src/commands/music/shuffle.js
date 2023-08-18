@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { useTimeline } = require("discord-player");
 const { musicChannelID } = process.env;
 
 module.exports = {
@@ -7,8 +8,7 @@ module.exports = {
     .setDescription("Shuffles the queue")
     .setDMPermission(false),
   async execute(interaction, client) {
-
-    const queue = client.player.getQueue(interaction.guildId);
+    const queue = client.player.nodes.get(interaction.guildId);
 
     let failedEmbed = new EmbedBuilder();
     let success = false;
@@ -40,7 +40,8 @@ module.exports = {
         embeds: [failedEmbed],
       });
     } else if (
-      queue.connection.channel.id === interaction.member.voice.channel.id
+      queue.connection.joinConfig.channelId ===
+      interaction.member.voice.channel.id
     ) {
       const embed = new EmbedBuilder()
         .setTitle(`Shuffle`)
@@ -51,7 +52,7 @@ module.exports = {
         .setThumbnail(
           `https://png.pngtree.com/png-vector/20230228/ourmid/pngtree-shuffle-vector-png-image_6622846.png`
         );
-      queue.shuffle();
+      queue.tracks.shuffle();
       await interaction.reply({
         embeds: [embed],
       });
@@ -68,19 +69,32 @@ module.exports = {
         embeds: [failedEmbed],
       });
     }
+
+    const { timestamp } = useTimeline(interaction.guildId);
+    const duration = timestamp.total.label;
+    const convertor = duration.split(":");
+    const totalTimer = +convertor[0] * 60 + +convertor[1];
+
+    const currentDuration = timestamp.current.label;
+    const currentConvertor = currentDuration.split(":");
+    const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
+
+    timer = totalTimer - currentTimer;
+
+    if (timer > 10 * 60) timer = 10 * 60;
+    if (timer < 1 * 60) timer = 1 * 60;
+
+    const timeoutDuration = success ? timer * 1000 : 2 * 60 * 1000;
+    const timeoutLog = success
+      ? "Failed to delete Shuffle interaction."
+      : "Failed to delete unsuccessfull Shuffle interaction.";
     setTimeout(() => {
-      if (success === true) {
-        if (interaction.channel.id === musicChannelID) return;
-        else {
-          interaction.deleteReply().catch((e) => {
-            console.log(`Failed to delete Shuffle interaction.`);
-          });
-        }
-      } else {
-        interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete unsuccessfull Shuffle interaction.`);
+      if (success === true && interaction.channel.id === musicChannelID) return;
+      else {
+        message.delete().catch((e) => {
+          console.log(timeoutLog);
         });
       }
-    }, 10 * 60 * 1000);
+    }, timeoutDuration);
   },
 };

@@ -87,6 +87,7 @@ module.exports = {
             .setRequired(true)
         )
     ),
+
   async execute(interaction, client) {
     await interaction.deferReply({
       fetchReply: true,
@@ -101,21 +102,40 @@ module.exports = {
         {
           const appid = options.get("game").value;
           const currency = options.get("currency").value;
-          let name;
-          if (options.getString("item").toLowerCase() === "key") {
-            name = "Mann Co. Supply Crate Key";
-          } else if (options.getString("item").toLowerCase() === "ticket") {
-            name = "Tour of Duty Ticket";
-          } else {
-            name = options.getString("item");
+
+          let name = options.getString("item");
+
+          switch (options.getString("item").toLowerCase()) {
+            case "key":
+              name = "Mann Co. Supply Crate Key";
+              break;
+            case "ticket":
+              name = "Tour of Duty Ticket";
+              break;
+            default:
+              name;
           }
 
           market
-            .getItemPrice(appid, `${name}`, currency)
+            .getItemPrice(appid, name, currency)
             .then(async (item) => {
+              let thumbnail;
+              switch (appid) {
+                case "730":
+                  thumbnail = `https://i.redd.it/yugctti7mek81.png`;
+                  break;
+                case "570":
+                  thumbnail = `https://www.buysellvouchers.com/assets/924fc46b/images/pt/dota.png`;
+                  break;
+                case "440":
+                  thumbnail = `https://aux2.iconspalace.com/uploads/429940364.png`;
+                  break;
+              }
+
               let embed = new EmbedBuilder()
                 .setTitle(`${item.market_hash_name}`)
                 .setColor(0x0e0e57)
+                .setThumbnail(thumbnail)
                 .setFooter({
                   iconURL: `https://cdn.freebiesupply.com/images/large/2x/steam-logo-transparent.png`,
                   text: `Steam`,
@@ -137,19 +157,6 @@ module.exports = {
                     inline: true,
                   }
                 );
-              if (appid == 730) {
-                embed.setThumbnail(`https://i.redd.it/yugctti7mek81.png`);
-              }
-              if (appid == 570) {
-                embed.setThumbnail(
-                  `https://www.buysellvouchers.com/assets/924fc46b/images/pt/dota.png`
-                );
-              }
-              if (appid == 440) {
-                embed.setThumbnail(
-                  `https://aux2.iconspalace.com/uploads/429940364.png`
-                );
-              }
               await interaction.editReply({
                 embeds: [embed],
               });
@@ -159,7 +166,7 @@ module.exports = {
               const failedEmbed = new EmbedBuilder()
                 .setTitle(`No result`)
                 .setDescription(
-                  `Please make sure you input the exact item name.\nThis API is Case-sensitive and also searchs for the exact item name you input.\nClick here to retry: </steam market:1100722765587284048>`
+                  `Please make sure you input the exact item name.\nThis API is Case-sensitive and also searchs for the exact item name you input.\nTry again with </steam market:1100722765587284048>.`
                 )
                 .setColor(0xffea00)
                 .setThumbnail(
@@ -179,7 +186,7 @@ module.exports = {
               const failedEmbed = new EmbedBuilder()
                 .setTitle(`No result`)
                 .setDescription(
-                  `Please make sure you input the correct game name.\nClick here to retry: </steam store:1100722765587284048>`
+                  `Please make sure you input the correct game name.\nTry again with </steam store:1100722765587284048>.`
                 )
                 .setColor(0xffea00)
                 .setThumbnail(
@@ -189,39 +196,39 @@ module.exports = {
                 embeds: [failedEmbed],
               });
             } else {
-              let platform;
-              result.platforms.windows === true
-                ? result.platforms.mac === true
-                  ? (platform = "Multiplatform")
-                  : (platform = "Windows")
-                : result.platforms.mac === true
-                ? (platform = "Mac")
-                : (platform = "Linux");
+              const platform =
+                result.platforms.windows === true
+                  ? result.platforms.mac === true
+                    ? "Multiplatform"
+                    : "Windows"
+                  : result.platforms.mac === true
+                  ? "Mac"
+                  : "Linux";
 
-              let releaseDate;
-              result.release_date.coming_soon === true
-                ? (releaseDate = "Coming Soon")
-                : (releaseDate = `${result.release_date.date}`);
-              let meta;
-              !result.metacritic
-                ? (meta = "Unkown")
-                : (meta = `${result.metacritic.score} / 100`);
-              let price;
-              !result.price_overview
-                ? (price = "Free to Play")
-                : (price = `${result.price_overview.final_formatted}`);
-              let developer;
-              !result.developers[0]
-                ? (developer = "Unkown")
-                : (developer = `${result.developers[0]}`);
-              let publisher;
-              !result.publishers[0]
-                ? (publisher = "Unkown")
-                : (publisher = `${result.publishers[0]}`);
-              let genre;
-              !result.genres[0].description
-                ? (genre = "Unkown")
-                : (genre = `${result.genres[0].description}`);
+              const releaseDate =
+                result.release_date.coming_soon === true
+                  ? "Coming Soon"
+                  : `${result.release_date.date}`;
+
+              const meta = result.metacritic
+                ? `${result.metacritic.score} / 100`
+                : "Unknown";
+
+              const price = result.price_overview
+                ? `${result.price_overview.final_formatted}`
+                : "-";
+
+              const developer = result.developers[0]
+                ? `${result.developers[0]}`
+                : "Unknown";
+
+              const publisher = result.publishers[0]
+                ? `${result.publishers[0]}`
+                : "Unknown";
+
+              const genre = result.genres[0].description
+                ? `${result.genres[0].description}`
+                : "Unknown";
               const resultName = result.name.replace(/\s+/g, "");
 
               const embed = new EmbedBuilder()
@@ -282,9 +289,22 @@ module.exports = {
                 )
                 .setStyle(ButtonStyle.Link);
 
+              const crackButton = new ButtonBuilder()
+                .setLabel(`Crack Status`)
+                .setURL(
+                  `https://steamcrackedgames.com/games/${encodeURIComponent(
+                    result.name.replace(/\s+/g, "-")
+                  )}`
+                )
+                .setStyle(ButtonStyle.Link);
+
               await interaction.editReply({
                 embeds: [embed],
-                components: [new ActionRowBuilder().addComponents(storeButton)],
+                components: [
+                  new ActionRowBuilder()
+                    .addComponents(storeButton)
+                    .addComponents(crackButton),
+                ],
               });
               success = true;
             }
@@ -295,18 +315,17 @@ module.exports = {
         console.log("Something went wrong while executing steam command...");
       }
     }
+    const timeoutDuration = success ? 5 * 60 * 1000 : 2 * 60 * 1000;
+    const timeoutLog = success
+      ? "Failed to delete Steam interaction."
+      : "Failed to delete unsuccessfull Steam interaction.";
     setTimeout(() => {
-      if (success === true) {
-        if (interaction.channel.id !== gameChannelID) {
-          interaction.deleteReply().catch((e) => {
-            console.log(`Failed to delete Steam interaction.`);
-          });
-        }
-      } else {
+      if (success && interaction.channel.id === gameChannelID) return;
+      else {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete unsuccessfull Steam interaction.`);
+          console.log(timeoutLog);
         });
       }
-    }, 5 * 60 * 1000);
+    }, timeoutDuration);
   },
 };

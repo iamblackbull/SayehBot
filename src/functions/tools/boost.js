@@ -13,9 +13,13 @@ module.exports = (client) => {
       client.channels.cache
         .get(boostChannelID)
         .send(`🚀 ${newMember.user} just boosted the server! 💜`);
+        
       const user = await Levels.fetch(newMember.user.id, newMember.guild.id);
+      if (!user.level || user.level === 0) return;
       const neededXp = Levels.xpFor(parseInt(user.level + 1));
-      const XP = neededXp + 1;
+      const gainedXp = Levels.xpFor(parseInt(user.level));
+      const XP = neededXp - gainedXp + 1;
+
       if (1 < user.level < 60) {
         try {
           const hasLevelUp = await Levels.appendXp(
@@ -32,10 +36,10 @@ module.exports = (client) => {
               newMember.guild.id
             );
             console.log(
-              `${newMember.user.username} just advanced to level ${user.level}`
+              `${newMember.user.username} just advanced to Level ${user.level}`
             );
             channel.send(
-              `🎊 ${newMember.user} just advanced to level **${user.level}** 🙌`
+              `🎊 ${newMember.user} just advanced to Level **${user.level}** 🙌`
             );
           }
         } catch (error) {

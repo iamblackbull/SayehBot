@@ -7,14 +7,14 @@ module.exports = {
     name: `lyrics`,
   },
   async execute(interaction, client) {
-    let queue = client.player.getQueue(interaction.guildId);
+    let queue = client.player.nodes.get(interaction.guildId);
     if (!queue) return;
 
     const lyricsEmbed = await interaction.deferReply({
       fetchReply: true,
     });
 
-    const songTitle = queue.current.title;
+    const songTitle = queue.currentTrack.title;
 
     await genius.songs
       .search(`${songTitle}`)

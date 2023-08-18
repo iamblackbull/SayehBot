@@ -42,7 +42,7 @@ module.exports = {
     } catch (error) {
       failedEmbed
         .setTitle(`**Action Failed**`)
-        .setDescription(`You can't clear messages older than **14** days.`)
+        .setDescription(`You can't clear messages older than **14** days.\nTry again with </clear:1047903145218547871>.`)
         .setColor(0xffea00)
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`

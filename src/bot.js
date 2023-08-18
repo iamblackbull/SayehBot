@@ -1,6 +1,6 @@
 require("dotenv").config();
 const { TOKEN, DBTOKEN } = process.env;
-const { connect } = require("mongoose");
+const { connect, mongoose } = require("mongoose");
 const {
   Client,
   Collection,
@@ -41,43 +41,20 @@ const client = new Client({
   ],
 });
 
-client.player = new Player(client, {
+client.player = Player.singleton(client, {
+  useLegacyFFmpeg: false,
   leaveOnEnd: true,
   leaveOnEmpty: true,
   leaveOnEndCooldown: 5 * 60 * 1000,
-  leaveOnEmptyCooldown: 5 * 60 * 1000,
+  leaveOnEmptyCooldown: 5 * 1000,
   smoothVolume: true,
   ytdlOptions: {
+    filter: "audioonly",
     quality: "highestaudio",
     highWaterMark: 1 << 25,
   },
 });
-client.player.on("connectionCreate", function (queue) {
-  queue.connection.voiceConnection.on(
-    "stateChange",
-    function (oldState, newState) {
-      var oldNetworking = Reflect.get(oldState, "networking");
-      var newNetworking = Reflect.get(newState, "networking");
-      var networkStateChangeHandler = function (
-        oldNetworkState,
-        newNetworkState
-      ) {
-        var newUdp = Reflect.get(newNetworkState, "udp");
-        clearInterval(
-          newUdp === null || newUdp === void 0
-            ? void 0
-            : newUdp.keepAliveInterval
-        );
-      };
-      oldNetworking === null || oldNetworking === void 0
-        ? void 0
-        : oldNetworking.off("stateChange", networkStateChangeHandler);
-      newNetworking === null || newNetworking === void 0
-        ? void 0
-        : newNetworking.on("stateChange", networkStateChangeHandler);
-    }
-  );
-});
+client.player.extractors.loadDefault();
 
 executing.on("unhandledRejection", (reason) => {
   console.log(`Unhandled Rejection with reason:\n`, reason);
@@ -105,6 +82,9 @@ client.handleEvents();
 client.handleCommands();
 client.handleComponents();
 client.login(TOKEN);
+
+mongoose.set('strictQuery', false);
+
 (async () => {
   await connect(DBTOKEN).catch(console.error);
 })();

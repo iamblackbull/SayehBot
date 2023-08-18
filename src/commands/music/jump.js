@@ -20,9 +20,10 @@ module.exports = {
     )
     .setDMPermission(false),
   async execute(interaction, client) {
-    const queue = client.player.getQueue(interaction.guildId);
+    const queue = client.player.nodes.get(interaction.guildId);
     let trackNum = interaction.options.getInteger("tracknumber");
 
+    let source;
     let timer;
     let success = false;
     let failedEmbed = new EmbedBuilder();
@@ -32,7 +33,7 @@ module.exports = {
       failedEmbed
         .setTitle(`**Action Failed**`)
         .setDescription(
-          `Queue is empty. Add at least 1 song to the queue to use this command.`
+          `Queue is empty. Add at least 1 song to the queue to use this command.\nTry again with </jump:1047903145071759421>.`
         )
         .setColor(0xffea00)
         .setThumbnail(
@@ -55,12 +56,13 @@ module.exports = {
         embeds: [failedEmbed],
       });
     } else if (
-      queue.connection.channel.id === interaction.member.voice.channel.id
+      queue.connection.joinConfig.channelId ===
+      interaction.member.voice.channel.id
     ) {
-      if (trackNum > queue.tracks.length) {
-        trackNum = queue.tracks.length;
+      if (trackNum > queue.tracks.size) {
+        trackNum = queue.tracks.size;
       }
-      queue.skipTo(trackNum - 1);
+      queue.node.skipTo(trackNum - 1);
       const nextSong = queue.tracks.at(0);
 
       const favoriteButton = new ButtonBuilder()
@@ -74,7 +76,7 @@ module.exports = {
       const downloadButton = new ButtonBuilder()
         .setCustomId(`downloader`)
         .setEmoji(`⬇`)
-        .setStyle(ButtonStyle.Primary);
+        .setStyle(ButtonStyle.Secondary);
 
       embed
         .setTitle(`⏭ Jump`)
@@ -83,39 +85,55 @@ module.exports = {
         )
         .setThumbnail(nextSong.thumbnail);
       if (nextSong.url.includes("youtube")) {
+        source = "public";
         embed.setColor(0xff0000).setFooter({
           iconURL: `https://www.iconpacks.net/icons/2/free-youtube-logo-icon-2431-thumb.png`,
           text: `YouTube`,
         });
       } else if (nextSong.url.includes("spotify")) {
+        source = "private";
         embed.setColor(0x34eb58).setFooter({
           iconURL: `https://www.freepnglogos.com/uploads/spotify-logo-png/image-gallery-spotify-logo-21.png`,
           text: `Spotify`,
         });
       } else if (nextSong.url.includes("soundcloud")) {
+        source = "public";
         embed.setColor(0xeb5534).setFooter({
           iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
           text: `Soundcloud`,
         });
       }
 
-      if (!queue.playing) await queue.play();
+      if (!queue.node.isPlaying()) await queue.node.play();
       success = true;
       if (nextSong.duration.length >= 7) {
-        timer = 10;
+        timer = 10 * 60;
       } else {
-        timer = parseInt(nextSong.duration);
+        const duration = nextSong.duration;
+        const convertor = duration.split(":");
+        timer = +convertor[0] * 60 + +convertor[1];
       }
-      if (timer < 10) {
-        await interaction.reply({
-          embeds: [embed],
-          components: [
-            new ActionRowBuilder()
-              .addComponents(favoriteButton)
-              .addComponents(lyricsButton)
-              .addComponents(downloadButton),
-          ],
-        });
+      if (timer < 10 * 60) {
+        if (source === "public") {
+          await interaction.reply({
+            embeds: [embed],
+            components: [
+              new ActionRowBuilder()
+                .addComponents(favoriteButton)
+                .addComponents(lyricsButton)
+                .addComponents(downloadButton),
+            ],
+          });
+        } else {
+          await interaction.reply({
+            embeds: [embed],
+            components: [
+              new ActionRowBuilder()
+                .addComponents(favoriteButton)
+                .addComponents(lyricsButton),
+            ],
+          });
+        }
       } else {
         await interaction.reply({
           embeds: [embed],
@@ -133,25 +151,20 @@ module.exports = {
         embeds: [failedEmbed],
       });
     }
-    if (success === false) {
-      timer = 5;
-    }
-    if (timer > 10) timer = 10;
-    if (timer < 1) timer = 1;
+    success ? timer : (timer = 2 * 60);
+    if (timer > 10 * 60) timer = 10 * 60;
+    if (timer < 1 * 60) timer = 1 * 60;
+    const timeoutLog = success
+      ? "Failed to delete Jump interaction."
+      : "Failed to delete unsuccessfull Jump interaction.";
     setTimeout(() => {
-      if (success === true) {
-        if (interaction.channel.id === musicChannelID) {
-          interaction.editReply({ components: [] });
-        } else {
-          interaction.deleteReply().catch((e) => {
-            console.log(`Failed to delete Jump interaction.`);
-          });
-        }
+      if (success && interaction.channel.id === musicChannelID) {
+        interaction.editReply({ components: [] });
       } else {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete unsuccessfull Jump interaction.`);
+          console.log(timeoutLog);
         });
       }
-    }, timer * 60 * 1000);
+    }, timer * 1000);
   },
 };

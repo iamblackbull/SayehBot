@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { useTimeline } = require("discord-player");
 const { musicChannelID } = process.env;
 
 module.exports = {
@@ -17,7 +18,7 @@ module.exports = {
     const queueEmbed = await interaction.deferReply({
       fetchReply: true,
     });
-    const queue = client.player.getQueue(interaction.guildId);
+    const queue = client.player.nodes.get(interaction.guildId);
 
     let failedEmbed = new EmbedBuilder();
     let success = false;
@@ -50,9 +51,10 @@ module.exports = {
         embeds: [failedEmbed],
       });
     } else if (
-      queue.connection.channel.id === interaction.member.voice.channel.id
+      queue.connection.joinConfig.channelId ===
+      interaction.member.voice.channel.id
     ) {
-      let totalPages = Math.ceil(queue.tracks.length / 10) || 1;
+      let totalPages = Math.ceil(queue.tracks.size / 10) || 1;
       let page = (interaction.options.getNumber("page") || 1) - 1;
 
       if (interaction.options.getNumber("page") > totalPages) {
@@ -70,7 +72,7 @@ module.exports = {
         })
         .join("\n");
 
-      let currentSong = queue.current;
+      let currentSong = queue.currentTrack;
 
       let embed = new EmbedBuilder().setColor(0x6d25c4);
 
@@ -98,7 +100,7 @@ module.exports = {
                   } -- ${song.author}](${song.url})`;
                 })
                 .join("\n");
-              currentSong = queue.current;
+              currentSong = queue.currentTrack;
               embed
                 .setDescription(
                   `💿 **Currently Playing**\n` +
@@ -128,6 +130,7 @@ module.exports = {
                     } -- ${song.author}](${song.url})`;
                   })
                   .join("\n");
+                currentSong = queue.currentTrack;
                 embed
                   .setDescription(
                     `💿 **Currently Playing**\n` +
@@ -148,7 +151,7 @@ module.exports = {
             } else if (reaction.emoji.name == `🔀`) {
               if (!queue) return;
               if (!queue.current) return;
-              queue.shuffle();
+              queue.tracks.shuffle();
               queueString = queue.tracks
                 .slice(page * 10, page * 10 + 10)
                 .map((song, i) => {
@@ -157,7 +160,7 @@ module.exports = {
                   } -- ${song.author}](${song.url})`;
                 })
                 .join("\n");
-              currentSong = queue.current;
+              currentSong = queue.currentTrack;
               embed
                 .setDescription(
                   `💿 **Currently Playing**\n` +
@@ -195,7 +198,20 @@ module.exports = {
             }),
         ],
       });
-      timer = parseInt(currentSong.duration);
+      const { timestamp } = useTimeline(interaction.guildId);
+      if (song.duration.length >= 7) {
+        timer = 10 * 60;
+      } else {
+        const duration = song.duration;
+        const convertor = duration.split(":");
+        const totalTimer = +convertor[0] * 60 + +convertor[1];
+
+        const currentDuration = timestamp.current.label;
+        const currentConvertor = currentDuration.split(":");
+        const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
+
+        timer = totalTimer - currentTimer;
+      }
       success = true;
     } else {
       failedEmbed
@@ -209,32 +225,27 @@ module.exports = {
         embeds: [failedEmbed],
       });
     }
-    if (success === false) {
-      timer = 5;
-    }
-    if (timer > 10) timer = 10;
-    if (timer < 1) timer = 1;
+    success ? timer : (timer = 2 * 60);
+    if (timer > 10 * 60) timer = 10 * 60;
+    if (timer < 1 * 60) timer = 1 * 60;
+    const timeoutLog = success
+      ? "Failed to delete Queue interaction."
+      : "Failed to delete unsuccessfull Queue interaction.";
     setTimeout(() => {
-      if (success === true) {
-        if (interaction.channel.id === musicChannelID) {
-          queueEmbed.reactions
-            .removeAll()
-            .catch((error) =>
-              console.error(
-                chalk.red("Failed to clear reactions from song message."),
-                error
-              )
-            );
-        } else {
-          interaction.deleteReply().catch((e) => {
-            console.log(`Failed to delete Queue interaction.`);
-          });
-        }
+      if (success && interaction.channel.id === musicChannelID) {
+        queueEmbed.reactions
+          .removeAll()
+          .catch((error) =>
+            console.error(
+              chalk.red("Failed to clear reactions from Queue interaction."),
+              error
+            )
+          );
       } else {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete unsuccessfull Queue interaction.`);
+          console.log(timeoutLog);
         });
       }
-    }, timer * 60 * 1000);
+    }, timer * 1000);
   },
 };

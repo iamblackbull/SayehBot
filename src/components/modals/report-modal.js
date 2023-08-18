@@ -13,57 +13,76 @@ module.exports = {
       .fetch(modChannelID)
       .catch(console.error);
 
-    const reportList = await report.findOne({
-      ReporterId: interaction.user.id,
-      IsCaseOpen: true,
-    });
+    let reportList;
 
-    const reason = interaction.fields.getTextInputValue(`reportInput`);
-    const message = reportList.Message;
-    const target = reportList.TargetName;
-    const reporter = interaction.user;
-    const avatar = reporter.displayAvatarURL({ size: 1024, dynamic: true });
-    const id = reportList.CaseId;
+    setTimeout(async () => {
+      reportList = await report.findOne({
+        ReporterId: interaction.user.id,
+        IsCaseOpen: true,
+        IsModsNotified: false,
+      });
 
-    let embed = new EmbedBuilder()
-      .setTitle(`**Report Case**`)
-      .setDescription(
-        `**Reason**\n\`\`\`${reason}\`\`\`\n**Message**\n\`\`\`${message}\`\`\``
-      )
-      .setThumbnail(
-        `https://cdn2.iconfinder.com/data/icons/medicine-colored-outline-part-2-v-2/128/ic_medical_card-512.png`
-      )
-      .setAuthor({ name: reporter.username, iconURL: avatar, url: avatar })
-      .addFields(
-        { name: `Reporter`, value: `${reporter}`, inline: true },
-        { name: `Target`, value: `${target}`, inline: true }
-      )
-      .setTimestamp(Date.now())
-      .setColor(0xff0000);
+      if (!reportList) return;
 
-    let successEmbed = new EmbedBuilder()
-      .setTitle(`Successfully Reported`)
-      .setDescription(
-        "Thanks for submitting your report. Moderators will respond to it as soon as possible."
-      )
-      .setColor(0x25bfc4)
-      .setThumbnail(`https://cdn-icons-png.flaticon.com/512/7870/7870619.png`);
+      const reason = interaction.fields.getTextInputValue(`reportInput`);
+      const message = reportList.Message;
+      const target = reportList.TargetName;
+      const reporter = interaction.user;
+      const avatar = reporter.displayAvatarURL({ size: 1024, dynamic: true });
+      const id = reportList.CaseId;
 
-    const msg = await channel.send({
-      embeds: [embed],
-    });
-    msg.react(`✅`);
-    const filter = (reaction, user) => {
-      [`✅`].includes(reaction.emoji.name) && user.id === interaction.user.id;
-    };
-    const collector = msg.createReactionCollector(filter);
-    collector.on("collect", async (user) => {
-      if (user.bot) return;
-      else {
-        await report.updateOne(
-          { CaseId: id, ReporterId: interaction.user.id, IsCaseOpen: true },
-          { IsCaseOpen: false }
+      let embed = new EmbedBuilder()
+        .setTitle(`**Report Case**`)
+        .setDescription(
+          `**Reason**\n\`\`\`${reason}\`\`\`\n**Message**\n\`\`\`${message}\`\`\``
+        )
+        .setThumbnail(
+          `https://cdn2.iconfinder.com/data/icons/medicine-colored-outline-part-2-v-2/128/ic_medical_card-512.png`
+        )
+        .setAuthor({ name: reporter.username, iconURL: avatar, url: avatar })
+        .addFields(
+          { name: `Reporter`, value: `${reporter}`, inline: true },
+          { name: `Target`, value: `${target}`, inline: true },
+          { name: `Case ID`, value: `${reportList.CaseId}`, inline: true }
+        )
+        .setTimestamp(Date.now())
+        .setColor(0xff0000);
+
+      let successEmbed = new EmbedBuilder()
+        .setTitle(`Successfully Reported`)
+        .setDescription(
+          "Thanks for submitting your report. You will be notifed as soon as a moderator responed to your report."
+        )
+        .addFields({
+          name: `Case ID`,
+          value: `${reportList.CaseId}`,
+          inline: true,
+        })
+        .setColor(0x25bfc4)
+        .setThumbnail(
+          `https://cdn-icons-png.flaticon.com/512/7870/7870619.png`
         );
+
+      const msg = await channel.send({
+        embeds: [embed],
+      });
+
+      await report.updateOne(
+        {
+          CaseId: id,
+        },
+        {
+          CaseMessageId: msg.id,
+          IsModsNotified: true,
+        }
+      );
+      msg.react(`✅`);
+      const filter = (reaction, user) => {
+        [`✅`].includes(reaction.emoji.name && !user.bot);
+      };
+      const collector = msg.createReactionCollector(filter);
+      collector.on("collect", async (reaction, user) => {
+        if (user.bot) return;
         msg.reactions.removeAll().catch(console.error);
 
         embed
@@ -71,6 +90,7 @@ module.exports = {
           .setDescription(`This report case has been closed by ${user}`);
         await msg.edit({
           embeds: [embed],
+          components: [],
         });
 
         successEmbed
@@ -78,28 +98,39 @@ module.exports = {
           .setDescription(
             `${user} has responded to your report and your case has been closed.`
           );
-        await reporter
-          .send({
+
+        await report.updateOne(
+          { CaseId: id },
+          { IsCaseOpen: false, IsReporterNotified: true }
+        );
+
+        try {
+          await reporter.send({
             embeds: [successEmbed],
-          })
-          .catch((e) => {
-            console.log(`Failed to send direct message to reporter.`);
           });
-      }
-    });
-    await interaction.reply({
-      embeds: [successEmbed],
-      ephemeral: true,
-    });
-    console.log(`${interaction.user.username} just reported ${target}.`);
-    setTimeout(() => {
-      msg.delete().catch((e) => {
-        console.log(`Failed to delete Report modal message.`);
+        } catch (e) {
+          console.log(`Failed to send direct message to reporter.`);
+          await report.updateOne({ CaseId: id }, { IsReporterNotified: false });
+        }
       });
-      if (!reportList) return;
-      else {
-        reportList.delete().catch(console.error);
-      }
-    }, 24 * 60 * 60 * 1000);
+
+      await interaction.reply({
+        embeds: [successEmbed],
+        ephemeral: true,
+      });
+
+      console.log(
+        `${interaction.user.username} just reported ${target}. (CaseID: ${reportList.CaseId})`
+      );
+      setTimeout(() => {
+        msg.delete().catch((e) => {
+          console.log(`Failed to delete Report modal message.`);
+        });
+        if (!reportList) return;
+        else {
+          reportList.delete().catch(console.error);
+        }
+      }, 24 * 60 * 60 * 1000);
+    }, 1 * 1000);
   },
 };

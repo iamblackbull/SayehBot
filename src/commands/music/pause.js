@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { useTimeline } = require("discord-player");
 const { musicChannelID } = process.env;
 let paused = false;
 
@@ -11,11 +12,12 @@ module.exports = {
     const pauseEmbed = await interaction.deferReply({
       fetchReply: true,
     });
-    const queue = client.player.getQueue(interaction.guildId);
+    const queue = client.player.nodes.get(interaction.guildId);
 
     let failedEmbed = new EmbedBuilder();
     let embed = new EmbedBuilder();
     let success = false;
+    let timer;
 
     if (!queue) {
       failedEmbed
@@ -44,7 +46,8 @@ module.exports = {
         embeds: [failedEmbed],
       });
     } else if (
-      queue.connection.channel.id === interaction.member.voice.channel.id
+      queue.connection.joinConfig.channelId ===
+      interaction.member.voice.channel.id
     ) {
       if (paused === false) {
         paused = true;
@@ -53,7 +56,7 @@ module.exports = {
         embed
           .setTitle(`Paused`)
           .setDescription(
-            "Use `/pause` again or react below to resume the music."
+            "Use </pause:1047903145071759424> again or react below to resume the music."
           )
           .setColor(0x256fc4)
           .setThumbnail(
@@ -72,14 +75,16 @@ module.exports = {
             reaction.users.remove(reaction.users.cache.get(user.id));
             if (reaction.emoji.name === `▶`) {
               if (!queue) return;
-              if (!queue.current) return;
+              if (!queue.currentTrack) return;
               if (paused === false) return;
               pauseEmbed.reactions.removeAll();
               queue.setPaused(false);
               paused = false;
               embed
                 .setTitle("Resumed")
-                .setDescription("Use `/pause` again to pause the music.")
+                .setDescription(
+                  "Use </pause:1047903145071759424> again to pause the music."
+                )
                 .setThumbnail(
                   `https://www.freepnglogos.com/uploads/play-button-png/index-media-cover-art-play-button-overlay-5.png`
                 );
@@ -99,7 +104,7 @@ module.exports = {
         embed
           .setTitle(`Resumed`)
           .setDescription(
-            "Use `/pause` again or react below to pause the music."
+            "Use </pause:1047903145071759424> again or react below to pause the music."
           )
           .setColor(0x256fc4)
           .setThumbnail(
@@ -117,13 +122,15 @@ module.exports = {
             pauseEmbed.reactions.removeAll();
             if (reaction.emoji.name === `⏸`) {
               if (!queue) return;
-              if (!queue.current) return;
+              if (!queue.currentTrack) return;
               if (paused === true) return;
               queue.setPaused(true);
               paused = true;
               embed
                 .setTitle("Paused")
-                .setDescription("Use `/pause` again to resume the music.")
+                .setDescription(
+                  "Use </pause:1047903145071759424> again to resume the music."
+                )
                 .setThumbnail(
                   `https://cdn-icons-png.flaticon.com/512/148/148746.png`
                 );
@@ -149,27 +156,40 @@ module.exports = {
         embeds: [failedEmbed],
       });
     }
+
+    const { timestamp } = useTimeline(interaction.guildId);
+    const duration = timestamp.total.label;
+    const convertor = duration.split(":");
+    const totalTimer = +convertor[0] * 60 + +convertor[1];
+
+    const currentDuration = timestamp.current.label;
+    const currentConvertor = currentDuration.split(":");
+    const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
+
+    timer = totalTimer - currentTimer;
+
+    if (timer > 10 * 60) timer = 10 * 60;
+    if (timer < 1 * 60) timer = 1 * 60;
+
+    const timeoutDuration = success ? timer * 1000 : 2 * 60 * 1000;
+    const timeoutLog = success
+      ? "Failed to delete Pause interaction."
+      : "Failed to delete unsuccessfull Pause interaction.";
     setTimeout(() => {
-      if (success === true) {
-        if (interaction.channel.id === musicChannelID) {
-          pauseEmbed.reactions
-            .removeAll()
-            .catch((error) =>
-              console.error(
-                chalk.red("Failed to clear reactions from pause message."),
-                error
-              )
-            );
-        } else {
-          interaction.deleteReply().catch((e) => {
-            console.log(`Failed to delete Pause interaction.`);
-          });
-        }
+      if (success && interaction.channel.id === musicChannelID) {
+        pauseEmbed.reactions
+          .removeAll()
+          .catch((error) =>
+            console.error(
+              chalk.red("Failed to clear reactions from Pause interaction."),
+              error
+            )
+          );
       } else {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete unsuccessfull Pause interaction.`);
+          console.log(timeoutLog);
         });
       }
-    }, 10 * 60 * 1000);
+    }, timeoutDuration);
   },
 };

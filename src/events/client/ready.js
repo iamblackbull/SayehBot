@@ -8,17 +8,19 @@ module.exports = {
   name: "ready",
   once: true,
   async execute(client) {
-    console.log(`SayehBot is online!`);
-    console.log(`Today's date: ${currentYear}.${currentMonth}.${currentDate}`);
+    console.log(
+      `SayehBot is online!\nToday's date: ${currentYear}.${currentMonth}.${currentDate}`
+    );
 
-    setInterval(client.remindBirthday, 24 * 60 * 60 * 1000);
+    setInterval(client.remindBirthday, 1 * 60 * 1000);
     setInterval(client.checkStreamS, 2 * 60 * 1000);
     setInterval(client.checkStreamH, 2 * 60 * 1000);
     setInterval(client.checkVideo, 5 * 60 * 1000);
+
     client.user.setPresence({
       activities: [
         {
-          name: "from Space",
+          name: "Sayeh's videos 👉👈",
           type: ActivityType.Watching,
         },
       ],

@@ -6,9 +6,10 @@ const {
   ButtonStyle,
   ComponentType,
 } = require("discord.js");
+const { TRACKERGG_API_KEY } = process.env;
 const { TrackerClient } = require("tracker.gg");
 const api = new TrackerClient({
-  apiKey: `0b70205c-ab93-4b35-9842-59fd97f58558`,
+  apiKey: TRACKERGG_API_KEY,
 });
 const apex = require("../../schemas/apex-schema");
 
@@ -47,14 +48,25 @@ module.exports = {
       fetchReply: true,
     });
 
+    let success = false;
     const username = interaction.options.getString("username");
     let platform;
-    if (interaction.options.get("platform").value === "pc") platform = `origin`;
-    if (interaction.options.get("platform").value === "psn") platform = `psn`;
-    if (interaction.options.get("platform").value === "xbl") platform = `xbl`;
+
+    switch (interaction.options.get("platform").value) {
+      case "pc":
+        platform = "origin";
+        break;
+      case "psn":
+        platform = "psn";
+        break;
+      case "xbl":
+        platform = "xbl";
+        break;
+    }
     await api
       .getApexPlayerStats(`${platform}`, `${username}`)
       .then((result) => {
+        console.log(JSON.stringify(result));
         let embed = new EmbedBuilder()
           .setTitle(`**${result.data.pInfo.platformUserID}**`)
           .setURL(
@@ -161,18 +173,22 @@ module.exports = {
           })
           .catch((e) => {
             console.log(
-              `Save collector of Apex did not recieve any interactions before ending.`
+              `Save collector of Apex did not receive any interactions before ending.`
             );
           });
         interaction.editReply({
           embeds: [embed],
           components: [new ActionRowBuilder().addComponents(saveButton)],
         });
+        success = true;
       })
       .catch((e) => {
+        console.log(e);
         let failedEmbed = new EmbedBuilder()
           .setTitle(`**No Result**`)
-          .setDescription(`Make sure you input the correct informations.`)
+          .setDescription(
+            `Make sure you input the correct information.\nTry again with </apex:1079842730752102551>.`
+          )
           .setColor(0xffea00)
           .setThumbnail(
             `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
@@ -181,10 +197,14 @@ module.exports = {
           embeds: [failedEmbed],
         });
       });
+    const timeoutDuration = success ? 5 * 60 * 1000 : 2 * 60 * 1000;
+    const timeoutLog = success
+      ? "Failed to delete Apex interaction."
+      : "Failed to delete unsuccessfull Apex interaction.";
     setTimeout(() => {
       interaction.deleteReply().catch((e) => {
-        console.log(`Failed to delete Apex interaction.`);
+        console.log(timeoutLog);
       });
-    }, 10 * 60 * 1000);
+    }, timeoutDuration);
   },
 };

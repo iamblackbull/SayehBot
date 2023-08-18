@@ -24,14 +24,14 @@ module.exports = (client) => {
     const guildID = process.env.guildID;
     const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
     try {
-      console.log(chalk.cyan("Refreshing application (/) commands..."));
+      console.log(chalk.cyan("Retrieving application slash commands..."));
 
       await rest.put(Routes.applicationCommands(clientID), {
         body: client.commandArray,
       });
 
       console.log(
-        chalk.green("Successfully reloaded application (/) commands.")
+        chalk.green("Successfully retrieved application slash commands.")
       );
     } catch (error) {
       console.error(error);

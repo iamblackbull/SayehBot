@@ -67,7 +67,7 @@ module.exports = {
       failedEmbed
         .setTitle(`**Connection Timed out!**`)
         .setDescription(
-          `Connection to database has been timed out. please try again later.`
+          `Connection to database has been timed out.\nTry again later with </xp:1047903144752984071>.`
         )
         .setThumbnail(
           `https://cdn.iconscout.com/icon/premium/png-256-thumb/error-in-internet-959268.png`
@@ -88,7 +88,7 @@ module.exports = {
         failedEmbed
           .setTitle(`**Action Failed**`)
           .setDescription(
-            `${user} has not gained enough xp. You should at least send 1 message in the server.`
+            `${user} has not gained enough xp. User should at least send **1** message in the server.`
           )
           .setThumbnail(
             `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
@@ -97,52 +97,51 @@ module.exports = {
           embeds: [failedEmbed],
         });
       } else {
-        if (interaction.options.get("action").value === "give") {
-          if (interaction.options.get("unit").value === "level") {
-            const level = interaction.options.getInteger("amount");
-            await Levels.appendLevel(user.id, interaction.guild.id, level);
-            embed
-              .setDescription(`Total of **${level} levels** granted to ${user}`)
-              .setColor(0x46eb34);
-            console.log(
-              `${interaction.user.username} added ${level} levels to ${user.username}`
-            );
-          }
-
-          if (interaction.options.get("unit").value === "xp") {
-            const XP = interaction.options.getInteger("amount");
-            await Levels.appendXp(user.id, interaction.guild.id, XP);
-            embed
-              .setDescription(`Total of **${XP} XP** granted to ${user}`)
-              .setColor(0x46eb34);
-            console.log(
-              `${interaction.user.username} granted ${XP} XP to ${user.username}`
-            );
-          }
-        }
-
-        if (interaction.options.get("action").value === "take") {
-          if (interaction.options.get("unit").value === "level") {
-            const level = interaction.options.getInteger("amount");
-            await Levels.subtractLevel(user.id, interaction.guild.id, level);
+        const action = interaction.options.get("action").value;
+        const unit = interaction.options.get("unit").value;
+        const amount = interaction.options.getInteger("amount");
+        if (action === "give") {
+          if (unit === "level") {
+            await Levels.appendLevel(user.id, interaction.guild.id, amount);
             embed
               .setDescription(
-                `Total of **${level} levels** removed from ${user}`
+                `Total of **${amount} levels** granted to ${user}`
+              )
+              .setColor(0x46eb34);
+            console.log(
+              `${interaction.user.username} added ${amount} levels to ${user.username}`
+            );
+          }
+
+          if (unit === "xp") {
+            await Levels.appendXp(user.id, interaction.guild.id, amount);
+            embed
+              .setDescription(`Total of **${amount} XP** granted to ${user}`)
+              .setColor(0x46eb34);
+            console.log(
+              `${interaction.user.username} granted ${amount} XP to ${user.username}`
+            );
+          }
+        } else {
+          if (unit === "level") {
+            await Levels.subtractLevel(user.id, interaction.guild.id, amount);
+            embed
+              .setDescription(
+                `Total of **${amount} levels** removed from ${user}`
               )
               .setColor(0xe01010);
             console.log(
-              `${interaction.user.username} removed ${level} levels from ${user.username}`
+              `${interaction.user.username} removed ${amount} levels from ${user.username}`
             );
           }
 
-          if (interaction.options.get("unit").value === "xp") {
-            const XP = interaction.options.getInteger("amount");
-            await Levels.subtractXp(user.id, interaction.guild.id, XP);
+          if (unit === "xp") {
+            await Levels.subtractXp(user.id, interaction.guild.id, amount);
             embed
-              .setDescription(`Total of **${XP} XP** removed from ${user}`)
+              .setDescription(`Total of **${amount} XP** removed from ${user}`)
               .setColor(0xe01010);
             console.log(
-              `${interaction.user.username} removed ${XP} XP from ${user.username}`
+              `${interaction.user.username} removed ${amount} XP from ${user.username}`
             );
           }
         }
@@ -155,6 +154,6 @@ module.exports = {
       interaction.deleteReply().catch((e) => {
         console.log(`Failed to delete XP interaction.`);
       });
-    }, 10 * 60 * 1000);
+    }, 5 * 60 * 1000);
   },
 };

@@ -12,7 +12,7 @@ module.exports = {
     let embed = new EmbedBuilder()
       .setTitle(`Ping`)
       .setDescription(
-        `API Latency: **${client.ws.ping} ms**\nClient Ping: **${
+        `Bot Latency: **${client.ws.ping} ms**\nUser Ping: **${
           pingEmbed.createdTimestamp - interaction.createdTimestamp
         } ms**`
       )

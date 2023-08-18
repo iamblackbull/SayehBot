@@ -48,11 +48,11 @@ module.exports = {
           `https://icons.veryicon.com/png/o/miscellaneous/programming-software-icons/reset-28.png`
         );
 
-      const queue = client.player.getQueue(interaction.guildId);
+      const queue = client.player.nodes.get(interaction.guildId);
       if (!queue) {
         voiceChannel.destroy();
       } else {
-        queue.destroy();
+        queue.delete();
       }
 
       await interaction.reply({ embeds: [embed] });
@@ -69,19 +69,17 @@ module.exports = {
         embeds: [failedEmbed],
       });
     }
+    const timeoutDuration = success ? 5 * 60 * 1000 : 2 * 60 * 1000;
+    const timeoutLog = success
+      ? "Failed to delete Favorite interaction."
+      : "Failed to delete unsuccessfull Favorite interaction.";
     setTimeout(() => {
-      if (success === true) {
-        if (interaction.channel.id === musicChannelID) return;
-        else {
-          interaction.deleteReply().catch((e) => {
-            console.log(`Failed to delete Leave interaction.`);
-          });
-        }
-      } else {
+      if (success && interaction.channel.id === musicChannelID) return;
+       else {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete unsuccessfull Leave interaction.`);
+          console.log(timeoutLog);
         });
       }
-    }, 5 * 60 * 1000);
+    }, timeoutDuration);
   },
 };

@@ -8,7 +8,6 @@ const {
 } = require("discord.js");
 const wow = require("../../schemas/wow-schema");
 const noderiowrapper = require("noderiowrapper");
-
 const RIO = new noderiowrapper();
 
 module.exports = {
@@ -47,11 +46,19 @@ module.exports = {
     const wowEmbed = await interaction.deferReply({
       fetchReply: true,
     });
+
+    let success = false;
+
     const character = interaction.options.getString("character");
     const realm = interaction.options.getString("realm");
-    let region;
-    if (interaction.options.get("region").value === "eu") region = `eu`;
-    if (interaction.options.get("region").value === "us") region = `us`;
+    switch (interaction.options.get("region").value) {
+      case "eu":
+        region = "eu";
+        break;
+      case "us":
+        region = "us";
+        break;
+    }
     RIO.Character.gear = true;
     RIO.Character.guild = true;
     RIO.Character.mythic_plus_ranks = true;
@@ -63,83 +70,100 @@ module.exports = {
 
     RIO.Character.getProfile(`${region}`, `${realm}`, `${character}`)
       .then((result) => {
+        const page1 = [
+          {
+            name: `Class`,
+            value: `${result.class}-${result.active_spec_name}`,
+            inline: true,
+          },
+          {
+            name: `Faction`,
+            value: `${result.faction}`,
+            inline: true,
+          },
+          {
+            name: `iLVL`,
+            value: `${result.gear.item_level_equipped}`,
+            inline: true,
+          },
+          {
+            name: `Achievement Points`,
+            value: `${result.achievement_points}`,
+            inline: true,
+          },
+          {
+            name: `M+ Rating`,
+            value: `${parseInt(
+              result.mythic_plus_scores_by_season[0].scores.all
+            )}`,
+            inline: true,
+          },
+          {
+            name: `Raid Progress`,
+            value: `${
+              result.raid_progression[`aberrus-the-shadowed-crucible`].summary
+            }`,
+            inline: true,
+          },
+          {
+            name: `Realm Class Rank`,
+            value: `${result.mythic_plus_ranks.class.realm}`,
+            inline: true,
+          },
+          {
+            name: `M+ Recent Run`,
+            value: `${result.mythic_plus_recent_runs[0].short_name} ${result.mythic_plus_recent_runs[0].mythic_level}${recentRun}`,
+            inline: true,
+          },
+          {
+            name: `M+ Best Run`,
+            value: `${result.mythic_plus_best_runs[0].short_name} ${result.mythic_plus_best_runs[0].mythic_level}${bestRun}`,
+            inline: true,
+          },
+        ];
+
         let recentRun;
-        if (result.mythic_plus_recent_runs[0].num_keystone_upgrades === 1)
-          recentRun = `+`;
-        if (result.mythic_plus_recent_runs[0].num_keystone_upgrades === 2)
-          recentRun = `++`;
-        if (result.mythic_plus_recent_runs[0].num_keystone_upgrades === 3)
-          recentRun = `+++`;
-        if (result.mythic_plus_recent_runs[0].num_keystone_upgrades === 0)
-          recentRun = ``;
-        if (result.mythic_plus_recent_runs[0].num_keystone_upgrades === -1)
-          recentRun = `-`;
+        switch (result.mythic_plus_recent_runs[0].num_keystone_upgrades) {
+          case 1:
+            recentRun = `+`;
+            break;
+          case 2:
+            recentRun = `++`;
+            break;
+          case 3:
+            recentRun = `+++`;
+            break;
+          case 0:
+            recentRun = ``;
+            break;
+          case -1:
+            recentRun = `-`;
+            break;
+        }
+
         let bestRun;
-        if (result.mythic_plus_best_runs[0].num_keystone_upgrades === 1)
-          bestRun = `+`;
-        if (result.mythic_plus_best_runs[0].num_keystone_upgrades === 2)
-          bestRun = `++`;
-        if (result.mythic_plus_best_runs[0].num_keystone_upgrades === 3)
-          bestRun = `+++`;
-        if (result.mythic_plus_best_runs[0].num_keystone_upgrades === 0)
-          bestRun = ``;
-        if (result.mythic_plus_best_runs[0].num_keystone_upgrades === -1)
-          bestRun = `-`;
+        switch (result.mythic_plus_best_runs[0].num_keystone_upgrades) {
+          case 1:
+            bestRun = `+`;
+            break;
+          case 2:
+            bestRun = `++`;
+            break;
+          case 3:
+            bestRun = `+++`;
+            break;
+          case 0:
+            bestRun = ``;
+            break;
+          case -1:
+            bestRun = `-`;
+            break;
+        }
         let embed = new EmbedBuilder()
           .setTitle(`**${result.name}-${result.realm}**`)
           .setURL(`${result.profile_url}`)
           .setThumbnail(`${result.thumbnail_url}`)
-          .addFields(
-            {
-              name: `Class`,
-              value: `${result.class}-${result.active_spec_name}`,
-              inline: true,
-            },
-            {
-              name: `Faction`,
-              value: `${result.faction}`,
-              inline: true,
-            },
-            {
-              name: `iLVL`,
-              value: `${result.gear.item_level_equipped}`,
-              inline: true,
-            },
-            {
-              name: `Achievement Points`,
-              value: `${result.achievement_points}`,
-              inline: true,
-            },
-            {
-              name: `M+ Rating`,
-              value: `${parseInt(
-                result.mythic_plus_scores_by_season[0].scores.all
-              )}`,
-              inline: true,
-            },
-            {
-              name: `Raid Progress`,
-              value: `${
-                result.raid_progression[`aberrus-the-shadowed-crucible`].summary
-              }`,
-              inline: true,
-            },
-            {
-              name: `Realm Class Rank`,
-              value: `${result.mythic_plus_ranks.class.realm}`,
-              inline: true,
-            },
-            {
-              name: `M+ Recent Run`,
-              value: `${result.mythic_plus_recent_runs[0].short_name} ${result.mythic_plus_recent_runs[0].mythic_level}${recentRun}`,
-              inline: true,
-            },
-            {
-              name: `M+ Best Run`,
-              value: `${result.mythic_plus_best_runs[0].short_name} ${result.mythic_plus_best_runs[0].mythic_level}${bestRun}`,
-              inline: true,
-            }
-          )
+          .addFields(page1)
           .setColor(0xa89d32)
           .setFooter({
             iconURL: `https://i.pinimg.com/originals/cf/f4/a5/cff4a59d9390e8f836581e55828fb9ca.png`,
@@ -157,273 +181,40 @@ module.exports = {
           else {
             reaction.users.remove(reaction.users.cache.get(user.id));
             if (reaction.emoji.name === `➡`) {
-              page = 2;
-              embed.setFields();
-              if (!result.gear.items.head) {
-                embed.addFields({
-                  name: `Head`,
-                  value: `-`,
+              const gearItems = [
+                { name: "Head", slot: "head" },
+                { name: "Neck", slot: "neck" },
+                { name: "Shoulder", slot: "shoulder" },
+                { name: "Back", slot: "back" },
+                { name: "Chest", slot: "chest" },
+                { name: "Waist", slot: "waist" },
+                { name: "Wrist", slot: "wrist" },
+                { name: "Hands", slot: "hands" },
+                { name: "Legs", slot: "legs" },
+                { name: "Feet", slot: "feet" },
+                { name: "Finger 1", slot: "finger1" },
+                { name: "Finger 2", slot: "finger2" },
+                { name: "Trinket 1", slot: "trinket1" },
+                { name: "Trinket 2", slot: "trinket2" },
+                { name: "Main Hand", slot: "mainhand" },
+                { name: "Off Hand", slot: "offhand" },
+              ];
+
+              gearItems.forEach((item) => {
+                const itemLevel =
+                  result.gear.items[item.slot]?.item_level.toString() ||
+                  "Empty";
+                embed.setFields({
+                  name: item.name,
+                  value: itemLevel,
                   inline: true,
                 });
-              } else {
-                embed.addFields({
-                  name: `Head`,
-                  value: `${result.gear.items.head.item_level}`,
-                  inline: true,
-                });
-              }
-              if (!result.gear.items.neck) {
-                embed.addFields({
-                  name: `Neck`,
-                  value: `-`,
-                  inline: true,
-                });
-              } else {
-                embed.addFields({
-                  name: `Neck`,
-                  value: `${result.gear.items.neck.item_level}`,
-                  inline: true,
-                });
-              }
-              if (!result.gear.items.shoulder) {
-                embed.addFields({
-                  name: `Shoulder`,
-                  value: `-`,
-                  inline: true,
-                });
-              } else {
-                embed.addFields({
-                  name: `Shoulder`,
-                  value: `${result.gear.items.shoulder.item_level}`,
-                  inline: true,
-                });
-              }
-              if (!result.gear.items.back) {
-                embed.addFields({
-                  name: `Back`,
-                  value: `-`,
-                  inline: true,
-                });
-              } else {
-                embed.addFields({
-                  name: `Back`,
-                  value: `${result.gear.items.back.item_level}`,
-                  inline: true,
-                });
-              }
-              if (!result.gear.items.chest) {
-                embed.addFields({
-                  name: `Chest`,
-                  value: `-`,
-                  inline: true,
-                });
-              } else {
-                embed.addFields({
-                  name: `Chest`,
-                  value: `${result.gear.items.chest.item_level}`,
-                  inline: true,
-                });
-              }
-              if (!result.gear.items.waist) {
-                embed.addFields({
-                  name: `Waist`,
-                  value: `-`,
-                  inline: true,
-                });
-              } else {
-                embed.addFields({
-                  name: `Waist`,
-                  value: `${result.gear.items.waist.item_level}`,
-                  inline: true,
-                });
-              }
-              if (!result.gear.items.wrist) {
-                embed.addFields({
-                  name: `Wrist`,
-                  value: `-`,
-                  inline: true,
-                });
-              } else {
-                embed.addFields({
-                  name: `Wrist`,
-                  value: `${result.gear.items.wrist.item_level}`,
-                  inline: true,
-                });
-              }
-              if (!result.gear.items.hands) {
-                embed.addFields({
-                  name: `Hands`,
-                  value: `-`,
-                  inline: true,
-                });
-              } else {
-                embed.addFields({
-                  name: `Hands`,
-                  value: `${result.gear.items.hands.item_level}`,
-                  inline: true,
-                });
-              }
-              if (!result.gear.items.legs) {
-                embed.addFields({
-                  name: `Legs`,
-                  value: `-`,
-                  inline: true,
-                });
-              } else {
-                embed.addFields({
-                  name: `Legs`,
-                  value: `${result.gear.items.legs.item_level}`,
-                  inline: true,
-                });
-              }
-              if (!result.gear.items.feet) {
-                embed.addFields({
-                  name: `Feet`,
-                  value: `-`,
-                  inline: true,
-                });
-              } else {
-                embed.addFields({
-                  name: `Feet`,
-                  value: `${result.gear.items.feet.item_level}`,
-                  inline: true,
-                });
-              }
-              if (!result.gear.items.mainhand) {
-                embed.addFields({
-                  name: `Finger 1`,
-                  value: `-`,
-                  inline: true,
-                });
-              } else {
-                embed.addFields({
-                  name: `Finger 1`,
-                  value: `${result.gear.items.finger1.item_level}`,
-                  inline: true,
-                });
-              }
-              if (!result.gear.items.mainhand) {
-                embed.addFields({
-                  name: `Finger 2`,
-                  value: `-`,
-                  inline: true,
-                });
-              } else {
-                embed.addFields({
-                  name: `Finger 2`,
-                  value: `${result.gear.items.finger2.item_level}`,
-                  inline: true,
-                });
-              }
-              if (!result.gear.items.mainhand) {
-                embed.addFields({
-                  name: `Trinket 1`,
-                  value: `-`,
-                  inline: true,
-                });
-              } else {
-                embed.addFields({
-                  name: `Trinket 1`,
-                  value: `${result.gear.items.trinket1.item_level}`,
-                  inline: true,
-                });
-              }
-              if (!result.gear.items.mainhand) {
-                embed.addFields({
-                  name: `Trinket 2`,
-                  value: `-`,
-                  inline: true,
-                });
-              } else {
-                embed.addFields({
-                  name: `Trinket 2`,
-                  value: `${result.gear.items.trinket2.item_level}`,
-                  inline: true,
-                });
-              }
-              if (!result.gear.items.mainhand) {
-                embed.addFields({
-                  name: `Main Hand`,
-                  value: `-`,
-                  inline: true,
-                });
-              } else {
-                embed.addFields({
-                  name: `Main Hand`,
-                  value: `${result.gear.items.mainhand.item_level}`,
-                  inline: true,
-                });
-              }
-              if (!result.gear.items.offhand) {
-                embed.addFields({
-                  name: `Off Hand`,
-                  value: `-`,
-                  inline: true,
-                });
-              } else {
-                embed.addFields({
-                  name: `Off Hand`,
-                  value: `${result.gear.items.offhand.item_level}`,
-                  inline: true,
-                });
-              }
+              });
               await interaction.editReply({
                 embeds: [embed],
               });
             } else {
-              page = 1;
-              embed.setFields(
-                {
-                  name: `Class`,
-                  value: `${result.class}-${result.active_spec_name}`,
-                  inline: true,
-                },
-                {
-                  name: `Faction`,
-                  value: `${result.faction}`,
-                  inline: true,
-                },
-                {
-                  name: `iLVL`,
-                  value: `${result.gear.item_level_equipped}`,
-                  inline: true,
-                },
-                {
-                  name: `Achievement Points`,
-                  value: `${result.achievement_points}`,
-                  inline: true,
-                },
-                {
-                  name: `M+ Rating`,
-                  value: `${parseInt(
-                    result.mythic_plus_scores_by_season[0].scores.all
-                  )}`,
-                  inline: true,
-                },
-                {
-                  name: `Raid Progress`,
-                  value: `${
-                    result.raid_progression[`aberrus-the-shadowed-crucible`]
-                      .summary
-                  }`,
-                  inline: true,
-                },
-                {
-                  name: `Realm Class Rank`,
-                  value: `${result.mythic_plus_ranks.class.realm}`,
-                  inline: true,
-                },
-                {
-                  name: `M+ Recent Run`,
-                  value: `${result.mythic_plus_recent_runs[0].short_name} ${result.mythic_plus_recent_runs[0].mythic_level}${recentRun}`,
-                  inline: true,
-                },
-                {
-                  name: `M+ Best Run`,
-                  value: `${result.mythic_plus_best_runs[0].short_name} ${result.mythic_plus_best_runs[0].mythic_level}${bestRun}`,
-                  inline: true,
-                }
-              );
+              embed.setFields(page1);
               await interaction.editReply({
                 embeds: [embed],
               });
@@ -503,7 +294,7 @@ module.exports = {
           })
           .catch((e) => {
             console.log(
-              `Save collector of WOW did not recieve any interactions before ending.`
+              `Save collector of WOW did not receive any interactions before ending.`
             );
           });
         interaction.editReply({
@@ -515,12 +306,13 @@ module.exports = {
               .addComponents(saveButton),
           ],
         });
+        success = true;
       })
       .catch((e) => {
         let failedEmbed = new EmbedBuilder()
           .setTitle(`**No Result**`)
           .setDescription(
-            `Make sure you input the correct information or character may not be max level nor has played Dragonflight Season 2.`
+            `Make sure you input the correct information or character may not be max level nor has played Dragonflight Season 2.\nTry again with </wow:1079842730752102553>`
           )
           .setColor(0xffea00)
           .setThumbnail(
@@ -530,10 +322,14 @@ module.exports = {
           embeds: [failedEmbed],
         });
       });
+    const timeoutDuration = success ? 5 * 60 * 1000 : 2 * 60 * 1000;
+    const timeoutLog = success
+      ? "Failed to delete WOW interaction."
+      : "Failed to delete unsuccessfull WOW interaction.";
     setTimeout(() => {
       interaction.deleteReply().catch((e) => {
-        console.log(`Failed to delete WOW interaction.`);
+        console.log(timeoutLog);
       });
-    }, 10 * 60 * 1000);
+    }, timeoutDuration);
   },
 };
