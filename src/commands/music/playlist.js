@@ -3,14 +3,15 @@ const {
   EmbedBuilder,
   PermissionsBitField,
 } = require("discord.js");
-const { QueryType } = require("discord-player");
+const { useMainPlayer, QueryType } = require("discord-player");
 const { musicChannelID } = process.env;
-const replay = require("../../schemas/replay-schema");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("playlist")
-    .setDescription("Play a playlist from YouTube / Spotify / Soundcloud")
+    .setDescription(
+      "Play a playlist or album from YouTube / Spotify / Soundcloud / Apple Music"
+    )
     .addStringOption((option) =>
       option
         .setName("url")
@@ -68,9 +69,10 @@ module.exports = {
           leaveOnEnd: true,
           leaveOnEmpty: true,
           leaveOnEndCooldown: 5 * 60 * 1000,
-          leaveOnEmptyCooldown: 5 * 60 * 1000,
+          leaveOnEmptyCooldown: 5 * 1000,
           smoothVolume: true,
           ytdlOptions: {
+            filter: "audioonly",
             quality: "highestaudio",
             highWaterMark: 1 << 25,
           },
@@ -87,22 +89,34 @@ module.exports = {
           .setTitle(`🎶 Playlist`)
           .setColor(0x256fc4);
 
-        const url = interaction.options.getString("url");
+        const player = useMainPlayer();
+        const url = interaction.options.getString("url", true);
+        if (url.toLowerCase().includes("album")) {
+          embed.setTitle(`🎶 Album`);
+        }
         let result;
 
         if (url.toLowerCase().startsWith("https")) {
           if (url.toLowerCase().includes("spotify")) {
-            result = await client.player.search(url, {
-              requestedBy: interaction.user,
-              searchEngine: QueryType.SPOTIFY_PLAYLIST,
-            });
+            if (url.toLowerCase().includes("playlist")) {
+              result = await player.search(url, {
+                requestedBy: interaction.user,
+                searchEngine: QueryType.SPOTIFY_PLAYLIST,
+              });
+            }
+            if (url.toLowerCase().includes("album")) {
+              result = await player.search(url, {
+                requestedBy: interaction.user,
+                searchEngine: QueryType.SPOTIFY_ALBUM,
+              });
+            }
             embed.setColor(0x34eb58).setFooter({
               iconURL: `https://www.freepnglogos.com/uploads/spotify-logo-png/image-gallery-spotify-logo-21.png`,
               text: `Spotify`,
             });
           }
           if (url.toLowerCase().includes("soundcloud")) {
-            result = await client.player.search(url, {
+            result = await player.search(url, {
               requestedBy: interaction.user,
               searchEngine: QueryType.SOUNDCLOUD_PLAYLIST,
             });
@@ -110,8 +124,26 @@ module.exports = {
               iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
               text: `Soundcloud`,
             });
+          }
+          if (url.toLowerCase().includes("apple")) {
+            if (url.toLowerCase().includes("playlist")) {
+              result = await player.search(url, {
+                requestedBy: interaction.user,
+                searchEngine: QueryType.APPLE_MUSIC_PLAYLIST,
+              });
+            }
+            if (url.toLowerCase().includes("album")) {
+              result = await player.search(url, {
+                requestedBy: interaction.user,
+                searchEngine: QueryType.APPLE_MUSIC_ALBUM,
+              });
+            }
+            embed.setColor(0xeb5534).setFooter({
+              iconURL: `https://music.apple.com/assets/knowledge-graph/music.png`,
+              text: `Apple Music`,
+            });
           } else {
-            result = await client.player.search(url, {
+            result = await player.search(url, {
               requestedBy: interaction.user,
               searchEngine: QueryType.YOUTUBE_PLAYLIST,
             });
@@ -163,27 +195,6 @@ module.exports = {
             const duration = result.tracks[0].duration;
             const convertor = duration.split(":");
             timer = +convertor[0] * 60 + +convertor[1];
-          }
-          let song = result.tracks[result.tracks.length - 1];
-          const { guild } = interaction;
-          let replayList = await replay.findOne({
-            guild: guild.id,
-          });
-          if (!replayList) {
-            replayList = new replay({
-              guild: guild.id,
-              Song: song.url,
-              Name: song.title,
-            });
-            await replayList.save().catch(console.error);
-          } else {
-            replayList = await replay.updateOne(
-              { guild: guild.id },
-              {
-                Song: song.url,
-                Name: song.title,
-              }
-            );
           }
         }
       } else {

@@ -29,7 +29,7 @@ module.exports = {
       failedEmbed
         .setTitle(`**Action Failed**`)
         .setDescription(
-          `Queue is empty. Add at least 1 song to the queue to use this command.`
+          `Bot is already not playing in any voice channel.\nUse </play:1047903145071759425> to play a track.`
         )
         .setColor(0xffea00)
         .setThumbnail(

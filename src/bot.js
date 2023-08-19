@@ -41,7 +41,7 @@ const client = new Client({
   ],
 });
 
-client.player = Player.singleton(client, {
+client.player = new Player(client, {
   useLegacyFFmpeg: false,
   leaveOnEnd: true,
   leaveOnEmpty: true,
@@ -55,6 +55,32 @@ client.player = Player.singleton(client, {
   },
 });
 client.player.extractors.loadDefault();
+client.player.events.on("connection", function (queue) {
+  queue.connection.on(
+    "stateChange",
+    function (oldState, newState) {
+      var oldNetworking = Reflect.get(oldState, "networking");
+      var newNetworking = Reflect.get(newState, "networking");
+      var networkStateChangeHandler = function (
+        oldNetworkState,
+        newNetworkState
+      ) {
+        var newUdp = Reflect.get(newNetworkState, "udp");
+        clearInterval(
+          newUdp === null || newUdp === void 0
+            ? void 0
+            : newUdp.keepAliveInterval
+        );
+      };
+      oldNetworking === null || oldNetworking === void 0
+        ? void 0
+        : oldNetworking.off("stateChange", networkStateChangeHandler);
+      newNetworking === null || newNetworking === void 0
+        ? void 0
+        : newNetworking.on("stateChange", networkStateChangeHandler);
+    }
+  );
+});
 
 executing.on("unhandledRejection", (reason) => {
   console.log(`Unhandled Rejection with reason:\n`, reason);
@@ -83,7 +109,7 @@ client.handleCommands();
 client.handleComponents();
 client.login(TOKEN);
 
-mongoose.set('strictQuery', false);
+mongoose.set("strictQuery", false);
 
 (async () => {
   await connect(DBTOKEN).catch(console.error);

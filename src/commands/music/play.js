@@ -6,14 +6,15 @@ const {
   ButtonBuilder,
   ButtonStyle,
 } = require("discord.js");
-const { useMainPlayer, useTimeline, QueryType } = require("discord-player");
+const { useMainPlayer, QueryType } = require("discord-player");
 const { musicChannelID } = process.env;
-const replay = require("../../schemas/replay-schema");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("play")
-    .setDescription("Play a track from YouTube / Spotify / Soundcloud")
+    .setDescription(
+      "Play a track from YouTube / Spotify / Soundcloud / Apple Music"
+    )
     .addStringOption((option) =>
       option
         .setName("query")
@@ -175,7 +176,7 @@ module.exports = {
             source = "private";
             embed.setColor(0x34eb58).setFooter({
               iconURL: `https://www.freepnglogos.com/uploads/spotify-logo-png/image-gallery-spotify-logo-21.png`,
-              text: "spotify",
+              text: "Spotify",
             });
           } else if (song.url.includes("soundcloud")) {
             source = "public";
@@ -183,27 +184,24 @@ module.exports = {
               iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
               text: `Soundcloud`,
             });
+          } else if (song.url.includes("apple")) {
+            source = "private";
+            embed.setColor(0xfb4f67).setFooter({
+              iconURL: `https://music.apple.com/assets/knowledge-graph/music.png`,
+              text: `Apple Music`,
+            });
           }
 
           if (!queue.node.isPlaying()) await queue.node.play();
           await queue.tasksQueue.release();
 
           success = true;
-
-          const { timestamp } = useTimeline(interaction.guildId);
           if (song.duration.length >= 7) {
             timer = 10 * 60;
           } else {
             const duration = song.duration;
             const convertor = duration.split(":");
-            const totalTimer = +convertor[0] * 60 + +convertor[1];
-
-            const currentDuration = timestamp.current.label;
-            const currentConvertor = currentDuration.split(":");
-            const currentTimer =
-              +currentConvertor[0] * 60 + +currentConvertor[1];
-
-            timer = totalTimer - currentTimer;
+            timer = +convertor[0] * 60 + +convertor[1];
           }
           if (timer < 10 * 60) {
             if (source === "public") {
@@ -230,26 +228,6 @@ module.exports = {
             await interaction.editReply({
               embeds: [embed],
             });
-          }
-          const { guild } = interaction;
-          let replayList = await replay.findOne({
-            guild: guild.id,
-          });
-          if (!replayList) {
-            replayList = new replay({
-              guild: guild.id,
-              Song: song.url,
-              Name: song.title,
-            });
-            await replayList.save().catch(console.error);
-          } else {
-            replayList = await replay.updateOne(
-              { guild: guild.id },
-              {
-                Song: song.url,
-                Name: song.title,
-              }
-            );
           }
         }
       } else {

@@ -8,7 +8,6 @@ const {
 const chalk = require("chalk");
 const { useTimeline } = require("discord-player");
 const { musicChannelID } = process.env;
-let paused = false;
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -25,12 +24,15 @@ module.exports = {
     let success = false;
     let timer;
     let queue = client.player.nodes.get(interaction.guildId);
+    const { timestamp, paused, pause, resume } = useTimeline(
+      interaction.guildId
+    );
 
     if (!queue) {
       failedEmbed
         .setTitle(`**Action Failed**`)
         .setDescription(
-          `Queue is empty. Add at least 1 song to the queue to use this command.`
+          `Bot is already not playing in any voice channel.\nUse </play:1047903145071759425> to play a track.`
         )
         .setColor(0xffea00)
         .setThumbnail(
@@ -83,11 +85,11 @@ module.exports = {
         .setEmoji(`⬇`)
         .setStyle(ButtonStyle.Secondary);
 
-      songEmbed.react(`▶`);
+      songEmbed.react(`⏮`);
       songEmbed.react(`⏸`);
       songEmbed.react(`⏭`);
       const filter = (reaction, user) => {
-        [`▶`, `⏸`, `⏭`].includes(reaction.emoji.name) &&
+        [`⏮`, `⏸`, `⏭`].includes(reaction.emoji.name) &&
           user.id === interaction.user.id;
       };
       const collector = songEmbed.createReactionCollector(filter);
@@ -95,12 +97,10 @@ module.exports = {
         if (user.bot) return;
         else {
           reaction.users.remove(reaction.users.cache.get(user.id));
-          if (reaction.emoji.name === `▶`) {
-            if (!queue) return;
-            if (!queue.current) return;
-            if (paused === false) return;
-            queue.setPaused(false);
-            paused = false;
+          if (!queue) return;
+          if (reaction.emoji.name === `⏮`) {
+            if (!queue.history) return;
+            await queue.history.back();
             song = queue.currentTrack;
             bar = queue.node.createProgressBar({
               timecodes: true,
@@ -117,30 +117,15 @@ module.exports = {
             });
             success = true;
           } else if (reaction.emoji.name === `⏸`) {
-            if (!queue) return;
-            if (!queue.current) return;
-            if (paused === true) return;
-            queue.setPaused(true);
-            paused = true;
-            song = queue.currentTrack;
-            bar = queue.node.createProgressBar({
-              timecodes: true,
-              queue: false,
-              length: 14,
-            });
-            embed
-              .setTitle("**Currently Paused**")
-              .setDescription(
-                `**[${song.title}](${song.url})**\n**${song.author}**\n` + bar
-              );
-            await interaction.editReply({
-              embeds: [embed],
-            });
-            success = true;
-          } else if (reaction.emoji.name === `⏭`) {
-            if (!queue) return;
-            queue.node.skip();
-            if (!queue.node.isPlaying()) await queue.node.play();
+            if (!queue.currentTrack) return;
+            if (paused) {
+              resume();
+              embed.setTitle("**Currently Playin**");
+            }
+            if (!paused) {
+              pause();
+              embed.setTitle("**Currently Paused**");
+            }
             song = queue.currentTrack;
             bar = queue.node.createProgressBar({
               timecodes: true,
@@ -154,15 +139,42 @@ module.exports = {
               embeds: [embed],
             });
             success = true;
+          } else if (reaction.emoji.name === `⏭`) {
+            queue.node.skip();
+            if (!queue.node.isPlaying()) await queue.node.play();
+            const nextSong = queue.tracks.at(0) || null;
+            song = queue.currentTrack;
+            bar = queue.node.createProgressBar({
+              timecodes: true,
+              queue: false,
+              length: 14,
+            });
+            if (nextSong == null || !nextSong) {
+              embed
+              .setTitle("**Skipped**")
+              .setDescription(
+                `**[${song.title}](${song.url})**\n**${song.author}**\n` + bar
+              );
+            } else {
+              embed
+              .setTitle("**Currently Paused**")
+              .setDescription(
+                `**[${nextSong.title}](${nextSong.url})**\n**${nextSong.author}**\n` + bar
+              );
+            }
+            await interaction.editReply({
+              embeds: [embed],
+            });
+            success = true;
           }
         }
       });
 
-      if (song.url.includes("spotify")) source = "private";
+      if (song.url.includes("spotify") || song.url.includes("apple"))
+        source = "private";
       else source = "public";
 
       success = true;
-      const { timestamp } = useTimeline(interaction.guildId);
       if (song.duration.length >= 7) {
         timer = 10 * 60;
       } else {

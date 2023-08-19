@@ -5,7 +5,7 @@ const {
   ButtonBuilder,
   ButtonStyle,
 } = require("discord.js");
-const { QueryType } = require("discord-player");
+const { useMainPlayer, QueryType } = require("discord-player");
 const { musicChannelID } = process.env;
 
 module.exports = {
@@ -14,9 +14,10 @@ module.exports = {
     .setDescription("Insert an audio in a certain position in the queue")
     .addStringOption((option) =>
       option
-        .setName("song")
+        .setName("query")
         .setDescription("Input song name or url")
         .setRequired(true)
+        .setAutocomplete(true)
     )
     .addIntegerOption((option) =>
       option
@@ -26,6 +27,28 @@ module.exports = {
         .setRequired(true)
     )
     .setDMPermission(false),
+
+  async autocompleteRun(interaction, client) {
+    const player = useMainPlayer();
+    const query = interaction.options.getString("query", true);
+    if (!query) return;
+
+    const results = await player.search(query, {
+      requestedBy: interaction.user,
+      searchEngine: QueryType.AUTO,
+    });
+    let respond = results.tracks.slice(0, 5).map((song) => ({
+      name: `${song.title} -- ${song.author} \`[${song.duration}]\``,
+      value: song.url,
+    }));
+
+    try {
+      await interaction.respond(respond);
+    } catch (error) {
+      return;
+    }
+  },
+
   async execute(interaction, client) {
     await interaction.deferReply({
       fetchReply: true,
@@ -51,9 +74,10 @@ module.exports = {
         leaveOnEnd: true,
         leaveOnEmpty: true,
         leaveOnEndCooldown: 5 * 60 * 1000,
-        leaveOnEmptyCooldown: 5 * 60 * 1000,
+        leaveOnEmptyCooldown: 5 * 1000,
         smoothVolume: true,
         ytdlOptions: {
+          filter: "audioonly",
           quality: "highestaudio",
           highWaterMark: 1 << 25,
         },
@@ -80,8 +104,9 @@ module.exports = {
         trackNum = queue.tracks.size + 1;
       }
 
-      let url = interaction.options.getString("song");
-      const result = await client.player.search(url, {
+      const player = useMainPlayer();
+      const query = interaction.options.getString("query", true);
+      const result = await player.search(query, {
         requestedBy: interaction.user,
         searchEngine: QueryType.AUTO,
       });
@@ -148,7 +173,14 @@ module.exports = {
             iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
             text: `Soundcloud`,
           });
+        } else if (song.url.includes("apple")) {
+          source = "private";
+          embed.setColor(0xfb4f67).setFooter({
+            iconURL: `https://music.apple.com/assets/knowledge-graph/music.png`,
+            text: `Apple Music`,
+          });
         }
+
         if (!queue.node.isPlaying()) await queue.node.play();
         success = true;
         if (song.duration.length >= 7) {

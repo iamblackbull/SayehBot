@@ -1,15 +1,20 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { useTimeline } = require("discord-player");
 const { musicChannelID } = process.env;
+let autoplayMode = false;
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("shuffle")
-    .setDescription("Shuffles the queue")
+    .setName("autoplay")
+    .setDescription("Toggle autoplay mode of the queue")
     .setDMPermission(false),
   async execute(interaction, client) {
+    const repeatEmbed = await interaction.deferReply({
+      fetchReply: true,
+    });
     const queue = client.player.nodes.get(interaction.guildId);
 
+    let embed = new EmbedBuilder().setColor(0x25bfc4).setTitle(`⏯ Autoplay`);
     let failedEmbed = new EmbedBuilder();
     let success = false;
 
@@ -23,7 +28,7 @@ module.exports = {
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
         );
-      await interaction.reply({
+      await interaction.editReply({
         embeds: [failedEmbed],
       });
     } else if (!interaction.member.voice.channel) {
@@ -36,24 +41,48 @@ module.exports = {
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
         );
-      await interaction.reply({
+      await interaction.editReply({
         embeds: [failedEmbed],
       });
     } else if (
       queue.connection.joinConfig.channelId ===
       interaction.member.voice.channel.id
     ) {
-      const embed = new EmbedBuilder()
-        .setTitle(`Shuffle`)
-        .setDescription(
-          `Queue of ${queue.tracks.data.length} songs have been shuffled!`
-        )
-        .setColor(0x25bfc4)
-        .setThumbnail(
-          `https://png.pngtree.com/png-vector/20230228/ourmid/pngtree-shuffle-vector-png-image_6622846.png`
+      if (!autoplayMode) {
+        autoplayMode = true;
+        queue.setRepeatMode(3);
+        embed.setDescription(
+          `Autoplay mode is **ON**.\nUse </autoplay:1142494521683361874> again or react below to turn it off.`
         );
-      queue.tracks.shuffle();
-      await interaction.reply({
+        repeatEmbed.react(`❌`);
+        const filter = (reaction, user) => {
+          [`❌`].includes(reaction.emoji.name) &&
+            user.id === interaction.user.id;
+        };
+        const collector = repeatEmbed.createReactionCollector(filter);
+        collector.on("collect", async (reaction, user) => {
+          if (user.bot) return;
+          else {
+            reaction.users.remove(reaction.users.cache.get(user.id));
+            autoplayMode = false;
+            queue.setRepeatMode(0);
+            embed.setDescription(
+              `Autoplay mode is **OFF**.\nUse </autoplay:1142494521683361874> again to turn it on.`
+            );
+            await interaction.editReply({
+              embeds: [embed],
+            });
+            success = true;
+          }
+        });
+      } else if (autoplayMode) {
+        autoplayMode = false;
+        queue.setRepeatMode(0);
+        embed.setDescription(
+          `Autoplay mode is **OFF**.\nUse </autoplay:1142494521683361874> again to turn it on.`
+        );
+      }
+      await interaction.editReply({
         embeds: [embed],
       });
       success = true;
@@ -65,7 +94,7 @@ module.exports = {
         .setThumbnail(
           `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
         );
-      await interaction.reply({
+      await interaction.editReply({
         embeds: [failedEmbed],
       });
     }
@@ -86,12 +115,20 @@ module.exports = {
 
     const timeoutDuration = success ? timer * 1000 : 2 * 60 * 1000;
     const timeoutLog = success
-      ? "Failed to delete Shuffle interaction."
-      : "Failed to delete unsuccessfull Shuffle interaction.";
+      ? "Failed to delete Autoplay interaction."
+      : "Failed to delete unsuccessfull Autoplay interaction.";
     setTimeout(() => {
-      if (success === true && interaction.channel.id === musicChannelID) return;
-      else {
-        message.delete().catch((e) => {
+      if (success && interaction.channel.id === musicChannelID) {
+        repeatEmbed.reactions
+          .removeAll()
+          .catch((error) =>
+            console.error(
+              chalk.red("Failed to clear reactions from Autoplay interaction."),
+              error
+            )
+          );
+      } else {
+        interaction.deleteReply().catch((e) => {
           console.log(timeoutLog);
         });
       }

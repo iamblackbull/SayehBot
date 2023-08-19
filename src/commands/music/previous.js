@@ -53,23 +53,17 @@ module.exports = {
       });
     } else {
       let queue = client.player.nodes.get(interaction.guildId);
-      if (!queue) {
-        queue = await client.player.nodes.create(interaction.guild, {
-          metadata: {
-            channel: interaction.channel,
-            client: interaction.guild.members.me,
-            requestedBy: interaction.user,
-          },
-          leaveOnEnd: true,
-          leaveOnEmpty: true,
-          leaveOnEndCooldown: 5 * 60 * 1000,
-          leaveOnEmptyCooldown: 5 * 60 * 1000,
-          smoothVolume: true,
-          ytdlOptions: {
-            quality: "highestaudio",
-            highWaterMark: 1 << 25,
-          },
-        });
+      if (!queue || !queue.history) {
+        failedEmbed
+        .setTitle(`**Action Failed**`)
+        .setDescription(`There is no queue or queue history is not available.`)
+        .setColor(0xffea00)
+        .setThumbnail(
+          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
+        );
+      await interaction.reply({
+        embeds: [failedEmbed],
+      });
       }
       if (!queue.connection) {
         await queue.connect(interaction.member.voice.channel);
@@ -118,6 +112,12 @@ module.exports = {
           embed.setColor(0xeb5534).setFooter({
             iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
             text: `Soundcloud`,
+          });
+        } else if (song.url.includes("apple")) {
+          source = "private";
+          embed.setColor(0xfb4f67).setFooter({
+            iconURL: `https://music.apple.com/assets/knowledge-graph/music.png`,
+            text: `Apple Music`,
           });
         }
         if (!queue.node.isPlaying()) await queue.node.play();

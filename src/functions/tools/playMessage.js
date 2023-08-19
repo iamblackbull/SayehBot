@@ -8,13 +8,11 @@ const {
 const { QueryType } = require("discord-player");
 require("dotenv").config();
 const { musicChannelID } = process.env;
-const replay = require("../../schemas/replay-schema");
 
 module.exports = (client) => {
   client.on("messageCreate", async (message) => {
     if (message.author.bot) return;
     if (!message.guild) return;
-    const { guild } = message;
 
     let failedEmbed = new EmbedBuilder();
     let song;
@@ -65,7 +63,7 @@ module.exports = (client) => {
       } else {
         let queue = client.player.nodes.get(interaction.guildId);
         if (!queue) {
-          queue = await client.player.nodes.create(message.guild, {
+          queue = await client.player.nodes.create(interaction.guild, {
             metadata: {
               channel: interaction.channel,
               client: interaction.guild.members.me,
@@ -74,9 +72,10 @@ module.exports = (client) => {
             leaveOnEnd: true,
             leaveOnEmpty: true,
             leaveOnEndCooldown: 5 * 60 * 1000,
-            leaveOnEmptyCooldown: 5 * 60 * 1000,
+            leaveOnEmptyCooldown: 5 * 1000,
             smoothVolume: true,
             ytdlOptions: {
+              filter: "audioonly",
               quality: "highestaudio",
               highWaterMark: 1 << 25,
             },
@@ -112,6 +111,11 @@ module.exports = (client) => {
             url.toLowerCase().includes("playlist")
           )
             type = "playlist";
+          else if (
+            url.toLowerCase().startsWith("https") &&
+            url.toLowerCase().includes("album")
+          )
+            type = "album";
           else type = "track";
 
           if (type === "playlist") {
@@ -133,6 +137,12 @@ module.exports = (client) => {
                 searchEngine: QueryType.SOUNDCLOUD_PLAYLIST,
               });
             }
+            if (url.toLowerCase().includes("apple")) {
+              result = await client.player.search(url, {
+                requestedBy: message.author,
+                searchEngine: QueryType.APPLE_MUSIC_PLAYLIST,
+              });
+            }
             const playlist = result.playlist;
             if (result.tracks[0].duration.length >= 7) {
               timer = 10 * 60;
@@ -146,7 +156,50 @@ module.exports = (client) => {
               .setTitle(`🎶 Playlist`)
               .setDescription(
                 `**[${playlist.title}](${playlist.url})**\n**${result.tracks.length} songs**`
-              );
+              )
+              .setThumbnail(playlist.thumbnail);
+            song = result.tracks[result.tracks.length - 1];
+          }
+          if (type === "album") {
+            if (url.toLowerCase().includes("youtube")) {
+              result = await client.player.search(url, {
+                requestedBy: message.author,
+                searchEngine: QueryType.YOUTUBE_PLAYLIST
+              });
+            }
+            if (url.toLowerCase().includes("spotify")) {
+              result = await client.player.search(url, {
+                requestedBy: message.author,
+                searchEngine: QueryType.SPOTIFY_ALBUM,
+              });
+            }
+            if (url.toLowerCase().includes("soundcloud")) {
+              result = await client.player.search(url, {
+                requestedBy: message.author,
+                searchEngine: QueryType.SOUNDCLOUD_PLAYLIST,
+              });
+            }
+            if (url.toLowerCase().includes("apple")) {
+              result = await client.player.search(url, {
+                requestedBy: message.author,
+                searchEngine: QueryType.APPLE_MUSIC_ALBUM,
+              });
+            }
+            const playlist = result.playlist;
+            if (result.tracks[0].duration.length >= 7) {
+              timer = 10 * 60;
+            } else {
+              const duration = result.tracks[0].duration;
+              const convertor = duration.split(":");
+              timer = +convertor[0] * 60 + +convertor[1];
+            }
+            await queue.addTrack(result.tracks);
+            embed
+              .setTitle(`🎶 Album`)
+              .setDescription(
+                `**[${playlist.title}](${playlist.url})**\n**${result.tracks.length} songs**`
+              )
+              .setThumbnail(playlist.thumbnail);
             song = result.tracks[result.tracks.length - 1];
           }
           if (type === "track") {
@@ -169,25 +222,6 @@ module.exports = (client) => {
                 `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`
               )
               .setThumbnail(song.thumbnail);
-          }
-          let replayList = await replay.findOne({
-            guild: guild.id,
-          });
-          if (!replayList) {
-            replayList = new replay({
-              guild: guild.id,
-              Song: song.url,
-              Name: song.title,
-            });
-            await replayList.save().catch(console.error);
-          } else {
-            replayList = await replay.updateOne(
-              { guild: guild.id },
-              {
-                Song: song.url,
-                Name: song.title,
-              }
-            );
           }
           if (result.tracks.length === 0) {
             failedEmbed
@@ -224,10 +258,16 @@ module.exports = (client) => {
                 iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
                 text: `Soundcloud`,
               });
+            } else if (song.url.includes("apple")) {
+              source = "private";
+              embed.setColor(0xfb4f67).setFooter({
+                iconURL: `https://music.apple.com/assets/knowledge-graph/music.png`,
+                text: `Apple Music`,
+              });
             }
             if (!queue.node.isPlaying()) await queue.node.play();
 
-            if (type === "playlist") {
+            if (type === "playlist" || type === "album") {
               await message.reply({
                 embeds: [embed],
               });

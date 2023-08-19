@@ -28,7 +28,7 @@ module.exports = {
       failedEmbed
         .setTitle(`**Action Failed**`)
         .setDescription(
-          `Queue is empty. Add at least 1 song to the queue to use this command.`
+          `Bot is already not playing in any voice channel.\nUse </play:1047903145071759425> to play a track.`
         )
         .setColor(0xffea00)
         .setThumbnail(
@@ -54,7 +54,7 @@ module.exports = {
       queue.connection.joinConfig.channelId ===
       interaction.member.voice.channel.id
     ) {
-      let totalPages = Math.ceil(queue.tracks.size / 10) || 1;
+      let totalPages = Math.ceil(queue.tracks.data.length / 10) || 1;
       let page = (interaction.options.getNumber("page") || 1) - 1;
 
       if (interaction.options.getNumber("page") > totalPages) {
@@ -63,7 +63,7 @@ module.exports = {
           page = totalPages - 1;
         }
       }
-      let queueString = queue.tracks
+      let queueString = queue.tracks.data
         .slice(page * 10, page * 10 + 10)
         .map((song, i) => {
           return `**${page * 10 + i + 1}.** \`[${song.duration}]\` [${
@@ -92,7 +92,7 @@ module.exports = {
           if (reaction.emoji.name === `➡`) {
             if (page < totalPages - 1) {
               page++;
-              queueString = queue.tracks
+              queueString = queue.tracks.data
                 .slice(page * 10, page * 10 + 10)
                 .map((song, i) => {
                   return `**${page * 10 + i + 1}.** \`[${song.duration}]\` [${
@@ -122,7 +122,7 @@ module.exports = {
             if (reaction.emoji.name == `⬅`) {
               if (page !== 0) {
                 --page;
-                queueString = queue.tracks
+                queueString = queue.tracks.data
                   .slice(page * 10, page * 10 + 10)
                   .map((song, i) => {
                     return `**${page * 10 + i + 1}.** \`[${song.duration}]\` [${
@@ -152,7 +152,7 @@ module.exports = {
               if (!queue) return;
               if (!queue.current) return;
               queue.tracks.shuffle();
-              queueString = queue.tracks
+              queueString = queue.tracks.data
                 .slice(page * 10, page * 10 + 10)
                 .map((song, i) => {
                   return `**${page * 10 + i + 1}.** \`[${song.duration}]\` [${
@@ -199,10 +199,10 @@ module.exports = {
         ],
       });
       const { timestamp } = useTimeline(interaction.guildId);
-      if (song.duration.length >= 7) {
+      if (currentSong.duration.length >= 7) {
         timer = 10 * 60;
       } else {
-        const duration = song.duration;
+        const duration = currentSong.duration;
         const convertor = duration.split(":");
         const totalTimer = +convertor[0] * 60 + +convertor[1];
 

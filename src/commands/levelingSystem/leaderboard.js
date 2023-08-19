@@ -57,7 +57,7 @@ module.exports = {
               e.level
             }]\``;
           })
-          .join("\n");
+          .join("\n\n");
 
         let embed = new EmbedBuilder()
           .setTitle("🎖 Leaderboard")

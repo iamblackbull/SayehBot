@@ -33,7 +33,7 @@ module.exports = {
       failedEmbed
         .setTitle(`**Action Failed**`)
         .setDescription(
-          `Queue is empty. Add at least 1 song to the queue to use this command.\nTry again with </jump:1047903145071759421>.`
+          `Bot is already not playing in any voice channel.\nUse </play:1047903145071759425> to play a track.`
         )
         .setColor(0xffea00)
         .setThumbnail(
@@ -101,6 +101,12 @@ module.exports = {
         embed.setColor(0xeb5534).setFooter({
           iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
           text: `Soundcloud`,
+        });
+      } else if (song.url.includes("apple")) {
+        source = "private";
+        embed.setColor(0xfb4f67).setFooter({
+          iconURL: `https://music.apple.com/assets/knowledge-graph/music.png`,
+          text: `Apple Music`,
         });
       }
 

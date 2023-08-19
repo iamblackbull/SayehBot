@@ -88,7 +88,7 @@ module.exports = {
       failedEmbed
         .setTitle(`**Action Failed**`)
         .setDescription(
-          `Queue is empty. Add at least 1 song to the queue to use this command.\nTry again with </filter:1047903144752984073>.`
+          `Bot is already not playing in any voice channel.\nUse </play:1047903145071759425> to play a track.`
         )
         .setColor(0xffea00)
         .setThumbnail(
@@ -183,18 +183,15 @@ module.exports = {
           .setThumbnail(`https://m.media-amazon.com/images/I/41P7AJjvdxL.png`)
           .setDescription("**Earrape** filter has been added to the queue.");
       } else if (interaction.options.get("effect").value === "remove") {
-        if (filterMode === true) {
-          queue.setFilters({
-            "8D": false,
-            bassboost_low: false,
-            reverse: false,
-            vaporwave: false,
-            nightcore: false,
-            earrape: false,
-            fadein: false,
-            karaoke: false,
-            vibrato: false,
-          });
+        if (filterMode) {
+          if (queue.filters.bassboost_low.enabled) queue.filters.ffmpeg.toggle(bassboost_low);
+          if (queue.filters.reverse.enabled) queue.filters.ffmpeg.toggle(reverse);
+          if (queue.filters.vaporwave.enabled) queue.filters.ffmpeg.toggle(vaporwave);
+          if (queue.filters.nightcore.enabled) queue.filters.ffmpeg.toggle(nightcore);
+          if (queue.filters.fadein.enabled) queue.filters.ffmpeg.toggle(fadein);
+          if (queue.filters.karaoke.enabled) queue.filters.ffmpeg.toggle(karaoke);
+          if (queue.filters.vibrato.enabled) queue.filters.ffmpeg.toggle(vibrato);
+          if (queue.filters.earrape.enabled) queue.filters.ffmpeg.toggle(earrape);
           filterMode = false;
           embed
             .setThumbnail(
@@ -227,19 +224,15 @@ module.exports = {
         else {
           reaction.users.remove(reaction.users.cache.get(user.id));
           if (reaction.emoji.name === `❌`) {
-            if (filterMode === true) {
-              queue.setFilters({
-                "8D": false,
-                bassboost_low: false,
-                reverse: false,
-                vaporwave: false,
-                nightcore: false,
-                earrape: false,
-                fadein: false,
-                karaoke: false,
-                vibrato: false,
-              });
-              filterMode = false;
+            if (filterMode) {
+              if (queue.filters.bassboost_low.enabled) queue.filters.ffmpeg.toggle(bassboost_low);
+              if (queue.filters.reverse.enabled) queue.filters.ffmpeg.toggle(reverse);
+              if (queue.filters.vaporwave.enabled) queue.filters.ffmpeg.toggle(vaporwave);
+              if (queue.filters.nightcore.enabled) queue.filters.ffmpeg.toggle(nightcore);
+              if (queue.filters.fadein.enabled) queue.filters.ffmpeg.toggle(fadein);
+              if (queue.filters.karaoke.enabled) queue.filters.ffmpeg.toggle(karaoke);
+              if (queue.filters.vibrato.enabled) queue.filters.ffmpeg.toggle(vibrato);
+              if (queue.filters.earrape.enabled) queue.filters.ffmpeg.toggle(earrape);
               success = true;
               embed
                 .setThumbnail(

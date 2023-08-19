@@ -7,6 +7,22 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("repeat")
     .setDescription("Toggle repeat mode of the queue")
+    .addStringOption((option) => {
+      return option
+        .setName(`mode`)
+        .setDescription(`Select mode`)
+        .setRequired(false)
+        .addChoices(
+          {
+            name: `Track`,
+            value: `track`,
+          },
+          {
+            name: `Queue`,
+            value: `queue`,
+          }
+        );
+    })
     .setDMPermission(false),
   async execute(interaction, client) {
     const repeatEmbed = await interaction.deferReply({
@@ -22,7 +38,7 @@ module.exports = {
       failedEmbed
         .setTitle(`**Action Failed**`)
         .setDescription(
-          `Queue is empty. Add at least 1 song to the queue to use this command.`
+          `Bot is already not playing in any voice channel.\nUse </play:1047903145071759425> to play a track.`
         )
         .setColor(0xffea00)
         .setThumbnail(
@@ -48,12 +64,22 @@ module.exports = {
       queue.connection.joinConfig.channelId ===
       interaction.member.voice.channel.id
     ) {
-      if (repeatMode === false) {
+      let mode = interaction.options.get("mode").value;
+      if (!mode) mode = "track";
+      if (!repeatMode) {
         repeatMode = true;
-        queue.setRepeatMode(1);
-        embed.setDescription(
-          `Repeat mode is **ON**.\nUse </repeat:1047903145071759428> again or react below to toggle repeat mode.`
-        );
+        if (mode === "track") {
+          queue.setRepeatMode(1);
+          embed.setDescription(
+            `Track Repeat mode is **ON**.\nUse </repeat:1047903145071759428> again or react below to turn it off.`
+          );
+        }
+        if (mode === "queue") {
+          queue.setRepeatMode(2);
+          embed.setDescription(
+            `Queue Repeat mode is **ON**.\nUse </repeat:1047903145071759428> again or react below to turn it off.`
+          );
+        }
         repeatEmbed.react(`❌`);
         const filter = (reaction, user) => {
           [`❌`].includes(reaction.emoji.name) &&
@@ -67,7 +93,7 @@ module.exports = {
             repeatMode = false;
             queue.setRepeatMode(0);
             embed.setDescription(
-              `Repeat mode is **OFF**.\nUse </repeat:1047903145071759428> again or react below to toggle repeat mode.`
+              `Repeat mode is **OFF**.\nUse </repeat:1047903145071759428> again to turn it on.`
             );
             await interaction.editReply({
               embeds: [embed],
@@ -75,11 +101,11 @@ module.exports = {
             success = true;
           }
         });
-      } else if (repeatMode === true) {
+      } else if (repeatMode) {
         repeatMode = false;
         queue.setRepeatMode(0);
         embed.setDescription(
-          `Repeat mode is **OFF**.\nUse </repeat:1047903145071759428> again or react below to toggle repeat mode.`
+          `Repeat mode is **OFF**.\nUse </repeat:1047903145071759428> again to turn it on.`
         );
       }
       await interaction.editReply({

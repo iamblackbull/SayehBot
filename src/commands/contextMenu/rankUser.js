@@ -89,6 +89,7 @@ module.exports = {
           ctx.strokeRect(300, 200, barWidth, 0);
         }
 
+        ctx.fillStyle = "#56237d";
         if (target.id === "481094367407374348") {
           ctx.font = "90px Space Silhouette Font";
           ctx.fillText("SAYEH", 280, 150);
@@ -105,7 +106,6 @@ module.exports = {
           }
           ctx.fillText(target.username, 280, 150);
         }
-        ctx.fillStyle = "#56237d";
 
         ctx.font = "35px BubbleGum";
         ctx.fillStyle = "#56237d";

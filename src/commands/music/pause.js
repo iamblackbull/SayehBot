@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { useTimeline } = require("discord-player");
 const { musicChannelID } = process.env;
-let paused = false;
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -13,6 +12,7 @@ module.exports = {
       fetchReply: true,
     });
     const queue = client.player.nodes.get(interaction.guildId);
+    const { timestamp, paused, pause, resume } = useTimeline(interaction.guildId);
 
     let failedEmbed = new EmbedBuilder();
     let embed = new EmbedBuilder();
@@ -23,7 +23,7 @@ module.exports = {
       failedEmbed
         .setTitle(`**Action Failed**`)
         .setDescription(
-          `Queue is empty. Add at least 1 song to the queue to use this command.`
+          `Bot is already not playing in any voice channel.\nUse </play:1047903145071759425> to play a track.`
         )
         .setColor(0xffea00)
         .setThumbnail(
@@ -49,10 +49,9 @@ module.exports = {
       queue.connection.joinConfig.channelId ===
       interaction.member.voice.channel.id
     ) {
-      if (paused === false) {
-        paused = true;
+      if (!paused) {
         success = true;
-        queue.setPaused(true);
+        pause();
         embed
           .setTitle(`Paused`)
           .setDescription(
@@ -75,11 +74,9 @@ module.exports = {
             reaction.users.remove(reaction.users.cache.get(user.id));
             if (reaction.emoji.name === `▶`) {
               if (!queue) return;
-              if (!queue.currentTrack) return;
-              if (paused === false) return;
+              if (!paused) return;
               pauseEmbed.reactions.removeAll();
-              queue.setPaused(false);
-              paused = false;
+              resume();
               embed
                 .setTitle("Resumed")
                 .setDescription(
@@ -97,10 +94,9 @@ module.exports = {
         await interaction.editReply({
           embeds: [embed],
         });
-      } else if (paused === true) {
-        paused = false;
+      } else if (paused) {
         success = true;
-        queue.setPaused(false);
+        resume();
         embed
           .setTitle(`Resumed`)
           .setDescription(
@@ -123,9 +119,8 @@ module.exports = {
             if (reaction.emoji.name === `⏸`) {
               if (!queue) return;
               if (!queue.currentTrack) return;
-              if (paused === true) return;
-              queue.setPaused(true);
-              paused = true;
+              if (paused) return;
+              pause();
               embed
                 .setTitle("Paused")
                 .setDescription(
@@ -157,7 +152,6 @@ module.exports = {
       });
     }
 
-    const { timestamp } = useTimeline(interaction.guildId);
     const duration = timestamp.total.label;
     const convertor = duration.split(":");
     const totalTimer = +convertor[0] * 60 + +convertor[1];

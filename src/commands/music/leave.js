@@ -1,5 +1,4 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { getVoiceConnection } = require("@discordjs/voice");
 const { musicChannelID } = process.env;
 
 module.exports = {
@@ -8,15 +7,15 @@ module.exports = {
     .setDescription("Disconnect and reset the queue")
     .setDMPermission(false),
   async execute(interaction, client) {
-    const voiceChannel = getVoiceConnection(interaction.member.guild.id);
+    let queue = client.player.nodes.get(interaction.guildId);
 
     let failedEmbed = new EmbedBuilder();
     let success = false;
 
-    if (!voiceChannel) {
+    if (!queue || !queue.connection) {
       failedEmbed
         .setTitle(`**Action Failed**`)
-        .setDescription(`Bot is already not connected to any voice channel.`)
+        .setDescription(`Bot is already not playing in any voice channel.\nUse </play:1047903145071759425> to play a track.`)
         .setColor(0xffea00)
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
@@ -38,7 +37,8 @@ module.exports = {
         embeds: [failedEmbed],
       });
     } else if (
-      voiceChannel.joinConfig.channelId === interaction.member.voice.channel.id
+      queue.connection.joinConfig.channelId ===
+      interaction.member.voice.channel.id
     ) {
       let embed = new EmbedBuilder()
         .setTitle(`❎ Leave`)
@@ -75,7 +75,7 @@ module.exports = {
       : "Failed to delete unsuccessfull Favorite interaction.";
     setTimeout(() => {
       if (success && interaction.channel.id === musicChannelID) return;
-       else {
+      else {
         interaction.deleteReply().catch((e) => {
           console.log(timeoutLog);
         });
