@@ -1,6 +1,6 @@
 #
 
-# **SayehBot v1.6.0 INSTALLATION GUIDE**
+# **SayehBot v1.6.1 INSTALLATION GUIDE**
 
 ## **UPDATE SERVER**
 
@@ -88,9 +88,9 @@
   >> - Make sure the bot is not running in a banned region.
   >> - Make sure there is no internet connection problem.
   >> - Restart the bot.
-  >> - If the problem is still there, it might be a temporary problem from api side. 
+  >> - If the problem is still there, it might be a temporary problem from api side but refreshing token might fix the problem. 
   > - If the error was a **TOKEN** problem, It means that the token has been expired. In that case, do as follows:
-  >> - Reset twitch bot OAuth token [here](https://twitchtokengenerator.com/).
+  >> - Refresh twitch bot OAuth token [here](https://twitchtokengenerator.com/).
   >>> - **Recommended:** If you have refresh access token, use it to refresh the token. It can be retrieved from .env file.
   >>> - Else if you want to reset your tokens completely, I suggest you to tick all the scopes available. But the currently required scopes are **user_read** and **channel_editor**
   >> - Replace the new token in the .env file
