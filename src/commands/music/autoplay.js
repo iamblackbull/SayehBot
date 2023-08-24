@@ -4,9 +4,11 @@ const { musicChannelID } = process.env;
 let autoplayMode = false;
 
 module.exports = {
+  isNew: true,
+  isBeta: true,
   data: new SlashCommandBuilder()
     .setName("autoplay")
-    .setDescription("Toggle autoplay mode of the queue")
+    .setDescription("Toggle autoplay mode of the current queue.")
     .setDMPermission(false),
   async execute(interaction, client) {
     const repeatEmbed = await interaction.deferReply({
@@ -115,8 +117,8 @@ module.exports = {
 
     const timeoutDuration = success ? timer * 1000 : 2 * 60 * 1000;
     const timeoutLog = success
-      ? "Failed to delete Autoplay interaction."
-      : "Failed to delete unsuccessfull Autoplay interaction.";
+      ? `Failed to delete ${interaction.commandName} interaction.`
+      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
       if (success && interaction.channel.id === musicChannelID) {
         repeatEmbed.reactions

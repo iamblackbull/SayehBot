@@ -9,20 +9,25 @@ const { useMainPlayer, QueryType } = require("discord-player");
 const { musicChannelID } = process.env;
 
 module.exports = {
+  isNew: true,
   data: new SlashCommandBuilder()
     .setName("insert")
-    .setDescription("Insert an audio in a certain position in the queue")
+    .setDescription(
+      "Insert a track in a certain position in the current queue."
+    )
     .addStringOption((option) =>
       option
         .setName("query")
-        .setDescription("Input song name or url")
+        .setDescription(
+          "Input a track from YouTube / Spotify / Soundcloud / Apple Music."
+        )
         .setRequired(true)
         .setAutocomplete(true)
     )
     .addIntegerOption((option) =>
       option
         .setName("tracknumber")
-        .setDescription("Track # to insert")
+        .setDescription("Input a track number to insert.")
         .setMinValue(1)
         .setRequired(true)
     )
@@ -38,7 +43,7 @@ module.exports = {
       searchEngine: QueryType.AUTO,
     });
     let respond = results.tracks.slice(0, 5).map((song) => ({
-      name: `${song.title} -- ${song.author} \`[${song.duration}]\``,
+      name: `${song.title} -- ${song.author} [${song.duration}] ${song.raw.source}`,
       value: song.url,
     }));
 
@@ -59,73 +64,75 @@ module.exports = {
     let success = false;
     let failedEmbed = new EmbedBuilder();
     let embed = new EmbedBuilder();
-    let empty = false;
 
     let trackNum = interaction.options.getInteger("tracknumber");
 
-    let queue = client.player.nodes.get(interaction.guildId);
-    if (!queue) {
-      queue = await client.player.nodes.create(interaction.guild, {
-        metadata: {
-          channel: interaction.channel,
-          client: interaction.guild.members.me,
-          requestedBy: interaction.user,
-        },
-        leaveOnEnd: true,
-        leaveOnEmpty: true,
-        leaveOnEndCooldown: 5 * 60 * 1000,
-        leaveOnEmptyCooldown: 5 * 1000,
-        smoothVolume: true,
-        ytdlOptions: {
-          filter: "audioonly",
-          quality: "highestaudio",
-          highWaterMark: 1 << 25,
-        },
-      });
-      empty = true;
-    } else if (!interaction.member.voice.channel) {
+    const player = useMainPlayer();
+    const query = interaction.options.getString("query", true);
+    const result = await player.search(query, {
+      requestedBy: interaction.user,
+      searchEngine: QueryType.AUTO,
+    });
+    if (result.tracks.length === 0) {
+      if (url.toLowerCase().startsWith("https")) {
+        failedEmbed.setDescription(`Make sure you input a valid link.`);
+      } else {
+        failedEmbed.setDescription(`Make sure you input a valid song name.`);
+      }
       failedEmbed
-        .setTitle(`**Action Failed**`)
-        .setDescription(
-          `You need to be in a voice channel to use this command.`
-        )
+        .setTitle(`**No Result**`)
         .setColor(0xffea00)
         .setThumbnail(
-          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
+          `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
         );
-      await interaction.editReply({
+      interaction.editReply({
         embeds: [failedEmbed],
       });
-    } else if (
-      queue.connection.joinConfig.channelId ===
-      interaction.member.voice.channel.id
-    ) {
-      if (trackNum > queue.tracks.size) {
-        trackNum = queue.tracks.size + 1;
-      }
-
-      const player = useMainPlayer();
-      const query = interaction.options.getString("query", true);
-      const result = await player.search(query, {
-        requestedBy: interaction.user,
-        searchEngine: QueryType.AUTO,
-      });
-      if (result.tracks.length === 0) {
-        if (url.toLowerCase().startsWith("https")) {
-          failedEmbed.setDescription(`Make sure you input a valid link.`);
-        } else {
-          failedEmbed.setDescription(`Make sure you input a valid song name.`);
-        }
+    } else {
+      let newQueue = false;
+      let queue = client.player.nodes.get(interaction.guildId);
+      if (!queue) {
+        newQueue = true;
+        queue = await client.player.nodes.create(interaction.guild, {
+          metadata: {
+            channel: interaction.member.voice.channel,
+            client: interaction.guild.members.me,
+            requestedBy: interaction.user,
+            track: result.tracks[0],
+          },
+          leaveOnEnd: true,
+          leaveOnEmpty: true,
+          leaveOnStop: true,
+          leaveOnStopCooldown: 5 * 60 * 1000,
+          leaveOnEndCooldown: 5 * 60 * 1000,
+          leaveOnEmptyCooldown: 5 * 1000,
+          smoothVolume: true,
+          ytdlOptions: {
+            filter: "audioonly",
+            quality: "highestaudio",
+            highWaterMark: 1 << 25,
+          },
+        });
+      } else if (!interaction.member.voice.channel) {
         failedEmbed
-          .setTitle(`**No Result**`)
+          .setTitle(`**Action Failed**`)
+          .setDescription(
+            `You need to be in a voice channel to use this command.`
+          )
           .setColor(0xffea00)
           .setThumbnail(
-            `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
+            `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
           );
-        interaction.editReply({
+        await interaction.editReply({
           embeds: [failedEmbed],
         });
-      } else {
+      } else if (
+        queue.connection.joinConfig.channelId ===
+        interaction.member.voice.channel.id
+      ) {
+        if (trackNum > queue.tracks.size) {
+          trackNum = queue.tracks.size + 1;
+        }
         const favoriteButton = new ButtonBuilder()
           .setCustomId(`favorite`)
           .setEmoji(`🤍`)
@@ -138,14 +145,18 @@ module.exports = {
           .setCustomId(`downloader`)
           .setEmoji(`⬇`)
           .setStyle(ButtonStyle.Secondary);
+        const skipButton = new ButtonBuilder()
+          .setCustomId(`skipper`)
+          .setEmoji(`⏭`)
+          .setStyle(ButtonStyle.Secondary);
 
         const song = result.tracks[0];
 
-        if (empty === true) {
-          embed.setTitle(`🎵 Track`);
+        if (newQueue) {
+          embed.setTitle(`🎵 Now Playing`);
           await queue.addTrack(song);
         } else {
-          embed.setTitle(`🎵 Insert track #${trackNum}`);
+          embed.setTitle(`🎵 Track #${trackNum}`);
           await queue.insertTrack(song, trackNum - 1);
         }
 
@@ -190,31 +201,27 @@ module.exports = {
           const convertor = duration.split(":");
           timer = +convertor[0] * 60 + +convertor[1];
         }
-        if (empty === true) {
-          if (timer < 10 * 60) {
-            if (source === "public") {
-              await interaction.editReply({
-                embeds: [embed],
-                components: [
-                  new ActionRowBuilder()
-                    .addComponents(favoriteButton)
-                    .addComponents(lyricsButton)
-                    .addComponents(downloadButton),
-                ],
-              });
-            } else {
-              await interaction.editReply({
-                embeds: [embed],
-                components: [
-                  new ActionRowBuilder()
-                    .addComponents(favoriteButton)
-                    .addComponents(lyricsButton),
-                ],
-              });
-            }
+        if (newQueue && timer < 10 * 60) {
+          if (source === "public") {
+            await interaction.editReply({
+              embeds: [embed],
+              components: [
+                new ActionRowBuilder()
+                  .addComponents(favoriteButton)
+                  .addComponents(lyricsButton)
+                  .addComponents(downloadButton)
+                  .addComponents(skipButton),
+              ],
+            });
           } else {
             await interaction.editReply({
               embeds: [embed],
+              components: [
+                new ActionRowBuilder()
+                  .addComponents(favoriteButton)
+                  .addComponents(lyricsButton)
+                  .addComponents(skipButton),
+              ],
             });
           }
         } else {
@@ -222,25 +229,25 @@ module.exports = {
             embeds: [embed],
           });
         }
+      } else {
+        failedEmbed
+          .setTitle(`**Busy**`)
+          .setDescription(`Bot is busy in another voice channel.`)
+          .setColor(0x256fc4)
+          .setThumbnail(
+            `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
+          );
+        await interaction.editReply({
+          embeds: [failedEmbed],
+        });
       }
-    } else {
-      failedEmbed
-        .setTitle(`**Busy**`)
-        .setDescription(`Bot is busy in another voice channel.`)
-        .setColor(0x256fc4)
-        .setThumbnail(
-          `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
-        );
-      await interaction.editReply({
-        embeds: [failedEmbed],
-      });
     }
     success ? timer : (timer = 2 * 60);
     if (timer > 10 * 60) timer = 10 * 60;
     if (timer < 1 * 60) timer = 1 * 60;
     const timeoutLog = success
-      ? "Failed to delete Insert interaction."
-      : "Failed to delete unsuccessfull Insert interaction.";
+      ? `Failed to delete ${interaction.commandName} interaction.`
+      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
       if (success && interaction.channel.id === musicChannelID) {
         interaction.editReply({ components: [] });

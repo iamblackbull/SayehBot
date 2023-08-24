@@ -12,7 +12,7 @@ const { musicChannelID } = process.env;
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("song")
-    .setDescription("Returns info about the current song playing")
+    .setDescription("Get info about the current track.")
     .setDMPermission(false),
   async execute(interaction, client) {
     const songEmbed = await interaction.deferReply({
@@ -120,7 +120,7 @@ module.exports = {
             if (!queue.currentTrack) return;
             if (paused) {
               resume();
-              embed.setTitle("**Currently Playin**");
+              embed.setTitle("**Currently Playing**");
             }
             if (!paused) {
               pause();
@@ -230,8 +230,8 @@ module.exports = {
     if (timer > 10 * 60) timer = 10 * 60;
     if (timer < 1 * 60) timer = 1 * 60;
     const timeoutLog = success
-      ? "Failed to delete Song interaction."
-      : "Failed to delete unsuccessfull Song interaction.";
+      ? `Failed to delete ${interaction.commandName} interaction.`
+      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
       if (success && interaction.channel.id === musicChannelID) {
         interaction.editReply({ components: [] });

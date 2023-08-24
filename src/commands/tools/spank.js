@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
 module.exports = {
+  isNew: true,
   data: new SlashCommandBuilder()
     .setName("spank")
     .setDescription("Spank someone")

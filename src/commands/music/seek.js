@@ -5,20 +5,27 @@ const { musicChannelID } = process.env;
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("seek")
-    .setDescription("Seek through the current song")
+    .setDescription("Seek to a specific duration in the current track.")
     .addIntegerOption((options) => {
       return options
         .setName("minutes")
-        .setDescription("Minutes to seek")
+        .setDescription("Input a amount of minutes to seek.")
         .setMinValue(1)
         .setRequired(true);
+    })
+    .addIntegerOption((options) => {
+      return options
+        .setName("seconds")
+        .setDescription("Input a amount of seconds to seek.")
+        .setMinValue(1)
+        .setMinValue(59)
+        .setRequired(false);
     })
     .setDMPermission(false),
   async execute(interaction, client) {
     const seekEmbed = await interaction.deferReply({
       fetchReply: true,
     });
-    let mins = interaction.options.getInteger("minutes");
     const queue = client.player.nodes.get(interaction.guildId);
 
     let failedEmbed = new EmbedBuilder();
@@ -55,50 +62,50 @@ module.exports = {
       queue.connection.joinConfig.channelId ===
       interaction.member.voice.channel.id
     ) {
+      let mins = interaction.options.getInteger("minutes");
+      let seconds = interaction.options.getInteger("seconds") || 0;
+      let amount = mins * 60 + seconds;
+
       const song = queue.currentTrack;
-      queue.seek(parseInt(mins) * 60 * 1000);
-      let embed = new EmbedBuilder()
-        .setTitle(`⏩ Seek`)
-        .setDescription(
-          `**[${song.title}](${song.url})**\n**${song.author}**\n${mins}:00 to ${song.duration}`
-        )
-        .setThumbnail(`${song.thumbnail}`)
-        .setColor(0x25bfc4);
-      seekEmbed.react(`⏮`);
-      const filter = (reaction, user) => {
-        [`⏮`].includes(reaction.emoji.name) && user.id === interaction.user.id;
-      };
-      const collector = seekEmbed.createReactionCollector(filter);
-      collector.on("collect", async (reaction, user) => {
-        if (user.bot) return;
-        else {
-          reaction.users.remove(reaction.users.cache.get(user.id));
-          queue.seek(parseInt(0) * 60 * 1000);
-          embed.setDescription(
-            `**[${song.title}](${song.url})**\n**${song.author}**\n00:00 to ${song.duration}`
-          );
-          await interaction.editReply({
-            embeds: [embed],
-          });
-          success = true;
-        }
-      });
-      await interaction.editReply({ embeds: [embed] });
-      success = true;
       const { timestamp } = useTimeline(interaction.guildId);
+
+      const duration = song.duration;
+      const convertor = duration.split(":");
+      const totalTimer = +convertor[0] * 60 + +convertor[1];
+
+      const currentDuration = timestamp.current.label;
+      const currentConvertor = currentDuration.split(":");
+      const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
+
       if (song.duration.length >= 7) {
         timer = 10 * 60;
       } else {
-        const duration = song.duration;
-        const convertor = duration.split(":");
-        const totalTimer = +convertor[0] * 60 + +convertor[1];
-
-        const currentDuration = timestamp.current.label;
-        const currentConvertor = currentDuration.split(":");
-        const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
-
         timer = totalTimer - currentTimer;
       }
+
+      const maxMins = +convertor[0] * 60;
+      const maxSecs = +convertor[1];
+
+      if (mins > maxMins) amount = maxMins * 60;
+      else if (mins === maxMins && seconds >= maxSecs) amount = maxMins * 60;
+
+      queue.node.seek(amount * 1000);
+
+      const bar = queue.node.createProgressBar({
+        timecodes: true,
+        queue: false,
+        length: 14,
+      });
+
+      const embed = new EmbedBuilder()
+        .setTitle(`⏩ Seek`)
+        .setDescription(
+          `**[${song.title}](${song.url})**\n**${song.author}**\n` + bar
+        )
+        .setColor(0x25bfc4);
+
+      await interaction.editReply({ embeds: [embed] });
+      success = true;
     } else {
       failedEmbed
         .setTitle(`**Busy**`)
@@ -111,23 +118,16 @@ module.exports = {
         embeds: [failedEmbed],
       });
     }
+
     success ? timer : (timer = 2 * 60);
     if (timer > 10 * 60) timer = 10 * 60;
     if (timer < 1 * 60) timer = 1 * 60;
     const timeoutLog = success
-      ? "Failed to delete Seek interaction."
-      : "Failed to delete unsuccessfull Seek interaction.";
+      ? `Failed to delete ${interaction.commandName} interaction.`
+      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
-      if (success && interaction.channel.id === musicChannelID) {
-        seekEmbed.reactions
-          .removeAll()
-          .catch((error) =>
-            console.error(
-              chalk.red("Failed to clear reactions from Seek interaction."),
-              error
-            )
-          );
-      } else {
+      if (success && interaction.channel.id === musicChannelID) return;
+      else {
         interaction.deleteReply().catch((e) => {
           console.log(timeoutLog);
         });

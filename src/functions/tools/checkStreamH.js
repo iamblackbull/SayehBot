@@ -226,11 +226,20 @@ module.exports = (client) => {
         }
       });
     } catch (error) {
-      console.log(
-        chalk.red(
-          `An error occurred in Twitch (Hamiitz) notification process...`
-        )
-      );
+      if (error.code.toLowerCase().includes("etimedout")) {
+        console.log(
+          "Connection ETIMEDOUT while awaiting API response for Twitch (Hamid)."
+        );
+      } else if (error.code.toLowerCase().includes("token")) {
+        console.log("Twitch (Hamid) API Token has been expired.");
+      } else {
+        console.log(
+          chalk.red(
+            `An unkown error occurred in Twitch (Hamid) notification process:`
+          )
+        );
+        throw error;
+      }
     }
   };
 };

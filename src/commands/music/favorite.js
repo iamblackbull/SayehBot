@@ -14,11 +14,11 @@ const { musicChannelID } = process.env;
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("favorite")
-    .setDescription("Returns user favortie playlist")
+    .setDescription("Interact with your favortie playlist.")
     .addStringOption((option) => {
       return option
         .setName(`action`)
-        .setDescription(`Choose action`)
+        .setDescription(`Choose an action to perform on your favorite playlist.`)
         .setRequired(true)
         .addChoices(
           {
@@ -39,7 +39,7 @@ module.exports = {
       return option
         .setName(`tracknumber`)
         .setDescription(
-          `Input the number of the track you want from your favorite playlist`
+          `Input a track number from your favorite playlist.`
         )
         .setMinValue(1)
         .setRequired(false);
@@ -125,7 +125,11 @@ module.exports = {
 
         const player = useMainPlayer();
         let result;
-        let resultArray = {};
+
+        let resultString = {};
+        let resultArray = [];
+
+        let mappedResultString = {};
         let mappedArray = [];
 
         for (let i = 0; i < playlistLength; ++i) {
@@ -133,10 +137,14 @@ module.exports = {
             requestedBy: interaction.user,
             searchEngine: QueryType.AUTO,
           });
-          resultArray[i] = `**${i + 1}.** [${result.tracks[0].title} -- ${
-            result.tracks[0].author
-          }](${result.tracks[0].url})`;
-          mappedArray.push(resultArray[i]);
+
+          resultString[i] = result.tracks[0].url;
+          resultArray.push(resultString[i]);
+
+          mappedResultString[i] = `**${i + 1}.** [${
+            result.tracks[0].title
+          } -- ${result.tracks[0].author}](${result.tracks[0].url})`;
+          mappedArray.push(mappedResultString[i]);
         }
 
         if (result.tracks.length === 0) {
@@ -336,12 +344,15 @@ module.exports = {
             if (!queue) {
               queue = await client.player.nodes.create(interaction.guild, {
                 metadata: {
-                  channel: interaction.channel,
+                  channel: interaction.member.voice.channel,
                   client: interaction.guild.members.me,
                   requestedBy: interaction.user,
+                  track: result.tracks[0],
                 },
                 leaveOnEnd: true,
                 leaveOnEmpty: true,
+                leaveOnStop: true,
+                leaveOnStopCooldown: 5 * 60 * 1000,
                 leaveOnEndCooldown: 5 * 60 * 1000,
                 leaveOnEmptyCooldown: 5 * 1000,
                 smoothVolume: true,
@@ -361,7 +372,8 @@ module.exports = {
             if (connection) {
               if (target) {
                 if (target > playlistLength) target = playlistLength;
-                const song = splitPlaylist[target - 1];
+                const song = resultArray[target - 1];
+                await queue.addTrack(song);
                 if (song.duration.length >= 7) {
                   timer = 10 * 60;
                 } else {
@@ -369,7 +381,6 @@ module.exports = {
                   const convertor = duration.split(":");
                   timer = +convertor[0] * 60 + +convertor[1];
                 }
-                await queue.addTrack(song);
                 embed
                   .setThumbnail(song.thumbnail)
                   .setDescription(
@@ -409,7 +420,7 @@ module.exports = {
                 }
                 success = true;
               } else {
-                await queue.addTrack(splitPlaylist);
+                await queue.addTrack(resultArray);
                 let favoriteLength = queue.tracks.size;
                 const song = result.tracks[0];
                 if (song.duration.length >= 7) {
@@ -451,8 +462,8 @@ module.exports = {
     if (timer > 10 * 60) timer = 10 * 60;
     if (timer < 1 * 60) timer = 1 * 60;
     const timeoutLog = success
-      ? "Failed to delete Favorite interaction."
-      : "Failed to delete unsuccessfull Favorite interaction.";
+      ? `Failed to delete ${interaction.commandName} interaction.`
+      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
       if (success && interaction.channel.id === musicChannelID) {
         interaction.editReply({ components: [] });

@@ -46,37 +46,44 @@ module.exports = (client) => {
 
       ctx.beginPath();
       ctx.arc(512, 166, 119, 0, 2 * Math.PI, true);
-      ctx.lineWidth = 7;
+      ctx.lineWidth = 10;
       if (guild.memberCount === "2000") {
-        ctx.strokeStyle = "#ffd700";
+        ctx.strokeStyle = "#b59410";
       } else {
         ctx.strokeStyle = "#56237d";
       }
       ctx.stroke();
       ctx.closePath();
 
+      ctx.fillStyle = "#56237d";
       if (guild.memberCount === "2000") {
-        ctx.fillStyle = "#ffd700";
         ctx.font = "72px Space Silhouette Font";
       } else {
-        ctx.fillStyle = "#56237d";
         ctx.font = "72px BubbleGum";
       }
+      ctx.textAlign = "center";
       let text = `WELCOME`;
-      ctx.fillText(text, 360, 360);
+      ctx.fillText(text, 512, 360);
 
       ctx.fillStyle = "#1e3e6b";
-      ctx.font = "40px BubbleGum";
+      if (guild.memberCount === "2000") {
+        ctx.font = "40px Space Silhouette Font";
+      } else {
+        ctx.font = "40px BubbleGum";
+      }
       ctx.textAlign = "center";
       text = `${member.user.username}`;
       ctx.fillText(text.toUpperCase(), 512, 410);
 
+
       if (guild.memberCount === "2000") {
-        ctx.fillStyle = "#ffd700";
+        ctx.fillStyle = "#b59410";
+        ctx.font = "30px Space Silhouette Font";
       } else {
         ctx.fillStyle = "#56237d";
+        ctx.font = "30px BubbleGum";
       }
-      ctx.font = "30px BubbleGum";
+      ctx.textAlign = "center";
       text = `Member #${guild.memberCount}`;
       ctx.fillText(text, 512, 455);
 

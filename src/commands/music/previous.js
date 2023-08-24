@@ -9,9 +9,11 @@ const {
 const { musicChannelID } = process.env;
 
 module.exports = {
+  isNew: true,
+  isBeta: true,
   data: new SlashCommandBuilder()
     .setName("previous")
-    .setDescription("Play previously played track"),
+    .setDescription("Play previously played track in the current queue."),
   async execute(interaction, client) {
     await interaction.deferReply({
       fetchReply: true,
@@ -172,8 +174,8 @@ module.exports = {
     if (timer > 10 * 60) timer = 10 * 60;
     if (timer < 1 * 60) timer = 1 * 60;
     const timeoutLog = success
-      ? "Failed to delete Previous interaction."
-      : "Failed to delete unsuccessfull Previous interaction.";
+      ? `Failed to delete ${interaction.commandName} interaction.`
+      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
       if (success && interaction.channel.id === musicChannelID) {
         interaction.editReply({ components: [] });

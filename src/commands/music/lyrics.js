@@ -5,9 +5,12 @@ const genius = new Genius.Client();
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("lyrics")
-    .setDescription("Returns lyrics of a song from Genius")
+    .setDescription("Get lyrics of a song from Genius.")
     .addStringOption((option) =>
-      option.setName("song").setDescription("Input song name").setRequired(true)
+      option
+        .setName("query")
+        .setDescription("Input a song name.")
+        .setRequired(true)
     ),
   async execute(interaction, client) {
     const lyricsEmbed = await interaction.deferReply({
@@ -15,7 +18,7 @@ module.exports = {
     });
 
     let success = false;
-    const songTitle = interaction.options.getString("song");
+    const songTitle = interaction.options.getString("query");
 
     await genius.songs
       .search(`${songTitle}`)
@@ -115,8 +118,8 @@ module.exports = {
       });
     const timeoutDuration = success ? 10 * 60 * 1000 : 2 * 60 * 1000;
     const timeoutLog = success
-      ? "Failed to delete Lyrics interaction."
-      : "Failed to delete unsuccessfull Lyrics interaction.";
+      ? `Failed to delete ${interaction.commandName} interaction.`
+      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
       interaction.deleteReply().catch((e) => {
         console.log(timeoutLog);

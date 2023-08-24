@@ -6,11 +6,11 @@ let repeatMode = false;
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("repeat")
-    .setDescription("Toggle repeat mode of the queue")
+    .setDescription("Toggle repeat mode of the current queue.")
     .addStringOption((option) => {
       return option
         .setName(`mode`)
-        .setDescription(`Select mode`)
+        .setDescription(`Select a mode to repeat the current track or repeat the current queue.`)
         .setRequired(false)
         .addChoices(
           {
@@ -141,8 +141,8 @@ module.exports = {
 
     const timeoutDuration = success ? timer * 1000 : 2 * 60 * 1000;
     const timeoutLog = success
-      ? "Failed to delete Repeat interaction."
-      : "Failed to delete unsuccessfull Repeat interaction.";
+      ? `Failed to delete ${interaction.commandName} interaction.`
+      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
       if (success && interaction.channel.id === musicChannelID) {
         repeatEmbed.reactions

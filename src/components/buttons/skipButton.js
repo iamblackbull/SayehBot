@@ -1,5 +1,4 @@
 const {
-  SlashCommandBuilder,
   EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
@@ -8,63 +7,45 @@ const {
 const { musicChannelID } = process.env;
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("jump")
-    .setDescription("Jump to a certain track number.")
-    .addIntegerOption((option) =>
-      option
-        .setName("tracknumber")
-        .setDescription("Input a track number to jump.")
-        .setMinValue(1)
-        .setRequired(true)
-    )
-    .setDMPermission(false),
+  isNew: true,
+  isBeta: true,
+  data: {
+    name: `skipper`,
+  },
   async execute(interaction, client) {
     const queue = client.player.nodes.get(interaction.guildId);
-    let trackNum = interaction.options.getInteger("tracknumber");
+    if (!queue) return;
+    if (!interaction.member.voice.channel) return;
+    if (
+      queue.connection.joinConfig.channelId !==
+      interaction.member.voice.channel.id
+    )
+      return;
+
+    queue.node.skip();
+    const nextSong = queue.tracks.at(0) || null;
+    const currentSong = queue.currentSong;
 
     let source;
-    let timer;
+    let embed = new EmbedBuilder().setColor(0xc42525);
     let success = false;
-    let failedEmbed = new EmbedBuilder();
-    let embed = new EmbedBuilder();
+    let timer;
 
-    if (!queue) {
-      failedEmbed
-        .setTitle(`**Action Failed**`)
+    if (nextSong == null || !nextSong) {
+      embed
+        .setTitle("**Skipped**")
         .setDescription(
-          `Bot is already not playing in any voice channel.\nUse </play:1047903145071759425> to play a track.`
+          `**[${currentSong.title}](${currentSong.url})**\n**${currentSong.author}**`
         )
-        .setColor(0xffea00)
-        .setThumbnail(
-          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-        );
-      await interaction.reply({
-        embeds: [failedEmbed],
-      });
-    } else if (!interaction.member.voice.channel) {
-      failedEmbed
-        .setTitle(`**Action Failed**`)
-        .setDescription(
-          `You need to be in a voice channel to use this command.`
-        )
-        .setColor(0xffea00)
-        .setThumbnail(
-          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-        );
-      await interaction.reply({
-        embeds: [failedEmbed],
-      });
-    } else if (
-      queue.connection.joinConfig.channelId ===
-      interaction.member.voice.channel.id
-    ) {
-      if (trackNum > queue.tracks.size) {
-        trackNum = queue.tracks.size;
-      }
-      queue.node.skipTo(trackNum - 1);
-      const nextSong = queue.tracks.at(0);
+        .setThumbnail(currentSong.thumbnail);
 
+      success = true;
+      timer = 2 * 60;
+
+      await interaction.reply({
+        embeds: [embed],
+      });
+    } else {
       const favoriteButton = new ButtonBuilder()
         .setCustomId(`favorite`)
         .setEmoji(`🤍`)
@@ -77,13 +58,18 @@ module.exports = {
         .setCustomId(`downloader`)
         .setEmoji(`⬇`)
         .setStyle(ButtonStyle.Secondary);
+      const skipButton = new ButtonBuilder()
+        .setCustomId(`skipper`)
+        .setEmoji(`⏭`)
+        .setStyle(ButtonStyle.Secondary);
 
       embed
-        .setTitle(`⏭ Jump`)
+        .setTitle(`**Next**`)
         .setDescription(
           `**[${nextSong.title}](${nextSong.url})**\n**${nextSong.author}**\n${nextSong.duration}`
         )
         .setThumbnail(nextSong.thumbnail);
+
       if (nextSong.url.includes("youtube")) {
         source = "public";
         embed.setColor(0xff0000).setFooter({
@@ -102,15 +88,10 @@ module.exports = {
           iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
           text: `Soundcloud`,
         });
-      } else if (song.url.includes("apple")) {
-        source = "private";
-        embed.setColor(0xfb4f67).setFooter({
-          iconURL: `https://music.apple.com/assets/knowledge-graph/music.png`,
-          text: `Apple Music`,
-        });
       }
 
       if (!queue.node.isPlaying()) await queue.node.play();
+
       success = true;
       if (nextSong.duration.length >= 7) {
         timer = 10 * 60;
@@ -119,6 +100,7 @@ module.exports = {
         const convertor = duration.split(":");
         timer = +convertor[0] * 60 + +convertor[1];
       }
+
       if (timer < 10 * 60) {
         if (source === "public") {
           await interaction.reply({
@@ -127,7 +109,8 @@ module.exports = {
               new ActionRowBuilder()
                 .addComponents(favoriteButton)
                 .addComponents(lyricsButton)
-                .addComponents(downloadButton),
+                .addComponents(downloadButton)
+                .addComponents(skipButton),
             ],
           });
         } else {
@@ -136,7 +119,8 @@ module.exports = {
             components: [
               new ActionRowBuilder()
                 .addComponents(favoriteButton)
-                .addComponents(lyricsButton),
+                .addComponents(lyricsButton)
+                .addComponents(skipButton),
             ],
           });
         }
@@ -145,17 +129,6 @@ module.exports = {
           embeds: [embed],
         });
       }
-    } else {
-      failedEmbed
-        .setTitle(`**Busy**`)
-        .setDescription(`Bot is busy in another voice channel.`)
-        .setColor(0x256fc4)
-        .setThumbnail(
-          `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
-        );
-      await interaction.reply({
-        embeds: [failedEmbed],
-      });
     }
     success ? timer : (timer = 2 * 60);
     if (timer > 10 * 60) timer = 10 * 60;

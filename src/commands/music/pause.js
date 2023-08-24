@@ -5,7 +5,7 @@ const { musicChannelID } = process.env;
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("pause")
-    .setDescription("Pause / Resume the music")
+    .setDescription("Pause / Resume the current track")
     .setDMPermission(false),
   async execute(interaction, client) {
     const pauseEmbed = await interaction.deferReply({
@@ -167,8 +167,8 @@ module.exports = {
 
     const timeoutDuration = success ? timer * 1000 : 2 * 60 * 1000;
     const timeoutLog = success
-      ? "Failed to delete Pause interaction."
-      : "Failed to delete unsuccessfull Pause interaction.";
+      ? `Failed to delete ${interaction.commandName} interaction.`
+      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;;
     setTimeout(() => {
       if (success && interaction.channel.id === musicChannelID) {
         pauseEmbed.reactions

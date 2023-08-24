@@ -5,7 +5,7 @@ const { musicChannelID } = process.env;
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("shuffle")
-    .setDescription("Shuffles the queue")
+    .setDescription("Shuffle the current queue.")
     .setDMPermission(false),
   async execute(interaction, client) {
     const queue = client.player.nodes.get(interaction.guildId);
@@ -86,8 +86,8 @@ module.exports = {
 
     const timeoutDuration = success ? timer * 1000 : 2 * 60 * 1000;
     const timeoutLog = success
-      ? "Failed to delete Shuffle interaction."
-      : "Failed to delete unsuccessfull Shuffle interaction.";
+      ? `Failed to delete ${interaction.commandName} interaction.`
+      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
       if (success === true && interaction.channel.id === musicChannelID) return;
       else {

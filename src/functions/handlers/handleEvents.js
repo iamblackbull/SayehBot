@@ -1,5 +1,6 @@
 const fs = require("fs");
 const { connection } = require("mongoose");
+const { useMainPlayer } = require("discord-player");
 
 module.exports = (client) => {
   client.handleEvents = async () => {
@@ -34,6 +35,16 @@ module.exports = (client) => {
               connection.on(event.name, (...args) =>
                 event.execute(...args, client)
               );
+          }
+          break;
+
+        case "player":
+          for (const file of eventFiles) {
+            const event = require(`../../events/${folder}/${file}`);
+            const player = useMainPlayer();
+            if (event.isPlayerEvent)
+              player.events.on(event.name, (...args) => event.execute(...args));
+            else player.on(event.name, (...args) => event.execute(...args));
           }
           break;
 

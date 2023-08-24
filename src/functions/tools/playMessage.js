@@ -61,185 +61,151 @@ module.exports = (client) => {
           });
         }, 2 * 60 * 1000);
       } else {
-        let queue = client.player.nodes.get(interaction.guildId);
-        if (!queue) {
-          queue = await client.player.nodes.create(interaction.guild, {
-            metadata: {
-              channel: interaction.channel,
-              client: interaction.guild.members.me,
-              requestedBy: interaction.user,
-            },
-            leaveOnEnd: true,
-            leaveOnEmpty: true,
-            leaveOnEndCooldown: 5 * 60 * 1000,
-            leaveOnEmptyCooldown: 5 * 1000,
-            smoothVolume: true,
-            ytdlOptions: {
-              filter: "audioonly",
-              quality: "highestaudio",
-              highWaterMark: 1 << 25,
-            },
+        let url = message.content;
+        let result;
+
+        if (
+          url.toLowerCase().startsWith("https") &&
+          url.toLowerCase().includes("playlist")
+        )
+          type = "playlist";
+        else if (
+          url.toLowerCase().startsWith("https") &&
+          url.toLowerCase().includes("album")
+        )
+          type = "album";
+        else type = "track";
+
+        if (type === "track") {
+          result = await client.player.search(url, {
+            requestedBy: message.author,
+            searchEngine: QueryType.AUTO,
+          });
+        } else if (url.toLowerCase().includes("youtube")) {
+          result = await client.player.search(url, {
+            requestedBy: message.author,
+            searchEngine: QueryType.YOUTUBE_PLAYLIST,
+          });
+        } else if (url.toLowerCase().includes("spotify")) {
+          result = await client.player.search(url, {
+            requestedBy: message.author,
+            searchEngine: QueryType.SPOTIFY_PLAYLIST,
+          });
+        } else if (url.toLowerCase().includes("soundcloud")) {
+          result = await client.player.search(url, {
+            requestedBy: message.author,
+            searchEngine: QueryType.SOUNDCLOUD_PLAYLIST,
+          });
+        } else if (url.toLowerCase().includes("apple") && type === "playlist") {
+          result = await client.player.search(url, {
+            requestedBy: message.author,
+            searchEngine: QueryType.APPLE_MUSIC_PLAYLIST,
+          });
+        } else if (url.toLowerCase().includes("apple") && type === "album") {
+          result = await client.player.search(url, {
+            requestedBy: message.author,
+            searchEngine: QueryType.APPLE_MUSIC_ALBUM,
           });
         }
-        if (!queue.connection) {
-          await queue.connect(message.member.voice.channel);
-        }
-        const connection =
-          queue.connection.joinConfig.channelId ===
-          interaction.member.voice.channel.id;
-        if (connection) {
-          let embed = new EmbedBuilder();
 
-          const favoriteButton = new ButtonBuilder()
-            .setCustomId(`favorite`)
-            .setEmoji(`🤍`)
-            .setStyle(ButtonStyle.Danger);
-          const lyricsButton = new ButtonBuilder()
-            .setCustomId(`lyrics`)
-            .setEmoji(`🎤`)
-            .setStyle(ButtonStyle.Primary);
-          const downloadButton = new ButtonBuilder()
-            .setCustomId(`downloader`)
-            .setEmoji(`⬇`)
-            .setStyle(ButtonStyle.Secondary);
-
-          let url = message.content;
-          let result;
-
-          if (
-            url.toLowerCase().startsWith("https") &&
-            url.toLowerCase().includes("playlist")
-          )
-            type = "playlist";
-          else if (
-            url.toLowerCase().startsWith("https") &&
-            url.toLowerCase().includes("album")
-          )
-            type = "album";
-          else type = "track";
-
-          if (type === "playlist") {
-            if (url.toLowerCase().includes("youtube")) {
-              result = await client.player.search(url, {
-                requestedBy: message.author,
-                searchEngine: QueryType.YOUTUBE_PLAYLIST,
-              });
-            }
-            if (url.toLowerCase().includes("spotify")) {
-              result = await client.player.search(url, {
-                requestedBy: message.author,
-                searchEngine: QueryType.SPOTIFY_PLAYLIST,
-              });
-            }
-            if (url.toLowerCase().includes("soundcloud")) {
-              result = await client.player.search(url, {
-                requestedBy: message.author,
-                searchEngine: QueryType.SOUNDCLOUD_PLAYLIST,
-              });
-            }
-            if (url.toLowerCase().includes("apple")) {
-              result = await client.player.search(url, {
-                requestedBy: message.author,
-                searchEngine: QueryType.APPLE_MUSIC_PLAYLIST,
-              });
-            }
-            const playlist = result.playlist;
-            if (result.tracks[0].duration.length >= 7) {
-              timer = 10 * 60;
-            } else {
-              const duration = result.tracks[0].duration;
-              const convertor = duration.split(":");
-              timer = +convertor[0] * 60 + +convertor[1];
-            }
-            await queue.addTrack(result.tracks);
-            embed
-              .setTitle(`🎶 Playlist`)
-              .setDescription(
-                `**[${playlist.title}](${playlist.url})**\n**${result.tracks.length} songs**`
-              )
-              .setThumbnail(playlist.thumbnail);
-            song = result.tracks[result.tracks.length - 1];
-          }
-          if (type === "album") {
-            if (url.toLowerCase().includes("youtube")) {
-              result = await client.player.search(url, {
-                requestedBy: message.author,
-                searchEngine: QueryType.YOUTUBE_PLAYLIST
-              });
-            }
-            if (url.toLowerCase().includes("spotify")) {
-              result = await client.player.search(url, {
-                requestedBy: message.author,
-                searchEngine: QueryType.SPOTIFY_ALBUM,
-              });
-            }
-            if (url.toLowerCase().includes("soundcloud")) {
-              result = await client.player.search(url, {
-                requestedBy: message.author,
-                searchEngine: QueryType.SOUNDCLOUD_PLAYLIST,
-              });
-            }
-            if (url.toLowerCase().includes("apple")) {
-              result = await client.player.search(url, {
-                requestedBy: message.author,
-                searchEngine: QueryType.APPLE_MUSIC_ALBUM,
-              });
-            }
-            const playlist = result.playlist;
-            if (result.tracks[0].duration.length >= 7) {
-              timer = 10 * 60;
-            } else {
-              const duration = result.tracks[0].duration;
-              const convertor = duration.split(":");
-              timer = +convertor[0] * 60 + +convertor[1];
-            }
-            await queue.addTrack(result.tracks);
-            embed
-              .setTitle(`🎶 Album`)
-              .setDescription(
-                `**[${playlist.title}](${playlist.url})**\n**${result.tracks.length} songs**`
-              )
-              .setThumbnail(playlist.thumbnail);
-            song = result.tracks[result.tracks.length - 1];
-          }
-          if (type === "track") {
-            result = await client.player.search(url, {
-              requestedBy: message.author,
-              searchEngine: QueryType.AUTO,
+        if (result.tracks.length === 0) {
+          failedEmbed
+            .setTitle(`**No Result**`)
+            .setDescription(`Make sure you input a valid link.`)
+            .setColor(0xffea00)
+            .setThumbnail(
+              `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
+            );
+          msg = await message.reply({
+            embeds: [failedEmbed],
+          });
+          setTimeout(() => {
+            msg.delete().catch((e) => {
+              console.log(`Failed to delete unsuccessfull Play message.`);
             });
-            song = result.tracks[0];
-            if (song.duration.length >= 7) {
-              timer = 10 * 60;
-            } else {
-              const duration = song.duration;
-              const convertor = duration.split(":");
-              timer = +convertor[0] * 60 + +convertor[1];
-            }
-            await queue.addTrack(song);
-            embed
-              .setTitle(`🎵 Track`)
-              .setDescription(
-                `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`
-              )
-              .setThumbnail(song.thumbnail);
-          }
-          if (result.tracks.length === 0) {
-            failedEmbed
-              .setTitle(`**No Result**`)
-              .setDescription(`Make sure you input a valid link.`)
-              .setColor(0xffea00)
-              .setThumbnail(
-                `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
-              );
-            msg = await message.reply({
-              embeds: [failedEmbed],
+          }, 2 * 60 * 1000);
+        } else {
+          let newQueue = false;
+          let queue = client.player.nodes.get(interaction.guildId);
+          if (!queue) {
+            newQueue = true;
+            queue = await client.player.nodes.create(interaction.guild, {
+              metadata: {
+                channel: interaction.member.voice.channel,
+                client: interaction.guild.members.me,
+                requestedBy: interaction.user,
+                track: result.tracks[0],
+              },
+              leaveOnEnd: true,
+              leaveOnEmpty: true,
+              leaveOnStop: true,
+              leaveOnStopCooldown: 5 * 60 * 1000,
+              leaveOnEndCooldown: 5 * 60 * 1000,
+              leaveOnEmptyCooldown: 5 * 1000,
+              smoothVolume: true,
+              ytdlOptions: {
+                filter: "audioonly",
+                quality: "highestaudio",
+                highWaterMark: 1 << 25,
+              },
             });
-            setTimeout(() => {
-              msg.delete().catch((e) => {
-                console.log(`Failed to delete unsuccessfull Play message.`);
-              });
-            }, 2 * 60 * 1000);
-          } else {
+          }
+          if (!queue.connection) {
+            await queue.connect(message.member.voice.channel);
+          }
+          const connection =
+            queue.connection.joinConfig.channelId ===
+            interaction.member.voice.channel.id;
+          if (connection) {
+            let embed = new EmbedBuilder();
+
+            const favoriteButton = new ButtonBuilder()
+              .setCustomId(`favorite`)
+              .setEmoji(`🤍`)
+              .setStyle(ButtonStyle.Danger);
+            const lyricsButton = new ButtonBuilder()
+              .setCustomId(`lyrics`)
+              .setEmoji(`🎤`)
+              .setStyle(ButtonStyle.Primary);
+            const downloadButton = new ButtonBuilder()
+              .setCustomId(`downloader`)
+              .setEmoji(`⬇`)
+              .setStyle(ButtonStyle.Secondary);
+            const skipButton = new ButtonBuilder()
+              .setCustomId(`skipper`)
+              .setEmoji(`⏭`)
+              .setStyle(ButtonStyle.Secondary);
+
+            if (type === "track") {
+              song = result.tracks[0];
+              await queue.addTrack(song);
+
+              if (newQueue) {
+                embed.setTitle(`🎵 Now Playing`);
+              } else {
+                embed.setTitle(`🎵 Track #${queue.tracks.size}`);
+              }
+
+              embed
+                .setDescription(
+                  `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`
+                )
+                .setThumbnail(song.thumbnail);
+            } else {
+              const playlist = result.playlist;
+              await queue.addTrack(result.tracks);
+
+              embed
+                .setDescription(
+                  `**[${playlist.title}](${playlist.url})**\n**${result.tracks.length} songs**`
+                )
+                .setThumbnail(playlist.thumbnail);
+              song = result.tracks[result.tracks.length - 1];
+
+              if (type === "playlist") embed.setTitle(`🎶 Playlist`);
+              if (type === "album") embed.setTitle(`🎶 Album`);
+            }
+
             if (song.url.includes("youtube")) {
               source = "public";
               embed.setColor(0xff0000).setFooter({
@@ -265,6 +231,7 @@ module.exports = (client) => {
                 text: `Apple Music`,
               });
             }
+
             if (!queue.node.isPlaying()) await queue.node.play();
 
             if (type === "playlist" || type === "album") {
@@ -272,7 +239,7 @@ module.exports = (client) => {
                 embeds: [embed],
               });
             } else {
-              if (timer < 10 * 60) {
+              if (newQueue && timer < 10 * 60) {
                 if (source === "public") {
                   msg = await message.reply({
                     embeds: [embed],
@@ -280,7 +247,8 @@ module.exports = (client) => {
                       new ActionRowBuilder()
                         .addComponents(favoriteButton)
                         .addComponents(lyricsButton)
-                        .addComponents(downloadButton),
+                        .addComponents(downloadButton)
+                        .addComponents(skipButton),
                     ],
                   });
                 } else {
@@ -289,7 +257,8 @@ module.exports = (client) => {
                     components: [
                       new ActionRowBuilder()
                         .addComponents(favoriteButton)
-                        .addComponents(lyricsButton),
+                        .addComponents(lyricsButton)
+                        .addComponents(skipButton),
                     ],
                   });
                 }
@@ -298,29 +267,37 @@ module.exports = (client) => {
                   embeds: [embed],
                 });
               }
+              if (result.tracks[0].duration.length >= 7) {
+                timer = 10 * 60;
+              } else {
+                const duration = result.tracks[0].duration;
+                const convertor = duration.split(":");
+                timer = +convertor[0] * 60 + +convertor[1];
+              }
+
               if (timer > 10 * 60) timer = 10 * 60;
               if (timer < 1 * 60) timer = 1 * 60;
               setTimeout(() => {
                 msg.edit({ components: [] });
               }, timer * 1000);
             }
-          }
-        } else {
-          failedEmbed
-            .setTitle(`**Busy**`)
-            .setDescription(`Bot is busy in another voice channel.`)
-            .setColor(0x256fc4)
-            .setThumbnail(
-              `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
-            );
-          msg = await message.reply({
-            embeds: [failedEmbed],
-          });
-          setTimeout(() => {
-            msg.delete().catch((e) => {
-              console.log(`Failed to delete unsuccessfull Play message.`);
+          } else {
+            failedEmbed
+              .setTitle(`**Busy**`)
+              .setDescription(`Bot is busy in another voice channel.`)
+              .setColor(0x256fc4)
+              .setThumbnail(
+                `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
+              );
+            msg = await message.reply({
+              embeds: [failedEmbed],
             });
-          }, 2 * 60 * 1000);
+            setTimeout(() => {
+              msg.delete().catch((e) => {
+                console.log(`Failed to delete unsuccessfull Play message.`);
+              });
+            }, 2 * 60 * 1000);
+          }
         }
       }
     }

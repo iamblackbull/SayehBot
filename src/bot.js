@@ -45,6 +45,8 @@ client.player = new Player(client, {
   useLegacyFFmpeg: false,
   leaveOnEnd: true,
   leaveOnEmpty: true,
+  leaveOnStop: true,
+  leaveOnStopCooldown: 5 * 60 * 1000,
   leaveOnEndCooldown: 5 * 60 * 1000,
   leaveOnEmptyCooldown: 5 * 1000,
   smoothVolume: true,
@@ -55,32 +57,6 @@ client.player = new Player(client, {
   },
 });
 client.player.extractors.loadDefault();
-client.player.events.on("connection", function (queue) {
-  queue.connection.on(
-    "stateChange",
-    function (oldState, newState) {
-      var oldNetworking = Reflect.get(oldState, "networking");
-      var newNetworking = Reflect.get(newState, "networking");
-      var networkStateChangeHandler = function (
-        oldNetworkState,
-        newNetworkState
-      ) {
-        var newUdp = Reflect.get(newNetworkState, "udp");
-        clearInterval(
-          newUdp === null || newUdp === void 0
-            ? void 0
-            : newUdp.keepAliveInterval
-        );
-      };
-      oldNetworking === null || oldNetworking === void 0
-        ? void 0
-        : oldNetworking.off("stateChange", networkStateChangeHandler);
-      newNetworking === null || newNetworking === void 0
-        ? void 0
-        : newNetworking.on("stateChange", networkStateChangeHandler);
-    }
-  );
-});
 
 executing.on("unhandledRejection", (reason) => {
   console.log(`Unhandled Rejection with reason:\n`, reason);

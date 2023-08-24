@@ -226,10 +226,20 @@ module.exports = (client) => {
         }
       });
     } catch (error) {
-      console.log(error);
-      console.log(
-        chalk.red(`An error occurred in Twitch (Sayeh) notification process...`)
-      );
+      if (error.code.toLowerCase().includes("etimedout")) {
+        console.log(
+          "Connection ETIMEDOUT while awaiting API response for Twitch (Sayeh)."
+        );
+      } else if (error.code.toLowerCase().includes("token")) {
+        console.log("Twitch (Sayeh) API Token has been expired.");
+      } else {
+        console.log(
+          chalk.red(
+            `An unkown error occurred in Twitch (Sayeh) notification process:`
+          )
+        );
+        throw error;
+      }
     }
   };
 };

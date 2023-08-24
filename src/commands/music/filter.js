@@ -1,7 +1,14 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} = require("discord.js");
 const { AudioFilters, useTimeline } = require("discord-player");
 const { musicChannelID } = process.env;
-let filterMode = false;
 
 AudioFilters.define(
   "8D",
@@ -13,60 +20,19 @@ AudioFilters.define(
   "earrape",
   "fadein",
   "karaoke",
-  "vibrato"
+  "vibrato",
+  "normalizer"
 );
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("filter")
-    .setDescription("Change current filter of the queue")
+    .setDescription("Put / Remove filters of the current queue.")
     .addStringOption((option) => {
       return option
-        .setName("effect")
-        .setDescription("Choose effect")
-        .setRequired(true)
-        .addChoices(
-          {
-            name: "8D",
-            value: "8d",
-          },
-          {
-            name: "Bassboost",
-            value: "bassboost",
-          },
-          {
-            name: "Vaporwave",
-            value: "vaporwave",
-          },
-          {
-            name: "Nightcore",
-            value: "nightcore",
-          },
-          {
-            name: "Reverse",
-            value: "reverse",
-          },
-          {
-            name: "Fade-In",
-            value: "fadein",
-          },
-          {
-            name: "Karaoke",
-            value: "karaoke",
-          },
-          {
-            name: "Vibrato",
-            value: "vibrato",
-          },
-          {
-            name: "Earrape",
-            value: "earrape",
-          },
-          {
-            name: "Remove",
-            value: "remove",
-          }
-        );
+        .setName("disable")
+        .setDescription("Disable all filters of the current queue.")
+        .setRequired(false);
     })
     .setDMPermission(false),
   async execute(interaction, client) {
@@ -74,15 +40,114 @@ module.exports = {
       fetchReply: true,
     });
 
+    const availableFilters = [
+      {
+        label: "8D",
+        value: "8D",
+        description: "Simulate surround audio effect.",
+        emoji: "🎧",
+      },
+      {
+        label: "Bass boost",
+        value: "bassboost_low",
+        description: "Boost the bass of the audio.",
+        emoji: "🔊",
+      },
+      {
+        label: "Nightcore",
+        value: "nightcore",
+        description: "Speed up the audio (higher pitch).",
+        emoji: "💨",
+      },
+      {
+        label: "Vaporwave",
+        value: "vaporwave",
+        description: "Slow down the audio (lower pitch).",
+        emoji: "🐌",
+      },
+      {
+        label: "Reverse",
+        value: "reverse",
+        description: "Reverse the audio.",
+        emoji: "◀",
+      },
+      {
+        label: "Fade-in",
+        value: "fadein",
+        description: "Add a progressive increase in the volume of the audio.",
+        emoji: "📈",
+      },
+      {
+        label: "Karaoke",
+        value: "karaoke",
+        description: "Lower the singer's voice from the audio.",
+        emoji: "🎤",
+      },
+      {
+        label: "Vibrato",
+        value: "vibrato",
+        description: "Make the notes change pitch subtly and quickly.",
+        emoji: "📳",
+      },
+      {
+        label: "Earrape",
+        value: "earrape",
+        description: "Add a extremely loud and distorted audio.",
+        emoji: "👂",
+      },
+      {
+        label: "Normalizer",
+        value: "normalizer",
+        description: "Normalize the audio (avoid distortion).",
+        emoji: "🎼",
+      },
+    ];
+
+    let filtersOptions = [];
+    availableFilters.forEach((filter) => {
+      let isEnabled = false;
+
+      if (queue.filters.ffmpeg.filters.includes(filter.value)) isEnabled = true;
+
+      filtersOptions.push(
+        new StringSelectMenuOptionBuilder()
+          .setLabel(filter.label)
+          .setDescription(filter.description)
+          .setValue(filter.value)
+          .setEmoji(filter.emoji)
+          .setDefault(isEnabled)
+      );
+    });
+
+    const filterMenu = new StringSelectMenuBuilder()
+      .setCustomId("filters")
+      .setPlaceholder("Select which filters to apply:")
+      .setMinValues(0)
+      .setMaxValues(filtersOptions.length)
+      .addOptions(filtersOptions);
+
+    const disableButton = new ButtonBuilder()
+      .setCustomId(`disable`)
+      .setLabel("Disable")
+      .setStyle(ButtonStyle.Danger);
+
+    const queue = client.player.nodes.get(interaction.guildId);
+
     let timer;
     let success = false;
     let embed = new EmbedBuilder()
       .setColor(0xc42577)
       .setTitle("✨ Current Filter");
 
-    let failedEmbed = new EmbedBuilder();
+    if (queue.filters.ffmpeg.filters.length > 0) {
+      embed.setDescription(
+        `**${queue.filters.ffmpeg.filters.length}** filters are enabled.`
+      );
+    } else {
+      embed.setDescription(`Filters are disabled.`);
+    }
 
-    const queue = client.player.nodes.get(interaction.guildId);
+    let failedEmbed = new EmbedBuilder();
 
     if (!queue) {
       failedEmbed
@@ -114,141 +179,88 @@ module.exports = {
       queue.connection.joinConfig.channelId ===
       interaction.member.voice.channel.id
     ) {
-      if (interaction.options.get("effect").value === "8d") {
-        queue.filters.ffmpeg.toggle("8D");
-        filterMode = true;
-        embed
-          .setThumbnail(
-            `https://res.cloudinary.com/mtree/image/upload/w_800,q_auto:eco,f_auto,dpr_auto/Braun-EN-US/1XGViwIsU8OuVsaIzd6zr8/77364d3f21dd75661831570058363290/pdp-icon-mpg-shaver-8d-flex-head-silver.png`
-          )
-          .setDescription("**8D** filter has been added to the queue.");
-      } else if (interaction.options.get("effect").value === "bassboost") {
-        queue.filters.ffmpeg.toggle(bassboost_low);
-        filterMode = true;
-        embed
-          .setThumbnail(
-            `https://dl.hiapphere.com/data/icon/201411/HiAppHere_com_com.djit.bassboostforandroidfree.png`
-          )
-          .setDescription("**Bassboost** filter has been added to the queue.");
-      } else if (interaction.options.get("effect").value === "reverse") {
-        queue.filters.ffmpeg.toggle(reverse);
-        filterMode = true;
-        embed
-          .setThumbnail(
-            `https://cdn-icons-png.flaticon.com/512/5869/5869821.png`
-          )
-          .setDescription("**Reverse** filter has been added to the queue.");
-      } else if (interaction.options.get("effect").value === "vaporwave") {
-        queue.filters.ffmpeg.toggle(vaporwave);
-        filterMode = true;
-        embed
-          .setThumbnail(`https://img.icons8.com/nolan/512/vaporwave.png`)
-          .setDescription("**Vaporwave** filter has been added to the queue.");
-      } else if (interaction.options.get("effect").value === "nightcore") {
-        queue.filters.ffmpeg.toggle(nightcore);
-        filterMode = true;
-        embed
-          .setThumbnail(
-            `https://image.apktoy.com/img/96/com.smp.musicspeed/icon.png`
-          )
-          .setDescription("**Nightcore** filter has been added to the queue.");
-      } else if (interaction.options.get("effect").value === "fadein") {
-        queue.filters.ffmpeg.toggle(fadein);
-        filterMode = true;
-        embed
-          .setThumbnail(
-            `https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/PT2019.png/800px-PT2019.png`
-          )
-          .setDescription("**Fade-In** filter has been added to the queue.");
-      } else if (interaction.options.get("effect").value === "karaoke") {
-        queue.filters.ffmpeg.toggle(karaoke);
-        filterMode = true;
-        embed
-          .setThumbnail(
-            `https://cdn-icons-png.flaticon.com/512/1651/1651780.png`
-          )
-          .setDescription("**Karaoke** filter has been added to the queue.");
-      } else if (interaction.options.get("effect").value === "vibrato") {
-        queue.filters.ffmpeg.toggle(vibrato);
-        filterMode = true;
-        embed
-          .setThumbnail(
-            `https://f-droid.org/repo/icons-640/io.gitlab.danielrparks.vibrato.3.png`
-          )
-          .setDescription("**Vibrato** filter has been added to the queue.");
-      } else if (interaction.options.get("effect").value === "earrape") {
-        queue.filters.ffmpeg.toggle(earrape);
-        filterMode = true;
-        embed
-          .setThumbnail(`https://m.media-amazon.com/images/I/41P7AJjvdxL.png`)
-          .setDescription("**Earrape** filter has been added to the queue.");
-      } else if (interaction.options.get("effect").value === "remove") {
-        if (filterMode) {
-          if (queue.filters.bassboost_low.enabled) queue.filters.ffmpeg.toggle(bassboost_low);
-          if (queue.filters.reverse.enabled) queue.filters.ffmpeg.toggle(reverse);
-          if (queue.filters.vaporwave.enabled) queue.filters.ffmpeg.toggle(vaporwave);
-          if (queue.filters.nightcore.enabled) queue.filters.ffmpeg.toggle(nightcore);
-          if (queue.filters.fadein.enabled) queue.filters.ffmpeg.toggle(fadein);
-          if (queue.filters.karaoke.enabled) queue.filters.ffmpeg.toggle(karaoke);
-          if (queue.filters.vibrato.enabled) queue.filters.ffmpeg.toggle(vibrato);
-          if (queue.filters.earrape.enabled) queue.filters.ffmpeg.toggle(earrape);
-          filterMode = false;
-          embed
-            .setThumbnail(
-              `https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/ec0429cf-1471-466c-b958-f3b1faa7896b/d5z70lm-6957c824-d709-4562-ad56-966f5d234ed8.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcL2VjMDQyOWNmLTE0NzEtNDY2Yy1iOTU4LWYzYjFmYWE3ODk2YlwvZDV6NzBsbS02OTU3YzgyNC1kNzA5LTQ1NjItYWQ1Ni05NjZmNWQyMzRlZDgucG5nIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.Jc35y_HhdezDe5zo7RbWrKb685SrzGxDNYlBdAXtR0Q`
-            )
-            .setDescription("Effects have been removed from the queue.");
-          await interaction.editReply({
-            embeds: [embed],
-          });
-        } else {
-          failedEmbed
-            .setTitle(`**Action Failed**`)
-            .setDescription(`There are already no effects on the queue.`)
-            .setColor(0xffea00)
-            .setThumbnail(
-              `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-            );
-          await interaction.editReply({
-            embeds: [failedEmbed],
-          });
-        }
-      }
-      filterEmbed.react(`❌`);
-      const filter = (reaction, user) => {
-        [`❌`].includes(reaction.emoji.name) && user.id === interaction.user.id;
-      };
-      const collector = filterEmbed.createReactionCollector(filter);
-      collector.on("collect", async (reaction, user) => {
-        if (user.bot) return;
-        else {
-          reaction.users.remove(reaction.users.cache.get(user.id));
-          if (reaction.emoji.name === `❌`) {
-            if (filterMode) {
-              if (queue.filters.bassboost_low.enabled) queue.filters.ffmpeg.toggle(bassboost_low);
-              if (queue.filters.reverse.enabled) queue.filters.ffmpeg.toggle(reverse);
-              if (queue.filters.vaporwave.enabled) queue.filters.ffmpeg.toggle(vaporwave);
-              if (queue.filters.nightcore.enabled) queue.filters.ffmpeg.toggle(nightcore);
-              if (queue.filters.fadein.enabled) queue.filters.ffmpeg.toggle(fadein);
-              if (queue.filters.karaoke.enabled) queue.filters.ffmpeg.toggle(karaoke);
-              if (queue.filters.vibrato.enabled) queue.filters.ffmpeg.toggle(vibrato);
-              if (queue.filters.earrape.enabled) queue.filters.ffmpeg.toggle(earrape);
-              success = true;
-              embed
-                .setThumbnail(
-                  `https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/ec0429cf-1471-466c-b958-f3b1faa7896b/d5z70lm-6957c824-d709-4562-ad56-966f5d234ed8.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcL2VjMDQyOWNmLTE0NzEtNDY2Yy1iOTU4LWYzYjFmYWE3ODk2YlwvZDV6NzBsbS02OTU3YzgyNC1kNzA5LTQ1NjItYWQ1Ni05NjZmNWQyMzRlZDgucG5nIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.Jc35y_HhdezDe5zo7RbWrKb685SrzGxDNYlBdAXtR0Q`
-                )
-                .setDescription("Effects have been removed from the queue.");
-              await interaction.editReply({
-                embeds: [embed],
-              });
-            } else return;
-          }
-        }
-      });
+      const { timestamp } = useTimeline(interaction.guildId);
+      const duration = timestamp.total.label;
+      const convertor = duration.split(":");
+      const totalTimer = +convertor[0] * 60 + +convertor[1];
+
+      const currentDuration = timestamp.current.label;
+      const currentConvertor = currentDuration.split(":");
+      const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
+
+      timer = totalTimer - currentTimer;
+
+      if (timer > 10 * 60) timer = 10 * 60;
+      if (timer < 1 * 60) timer = 1 * 60;
+
       await interaction.editReply({
         embeds: [embed],
+        components: [
+          new ActionRowBuilder()
+            .addComponents(filterMenu)
+            .addComponents(disableButton),
+        ],
       });
+
+      const collectorFilter = (i) => i.user.id === interaction.user.id;
+      try {
+        const confirmation = await filterEmbed.awaitMessageComponent({
+          filter: collectorFilter,
+          time: timer,
+        });
+        confirmation.deferUpdate();
+
+        if (queue.filters.ffmpeg.filters.length > 0) {
+          queue.filters.ffmpeg.setFilters(false);
+        }
+        if (
+          confirmation.customId === "disable" ||
+          confirmation.values.length === 0
+        ) {
+          embed.setDescription("Filters are disabled.");
+
+          await interaction.editReply({
+            embeds: [embed],
+            components: [],
+          });
+        } else {
+          if (
+            confirmation.values.includes("bassboost_low") &&
+            !confirmation.values.includes("normalizer")
+          ) {
+            confirmation.values.push("normalizer");
+          }
+
+          queue.filters.ffmpeg.toggle(confirmation.values);
+
+          embed.setDescription(`**${
+            queue.filters.ffmpeg.filters.length
+          }** filters are enabled.\n
+          ${confirmation.values
+            .map((enabledFilter) => {
+              let filter = availableFilters.find(
+                (filter) => enabledFilter == filter.value
+              );
+              return `- **${filter.emoji} ${filter.label}**`;
+            })
+            .join("\n")}`);
+
+          await interaction.editReply({
+            embeds: [embed],
+            components: [],
+          });
+        }
+      } catch (error) {
+        if (error.code === "InteractionCollectorError") {
+          console.log(
+            `Interaction response timed out for command ${interaction.commandName}`
+          );
+        } else {
+          console.log(
+            `Something went wrong while awaiting interaction response for command ${interaction.commandName}`
+          );
+        }
+      }
     } else {
       failedEmbed
         .setTitle(`**Busy**`)
@@ -262,34 +274,15 @@ module.exports = {
       });
     }
 
-    const { timestamp } = useTimeline(interaction.guildId);
-    const duration = timestamp.total.label;
-    const convertor = duration.split(":");
-    const totalTimer = +convertor[0] * 60 + +convertor[1];
-
-    const currentDuration = timestamp.current.label;
-    const currentConvertor = currentDuration.split(":");
-    const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
-
-    timer = totalTimer - currentTimer;
-
-    if (timer > 10 * 60) timer = 10 * 60;
-    if (timer < 1 * 60) timer = 1 * 60;
-
     const timeoutDuration = success ? timer * 1000 : 2 * 60 * 1000;
     const timeoutLog = success
-      ? "Failed to delete Filter interaction."
-      : "Failed to delete unsuccessfull Filter interaction.";
+      ? `Failed to delete ${interaction.commandName} interaction.`
+      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
       if (success && interaction.channel.id === musicChannelID) {
-        filterEmbed.reactions
-          .removeAll()
-          .catch((error) =>
-            console.error(
-              chalk.red("Failed to clear reactions from Filter interaction."),
-              error
-            )
-          );
+        interaction.editReply({
+          components: [],
+        });
       } else {
         interaction.deleteReply().catch((e) => {
           console.log(timeoutLog);

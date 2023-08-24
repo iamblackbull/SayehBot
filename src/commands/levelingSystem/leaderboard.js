@@ -52,9 +52,9 @@ module.exports = {
           rawLeaderboard
         );
         const leaderboardString = leaderboard
-          .map((e) => {
-            return `**${e.position}.** ${e.username.toUpperCase()} \`[${
-              e.level
+          .map((user) => {
+            return `**${user.position}.** ${user.username.toUpperCase()} \`[${
+              user.level
             }]\``;
           })
           .join("\n\n");

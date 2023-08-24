@@ -4,7 +4,7 @@ const { musicChannelID } = process.env;
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("leave")
-    .setDescription("Disconnect and reset the queue")
+    .setDescription("Disconnect the bot and delete the current queue.")
     .setDMPermission(false),
   async execute(interaction, client) {
     let queue = client.player.nodes.get(interaction.guildId);
@@ -15,7 +15,9 @@ module.exports = {
     if (!queue || !queue.connection) {
       failedEmbed
         .setTitle(`**Action Failed**`)
-        .setDescription(`Bot is already not playing in any voice channel.\nUse </play:1047903145071759425> to play a track.`)
+        .setDescription(
+          `Bot is already not playing in any voice channel.\nUse </play:1047903145071759425> to play a track.`
+        )
         .setColor(0xffea00)
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
@@ -48,12 +50,7 @@ module.exports = {
           `https://icons.veryicon.com/png/o/miscellaneous/programming-software-icons/reset-28.png`
         );
 
-      const queue = client.player.nodes.get(interaction.guildId);
-      if (!queue) {
-        voiceChannel.destroy();
-      } else {
-        queue.delete();
-      }
+      queue.delete();
 
       await interaction.reply({ embeds: [embed] });
       success = true;
@@ -71,8 +68,8 @@ module.exports = {
     }
     const timeoutDuration = success ? 5 * 60 * 1000 : 2 * 60 * 1000;
     const timeoutLog = success
-      ? "Failed to delete Favorite interaction."
-      : "Failed to delete unsuccessfull Favorite interaction.";
+      ? `Failed to delete ${interaction.commandName} interaction.`
+      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
       if (success && interaction.channel.id === musicChannelID) return;
       else {

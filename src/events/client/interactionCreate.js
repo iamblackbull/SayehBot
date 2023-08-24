@@ -1,4 +1,4 @@
-const { InteractionType, EmbedBuilder } = require("discord.js");
+const { EmbedBuilder } = require("discord.js");
 
 let failedEmbed = new EmbedBuilder()
   .setTitle(`Error`)

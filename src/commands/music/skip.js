@@ -10,7 +10,7 @@ const { musicChannelID } = process.env;
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("skip")
-    .setDescription("Skip the current track")
+    .setDescription("Skip the current track.")
     .setDMPermission(false),
   async execute(interaction, client) {
     await interaction.deferReply({
@@ -161,8 +161,8 @@ module.exports = {
     if (timer > 10 * 60) timer = 10 * 60;
     if (timer < 1 * 60) timer = 1 * 60;
     const timeoutLog = success
-      ? "Failed to delete Skip interaction."
-      : "Failed to delete unsuccessfull Skip interaction.";
+      ? `Failed to delete ${interaction.commandName} interaction.`
+      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
       if (success && interaction.channel.id === musicChannelID) {
         interaction.editReply({ components: [] });

@@ -8,7 +8,7 @@ module.exports = (client) => {
         (file) => file.endsWith(".js")
       );
 
-      const { buttons, modals } = client;
+      const { buttons, modals, selectMenus } = client;
 
       switch (folder) {
         case "buttons":
@@ -22,6 +22,13 @@ module.exports = (client) => {
           for (const file of componentFiles) {
             const modal = require(`../../components/${folder}/${file}`);
             modals.set(modal.data.name, modal);
+          }
+          break;
+
+        case "selectMenus":
+          for (const file of componentFiles) {
+            const menu = require(`../../components/${folder}/${file}`);
+            selectMenus.set(menu.data.name, menu);
           }
           break;
 

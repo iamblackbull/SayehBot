@@ -30,7 +30,7 @@ module.exports = {
 
     let embed = new EmbedBuilder()
       .setTitle(`Follow & Subscribe now!`)
-      .setDescription(`Don't forget to follow Sayeh on social medias!`)
+      .setDescription(`Don't forget to follow Sayeh on social media!`)
       .setFields(
         { name: `Twitch`, value: `/Sayeh`, inline: true },
         { name: `YouTube`, value: `@Say3h`, inline: true },

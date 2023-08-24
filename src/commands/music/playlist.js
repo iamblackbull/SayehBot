@@ -10,12 +10,12 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("playlist")
     .setDescription(
-      "Play a playlist or album from YouTube / Spotify / Soundcloud / Apple Music"
+      "Play a playlist or album from YouTube / Spotify / Soundcloud / Apple Music."
     )
     .addStringOption((option) =>
       option
         .setName("url")
-        .setDescription("Input playlist's url")
+        .setDescription("Input a playlist url.")
         .setRequired(true)
     )
     .setDMPermission(false),
@@ -58,125 +58,121 @@ module.exports = {
         embeds: [failedEmbed],
       });
     } else {
-      let queue = client.player.nodes.get(interaction.guildId);
-      if (!queue) {
-        queue = await client.player.nodes.create(interaction.guild, {
-          metadata: {
-            channel: interaction.channel,
-            client: interaction.guild.members.me,
+      const player = useMainPlayer();
+      const url = interaction.options.getString("url", true);
+      let result;
+
+      if (url.toLowerCase().startsWith("https")) {
+        if (url.toLowerCase().includes("spotify")) {
+          result = await player.search(url, {
             requestedBy: interaction.user,
-          },
-          leaveOnEnd: true,
-          leaveOnEmpty: true,
-          leaveOnEndCooldown: 5 * 60 * 1000,
-          leaveOnEmptyCooldown: 5 * 1000,
-          smoothVolume: true,
-          ytdlOptions: {
-            filter: "audioonly",
-            quality: "highestaudio",
-            highWaterMark: 1 << 25,
-          },
-        });
-      }
-      if (!queue.connection) {
-        await queue.connect(interaction.member.voice.channel);
-      }
-      const connection =
-        queue.connection.joinConfig.channelId ===
-        interaction.member.voice.channel.id;
-      if (connection) {
-        let embed = new EmbedBuilder()
-          .setTitle(`🎶 Playlist`)
-          .setColor(0x256fc4);
-
-        const player = useMainPlayer();
-        const url = interaction.options.getString("url", true);
-        if (url.toLowerCase().includes("album")) {
-          embed.setTitle(`🎶 Album`);
-        }
-        let result;
-
-        if (url.toLowerCase().startsWith("https")) {
-          if (url.toLowerCase().includes("spotify")) {
-            if (url.toLowerCase().includes("playlist")) {
-              result = await player.search(url, {
-                requestedBy: interaction.user,
-                searchEngine: QueryType.SPOTIFY_PLAYLIST,
-              });
-            }
-            if (url.toLowerCase().includes("album")) {
-              result = await player.search(url, {
-                requestedBy: interaction.user,
-                searchEngine: QueryType.SPOTIFY_ALBUM,
-              });
-            }
-            embed.setColor(0x34eb58).setFooter({
-              iconURL: `https://www.freepnglogos.com/uploads/spotify-logo-png/image-gallery-spotify-logo-21.png`,
-              text: `Spotify`,
-            });
-          }
-          if (url.toLowerCase().includes("soundcloud")) {
-            result = await player.search(url, {
-              requestedBy: interaction.user,
-              searchEngine: QueryType.SOUNDCLOUD_PLAYLIST,
-            });
-            embed.setColor(0xeb5534).setFooter({
-              iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
-              text: `Soundcloud`,
-            });
-          }
-          if (url.toLowerCase().includes("apple")) {
-            if (url.toLowerCase().includes("playlist")) {
-              result = await player.search(url, {
-                requestedBy: interaction.user,
-                searchEngine: QueryType.APPLE_MUSIC_PLAYLIST,
-              });
-            }
-            if (url.toLowerCase().includes("album")) {
-              result = await player.search(url, {
-                requestedBy: interaction.user,
-                searchEngine: QueryType.APPLE_MUSIC_ALBUM,
-              });
-            }
-            embed.setColor(0xeb5534).setFooter({
-              iconURL: `https://music.apple.com/assets/knowledge-graph/music.png`,
-              text: `Apple Music`,
-            });
-          } else {
-            result = await player.search(url, {
-              requestedBy: interaction.user,
-              searchEngine: QueryType.YOUTUBE_PLAYLIST,
-            });
-            embed.setColor(0xff0000).setFooter({
-              iconURL: `https://www.iconpacks.net/icons/2/free-youtube-logo-icon-2431-thumb.png`,
-              text: `YouTube`,
-            });
-          }
-        }
-        if (!url.toLowerCase().startsWith("https")) {
-          failedEmbed
-            .setTitle(`**No Result**`)
-            .setDescription(`Make sure you input a valid link.`)
-            .setColor(0xffea00)
-            .setThumbnail(
-              `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
-            );
-          interaction.editReply({
-            embeds: [failedEmbed],
+            searchEngine: QueryType.SPOTIFY_PLAYLIST,
+          });
+          embed.setColor(0x34eb58).setFooter({
+            iconURL: `https://www.freepnglogos.com/uploads/spotify-logo-png/image-gallery-spotify-logo-21.png`,
+            text: `Spotify`,
           });
         }
-        if (result.tracks.length === 0) {
-          failedEmbed
-            .setTitle(`**No Result**`)
-            .setDescription(`Make sure you input a valid link.`)
-            .setColor(0xffea00)
-            .setThumbnail(
-              `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
-            );
-          interaction.editReply({
-            embeds: [failedEmbed],
+        if (url.toLowerCase().includes("soundcloud")) {
+          result = await player.search(url, {
+            requestedBy: interaction.user,
+            searchEngine: QueryType.SOUNDCLOUD_PLAYLIST,
+          });
+          embed.setColor(0xeb5534).setFooter({
+            iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
+            text: `Soundcloud`,
+          });
+        }
+        if (url.toLowerCase().includes("apple")) {
+          if (url.toLowerCase().includes("playlist")) {
+            result = await player.search(url, {
+              requestedBy: interaction.user,
+              searchEngine: QueryType.APPLE_MUSIC_PLAYLIST,
+            });
+          }
+          if (url.toLowerCase().includes("album")) {
+            result = await player.search(url, {
+              requestedBy: interaction.user,
+              searchEngine: QueryType.APPLE_MUSIC_ALBUM,
+            });
+          }
+          embed.setColor(0xeb5534).setFooter({
+            iconURL: `https://music.apple.com/assets/knowledge-graph/music.png`,
+            text: `Apple Music`,
           });
         } else {
+          result = await player.search(url, {
+            requestedBy: interaction.user,
+            searchEngine: QueryType.YOUTUBE_PLAYLIST,
+          });
+          embed.setColor(0xff0000).setFooter({
+            iconURL: `https://www.iconpacks.net/icons/2/free-youtube-logo-icon-2431-thumb.png`,
+            text: `YouTube`,
+          });
+        }
+      }
+      if (!url.toLowerCase().startsWith("https")) {
+        failedEmbed
+          .setTitle(`**No Result**`)
+          .setDescription(`You should input a link that starts with https.`)
+          .setColor(0xffea00)
+          .setThumbnail(
+            `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
+          );
+        interaction.editReply({
+          embeds: [failedEmbed],
+        });
+      }
+      if (result.tracks.length === 0) {
+        failedEmbed
+          .setTitle(`**No Result**`)
+          .setDescription(`Make sure you input a valid link.`)
+          .setColor(0xffea00)
+          .setThumbnail(
+            `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
+          );
+        interaction.editReply({
+          embeds: [failedEmbed],
+        });
+      } else {
+        let queue = client.player.nodes.get(interaction.guildId);
+        if (!queue) {
+          queue = await client.player.nodes.create(interaction.guild, {
+            metadata: {
+              channel: interaction.member.voice.channel,
+              client: interaction.guild.members.me,
+              requestedBy: interaction.user,
+              track: result.tracks[0],
+            },
+            leaveOnEnd: true,
+            leaveOnEmpty: true,
+            leaveOnStop: true,
+            leaveOnStopCooldown: 5 * 60 * 1000,
+            leaveOnEndCooldown: 5 * 60 * 1000,
+            leaveOnEmptyCooldown: 5 * 1000,
+            smoothVolume: true,
+            ytdlOptions: {
+              filter: "audioonly",
+              quality: "highestaudio",
+              highWaterMark: 1 << 25,
+            },
+          });
+        }
+        if (!queue.connection) {
+          await queue.connect(interaction.member.voice.channel);
+        }
+        const connection =
+          queue.connection.joinConfig.channelId ===
+          interaction.member.voice.channel.id;
+        if (connection) {
+          let embed = new EmbedBuilder()
+            .setTitle(`🎶 Playlist`)
+            .setColor(0x256fc4);
+
+          if (url.toLowerCase().includes("album")) {
+            embed.setTitle(`🎶 Album`);
+          }
+
           const playlist = result.playlist;
           await queue.addTrack(result.tracks);
           embed
@@ -196,26 +192,26 @@ module.exports = {
             const convertor = duration.split(":");
             timer = +convertor[0] * 60 + +convertor[1];
           }
+        } else {
+          failedEmbed
+            .setTitle(`**Busy**`)
+            .setDescription(`Bot is busy in another voice channel.`)
+            .setColor(0x256fc4)
+            .setThumbnail(
+              `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
+            );
+          interaction.editReply({
+            embeds: [failedEmbed],
+          });
         }
-      } else {
-        failedEmbed
-          .setTitle(`**Busy**`)
-          .setDescription(`Bot is busy in another voice channel.`)
-          .setColor(0x256fc4)
-          .setThumbnail(
-            `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
-          );
-        interaction.editReply({
-          embeds: [failedEmbed],
-        });
       }
     }
     success ? timer : (timer = 2 * 60);
     if (timer > 10 * 60) timer = 10 * 60;
     if (timer < 1 * 60) timer = 1 * 60;
     const timeoutLog = success
-      ? "Failed to delete Playlist interaction."
-      : "Failed to delete unsuccessfull Playlist interaction.";
+      ? `Failed to delete ${interaction.commandName} interaction.`
+      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
       if (success && interaction.channel.id === musicChannelID) {
         interaction.editReply({ components: [] });
