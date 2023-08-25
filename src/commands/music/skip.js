@@ -60,7 +60,7 @@ module.exports = {
       const currentSong = queue.currentTrack;
       if (nextSong == null || !nextSong) {
         embed
-          .setTitle("**Skipped**")
+          .setTitle("⏭ **Skipped**")
           .setDescription(
             `**[${currentSong.title}](${currentSong.url})**\n**${currentSong.author}**`
           )
@@ -85,7 +85,7 @@ module.exports = {
           .setStyle(ButtonStyle.Secondary);
 
         embed
-          .setTitle(`**Next**`)
+          .setTitle("🎵 **Playing Next**")
           .setDescription(
             `**[${nextSong.title}](${nextSong.url})**\n**${nextSong.author}**\n${nextSong.duration}`
           )

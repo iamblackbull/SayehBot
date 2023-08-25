@@ -103,6 +103,8 @@ module.exports = {
       },
     ];
 
+    const queue = client.player.nodes.get(interaction.guildId);
+
     let filtersOptions = [];
     availableFilters.forEach((filter) => {
       let isEnabled = false;
@@ -130,8 +132,6 @@ module.exports = {
       .setCustomId(`disable`)
       .setLabel("Disable")
       .setStyle(ButtonStyle.Danger);
-
-    const queue = client.player.nodes.get(interaction.guildId);
 
     let timer;
     let success = false;
@@ -193,15 +193,6 @@ module.exports = {
       if (timer > 10 * 60) timer = 10 * 60;
       if (timer < 1 * 60) timer = 1 * 60;
 
-      await interaction.editReply({
-        embeds: [embed],
-        components: [
-          new ActionRowBuilder()
-            .addComponents(filterMenu)
-            .addComponents(disableButton),
-        ],
-      });
-
       const collectorFilter = (i) => i.user.id === interaction.user.id;
       try {
         const confirmation = await filterEmbed.awaitMessageComponent({
@@ -253,14 +244,22 @@ module.exports = {
       } catch (error) {
         if (error.code === "InteractionCollectorError") {
           console.log(
-            `Interaction response timed out for command ${interaction.commandName}`
+            `Interaction response timed out for command ${interaction.commandName}.`
           );
         } else {
           console.log(
-            `Something went wrong while awaiting interaction response for command ${interaction.commandName}`
+            `Something went wrong while awaiting interaction response for command ${interaction.commandName}.`
           );
         }
       }
+      await interaction.editReply({
+        embeds: [embed],
+        components: [
+          new ActionRowBuilder()
+            .addComponents(filterMenu)
+            .addComponents(disableButton),
+        ],
+      });
     } else {
       failedEmbed
         .setTitle(`**Busy**`)

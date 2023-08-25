@@ -151,13 +151,12 @@ module.exports = {
           .setStyle(ButtonStyle.Secondary);
 
         const song = result.tracks[0];
+        await queue.insertTrack(song, trackNum - 1);
 
-        if (newQueue) {
+        if (newQueue || queue.tracks.size === 0) {
           embed.setTitle(`🎵 Now Playing`);
-          await queue.addTrack(song);
         } else {
           embed.setTitle(`🎵 Track #${trackNum}`);
-          await queue.insertTrack(song, trackNum - 1);
         }
 
         embed

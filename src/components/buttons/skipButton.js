@@ -26,14 +26,20 @@ module.exports = {
     const nextSong = queue.tracks.at(0) || null;
     const currentSong = queue.currentSong;
 
+    const user = interaction.user;
+    const avatar = user.displayAvatarURL({ size: 1024, dynamic: true });
+
+    let embed = new EmbedBuilder()
+      .setAuthor({ name: user.username, iconURL: avatar, url: avatar })
+      .setColor(0xc42525);
+
     let source;
-    let embed = new EmbedBuilder().setColor(0xc42525);
     let success = false;
     let timer;
 
     if (nextSong == null || !nextSong) {
       embed
-        .setTitle("**Skipped**")
+        .setTitle("⏭ **Skipped**")
         .setDescription(
           `**[${currentSong.title}](${currentSong.url})**\n**${currentSong.author}**`
         )
@@ -64,7 +70,7 @@ module.exports = {
         .setStyle(ButtonStyle.Secondary);
 
       embed
-        .setTitle(`**Next**`)
+        .setTitle(`🎵 **Playing Next**`)
         .setDescription(
           `**[${nextSong.title}](${nextSong.url})**\n**${nextSong.author}**\n${nextSong.duration}`
         )

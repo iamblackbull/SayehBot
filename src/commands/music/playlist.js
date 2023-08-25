@@ -28,6 +28,7 @@ module.exports = {
     let success = false;
     let timer;
     let failedEmbed = new EmbedBuilder();
+    let embed = new EmbedBuilder().setTitle(`🎶 Playlist`).setColor(0x256fc4);
 
     if (
       !interaction.guild.members.me.permissions.has(
@@ -58,59 +59,8 @@ module.exports = {
         embeds: [failedEmbed],
       });
     } else {
-      const player = useMainPlayer();
       const url = interaction.options.getString("url", true);
-      let result;
-
-      if (url.toLowerCase().startsWith("https")) {
-        if (url.toLowerCase().includes("spotify")) {
-          result = await player.search(url, {
-            requestedBy: interaction.user,
-            searchEngine: QueryType.SPOTIFY_PLAYLIST,
-          });
-          embed.setColor(0x34eb58).setFooter({
-            iconURL: `https://www.freepnglogos.com/uploads/spotify-logo-png/image-gallery-spotify-logo-21.png`,
-            text: `Spotify`,
-          });
-        }
-        if (url.toLowerCase().includes("soundcloud")) {
-          result = await player.search(url, {
-            requestedBy: interaction.user,
-            searchEngine: QueryType.SOUNDCLOUD_PLAYLIST,
-          });
-          embed.setColor(0xeb5534).setFooter({
-            iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
-            text: `Soundcloud`,
-          });
-        }
-        if (url.toLowerCase().includes("apple")) {
-          if (url.toLowerCase().includes("playlist")) {
-            result = await player.search(url, {
-              requestedBy: interaction.user,
-              searchEngine: QueryType.APPLE_MUSIC_PLAYLIST,
-            });
-          }
-          if (url.toLowerCase().includes("album")) {
-            result = await player.search(url, {
-              requestedBy: interaction.user,
-              searchEngine: QueryType.APPLE_MUSIC_ALBUM,
-            });
-          }
-          embed.setColor(0xeb5534).setFooter({
-            iconURL: `https://music.apple.com/assets/knowledge-graph/music.png`,
-            text: `Apple Music`,
-          });
-        } else {
-          result = await player.search(url, {
-            requestedBy: interaction.user,
-            searchEngine: QueryType.YOUTUBE_PLAYLIST,
-          });
-          embed.setColor(0xff0000).setFooter({
-            iconURL: `https://www.iconpacks.net/icons/2/free-youtube-logo-icon-2431-thumb.png`,
-            text: `YouTube`,
-          });
-        }
-      }
+      
       if (!url.toLowerCase().startsWith("https")) {
         failedEmbed
           .setTitle(`**No Result**`)
@@ -119,11 +69,18 @@ module.exports = {
           .setThumbnail(
             `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
           );
-        interaction.editReply({
+        return interaction.editReply({
           embeds: [failedEmbed],
         });
       }
-      if (result.tracks.length === 0) {
+      const player = useMainPlayer();
+
+      const result = await player.search(url, {
+        requestedBy: interaction.user,
+        searchEngine: QueryType.AUTO,
+      });
+
+      if (!result.hasPlaylist()) {
         failedEmbed
           .setTitle(`**No Result**`)
           .setDescription(`Make sure you input a valid link.`)
@@ -165,26 +122,47 @@ module.exports = {
           queue.connection.joinConfig.channelId ===
           interaction.member.voice.channel.id;
         if (connection) {
-          let embed = new EmbedBuilder()
-            .setTitle(`🎶 Playlist`)
-            .setColor(0x256fc4);
-
-          if (url.toLowerCase().includes("album")) {
-            embed.setTitle(`🎶 Album`);
-          }
-
           const playlist = result.playlist;
           await queue.addTrack(result.tracks);
+
           embed
             .setDescription(
-              `**[${playlist.title}](${playlist.url})**\n**${result.tracks.length} songs**`
+              `**[${playlist.title}](${playlist.url})**\n**${result.tracks.length} tracks**`
             )
             .setThumbnail(playlist.thumbnail);
+
+          if (playlist.url.toLowerCase().includes("album")) {
+            embed.setTitle(`🎶 Album`);
+          }
+          if (playlist.url.includes("youtube")) {
+            embed.setColor(0xff0000).setFooter({
+              iconURL: `https://www.iconpacks.net/icons/2/free-youtube-logo-icon-2431-thumb.png`,
+              text: `YouTube`,
+            });
+          } else if (playlist.url.includes("spotify")) {
+            embed.setColor(0x34eb58).setFooter({
+              iconURL: `https://www.freepnglogos.com/uploads/spotify-logo-png/image-gallery-spotify-logo-21.png`,
+              text: "Spotify",
+            });
+          } else if (playlist.url.includes("soundcloud")) {
+            embed.setColor(0xeb5534).setFooter({
+              iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
+              text: `Soundcloud`,
+            });
+          } else if (playlist.url.includes("apple")) {
+            embed.setColor(0xfb4f67).setFooter({
+              iconURL: `https://music.apple.com/assets/knowledge-graph/music.png`,
+              text: `Apple Music`,
+            });
+          }
+
           if (!queue.node.isPlaying()) await queue.node.play();
+
           await interaction.editReply({
             embeds: [embed],
           });
           success = true;
+
           if (result.tracks[0].duration.length >= 7) {
             timer = 10 * 60;
           } else {

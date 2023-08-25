@@ -18,7 +18,9 @@ module.exports = {
     .addStringOption((option) => {
       return option
         .setName(`action`)
-        .setDescription(`Choose an action to perform on your favorite playlist.`)
+        .setDescription(
+          `Choose an action to perform on your favorite playlist.`
+        )
         .setRequired(true)
         .addChoices(
           {
@@ -38,9 +40,7 @@ module.exports = {
     .addIntegerOption((option) => {
       return option
         .setName(`tracknumber`)
-        .setDescription(
-          `Input a track number from your favorite playlist.`
-        )
+        .setDescription(`Input a track number from your favorite playlist.`)
         .setMinValue(1)
         .setRequired(false);
     })
@@ -50,12 +50,14 @@ module.exports = {
       fetchReply: true,
     });
 
+    const user = interaction.member.nickname || interaction.user.username;
+
     let target = interaction.options.getInteger("tracknumber");
     let success = false;
     let timer;
     let failedEmbed = new EmbedBuilder();
     let embed = new EmbedBuilder()
-      .setTitle(`🎶 Playlist`)
+      .setTitle(`🎶 ${user}'s Playlist`)
       .setColor(0x256fc4)
       .setFooter({
         iconURL: `https://www.linkpicture.com/q/2753995-201.png`,
@@ -126,9 +128,6 @@ module.exports = {
         const player = useMainPlayer();
         let result;
 
-        let resultString = {};
-        let resultArray = [];
-
         let mappedResultString = {};
         let mappedArray = [];
 
@@ -137,9 +136,6 @@ module.exports = {
             requestedBy: interaction.user,
             searchEngine: QueryType.AUTO,
           });
-
-          resultString[i] = result.tracks[0].url;
-          resultArray.push(resultString[i]);
 
           mappedResultString[i] = `**${i + 1}.** [${
             result.tracks[0].title
@@ -340,6 +336,23 @@ module.exports = {
               embeds: [failedEmbed],
             });
           } else {
+            if (target) {
+              if (target > playlistLength) target = playlistLength;
+
+              result = await player.search(splitPlaylist[target - 1], {
+                requestedBy: interaction.user,
+                searchEngine: QueryType.AUTO,
+              });
+            } else {
+              for (let i = 0; i < playlistLength; ++i) {
+                result = await player.search(splitPlaylist[i], {
+                  requestedBy: interaction.user,
+                  searchEngine: QueryType.AUTO,
+                });
+                await queue.addTrack(result.tracks[0]);
+              }
+            }
+            let newQueue = false;
             let queue = client.player.nodes.get(interaction.guildId);
             if (!queue) {
               queue = await client.player.nodes.create(interaction.guild, {
@@ -362,18 +375,25 @@ module.exports = {
                   highWaterMark: 1 << 25,
                 },
               });
+              newQueue = true;
             }
             if (!queue.connection) {
               await queue.connect(interaction.member.voice.channel);
             }
-            const connection =
+            if (
               queue.connection.joinConfig.channelId ===
-              interaction.member.voice.channel.id;
-            if (connection) {
+              interaction.member.voice.channel.id
+            ) {
               if (target) {
-                if (target > playlistLength) target = playlistLength;
-                const song = resultArray[target - 1];
+                const song = result.tracks[0];
                 await queue.addTrack(song);
+
+                if (newQueue || queue.tracks.size === 0) {
+                  embed.setTitle("🎵 Now Playing");
+                } else {
+                  embed.setTitle(`🎵 Track #${queue.tracks.size}`);
+                }
+
                 if (song.duration.length >= 7) {
                   timer = 10 * 60;
                 } else {
@@ -384,7 +404,7 @@ module.exports = {
                 embed
                   .setThumbnail(song.thumbnail)
                   .setDescription(
-                    `**[${song.title}](${song.url})**\n**${song.author}**\n${interaction.user}'s Playlist, Track #${target}`
+                    `**[${song.title}](${song.url})**\n**${song.author}**\n${user}'s Playlist, Track #${target}`
                   );
                 if (!queue.node.isPlaying()) await queue.node.play();
 
@@ -420,8 +440,6 @@ module.exports = {
                 }
                 success = true;
               } else {
-                await queue.addTrack(resultArray);
-                let favoriteLength = queue.tracks.size;
                 const song = result.tracks[0];
                 if (song.duration.length >= 7) {
                   timer = 10 * 60;
@@ -433,7 +451,7 @@ module.exports = {
                 embed
                   .setThumbnail(song.thumbnail)
                   .setDescription(
-                    `**${interaction.user}'s Playlist**\n**${favoriteLength}** tracks`
+                    `**[${song.title}](${song.url})**\n**And ${playlistLength - 1} other tracks**`
                   );
                 if (!queue.node.isPlaying()) await queue.node.play();
 

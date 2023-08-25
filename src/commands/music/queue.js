@@ -9,7 +9,9 @@ module.exports = {
     .addNumberOption((option) =>
       option
         .setName("page")
-        .setDescription("Input a page number to see a specific page from the queue.")
+        .setDescription(
+          "Input a page number to see a specific page from the queue."
+        )
         .setMinValue(1)
     )
     .setDMPermission(false),
@@ -79,6 +81,8 @@ module.exports = {
         })
         .join("\n");
 
+      let queueStringLength = queueString.split("\n").length;
+
       let currentSong = queue.currentTrack;
 
       let embed = new EmbedBuilder().setTitle("🔗 Queue").setColor(0x6d25c4);
@@ -110,6 +114,8 @@ module.exports = {
                 })
                 .join("\n");
 
+              queueStringLength = queueString.split("\n").length;
+
               currentSong = queue.currentTrack;
               bar = queue.node.createProgressBar({
                 timecodes: true,
@@ -119,15 +125,15 @@ module.exports = {
 
               embed
                 .setDescription(
-                  `🎵 **Now Playing**\n` +
+                  `### 🎵 Now Playing\n` +
                     (currentSong
-                      ? `- \`[${currentSong.duration}]\` [${currentSong.title} -- ${currentSong.title}](${currentSong.url})`
+                      ? `**[${currentSong.title}](${currentSong.url})**\n**${currentSong.author}**`
                       : "None") +
                     `\n` +
                     bar +
-                    `\n\n⏭ **Upcoming Tracks**\n${queueString}`
+                    `\n\n###⏭ Upcoming Tracks\n` +
+                    (queueStringLength > 1 ? `${queueString}` : "None")
                 )
-                .setThumbnail(currentSong.setThumbnail)
                 .setFooter({
                   text: `📄 Page ${page + 1} of ${totalPages} (${
                     queue.tracks.size
@@ -153,6 +159,8 @@ module.exports = {
                   })
                   .join("\n");
 
+                queueStringLength = queueString.split("\n").length;
+
                 currentSong = queue.currentTrack;
                 bar = queue.node.createProgressBar({
                   timecodes: true,
@@ -162,15 +170,15 @@ module.exports = {
 
                 embed
                   .setDescription(
-                    `🎵 **Now Playing**\n` +
+                    `### 🎵 Now Playing\n` +
                       (currentSong
-                        ? `- \`[${currentSong.duration}]\` [${currentSong.title} -- ${currentSong.author}](${currentSong.url})`
+                        ? `**[${currentSong.title}](${currentSong.url})**\n**${currentSong.author}**`
                         : "None") +
                       `\n` +
                       bar +
-                      `\n\n⏭ **Upcoming Tracks**\n${queueString}`
+                      `\n\n### ⏭ Upcoming Tracks\n` +
+                      (queueStringLength > 1 ? `${queueString}` : "None")
                   )
-                  .setThumbnail(currentSong.setThumbnail)
                   .setFooter({
                     text: `📄 Page ${page + 1} of ${totalPages} (${
                       queue.tracks.size
@@ -196,6 +204,8 @@ module.exports = {
                 })
                 .join("\n");
 
+              queueStringLength = queueString.split("\n").length;
+
               currentSong = queue.currentTrack;
               bar = queue.node.createProgressBar({
                 timecodes: true,
@@ -205,15 +215,15 @@ module.exports = {
 
               embed
                 .setDescription(
-                  `🎵 **Now Playing**\n` +
+                  `### 🎵 Now Playing\n` +
                     (currentSong
-                      ? `- \`[${currentSong.duration}]\` [${currentSong.title} -- ${currentSong.author}](${currentSong.url})`
+                      ? `**[${currentSong.title}](${currentSong.url})**\n**${currentSong.author}**`
                       : "None") +
                     `\n` +
                     bar +
-                    `\n\n⏭ **Upcoming Tracks**\n${queueString}`
+                    `\n\n### ⏭ Upcoming Tracks\n` +
+                    (queueStringLength > 1 ? `${queueString}` : "None")
                 )
-                .setThumbnail(currentSong.setThumbnail)
                 .setFooter({
                   text: `📄 Page ${page + 1} of ${totalPages} (${
                     queue.tracks.size
@@ -233,15 +243,15 @@ module.exports = {
         embeds: [
           embed
             .setDescription(
-              `🎵 **Now Playing**\n` +
+              `### 🎵 Now Playing\n` +
                 (currentSong
-                  ? `- \`[${currentSong.duration}]\` [${currentSong.title}](${currentSong.url})`
+                  ? `**[${currentSong.title}](${currentSong.url})**\n**${currentSong.author}**`
                   : "None") +
                 `\n` +
                 bar +
-                `\n\n⏭ **Upcoming Tracks**\n${queueString}`
+                `\n\n### ⏭ Upcoming Tracks\n` +
+                (queueStringLength > 1 ? `${queueString}` : "None")
             )
-            .setThumbnail(currentSong.setThumbnail)
             .setFooter({
               text: `📄 Page ${page + 1} of ${totalPages} (${
                 queue.tracks.size

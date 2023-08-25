@@ -18,7 +18,7 @@ module.exports = {
         .setName("seconds")
         .setDescription("Input a amount of seconds to seek.")
         .setMinValue(1)
-        .setMinValue(59)
+        .setMaxValue(59)
         .setRequired(false);
     })
     .setDMPermission(false),
@@ -83,29 +83,31 @@ module.exports = {
         timer = totalTimer - currentTimer;
       }
 
-      const maxMins = +convertor[0] * 60;
+      const maxMins = +convertor[0];
       const maxSecs = +convertor[1];
 
       if (mins > maxMins) amount = maxMins * 60;
       else if (mins === maxMins && seconds >= maxSecs) amount = maxMins * 60;
 
-      queue.node.seek(amount * 1000);
+      await queue.node.seek(amount * 1000);
 
-      const bar = queue.node.createProgressBar({
-        timecodes: true,
-        queue: false,
-        length: 14,
-      });
+      setTimeout(async () => {
+        const bar = queue.node.createProgressBar({
+          timecodes: true,
+          queue: false,
+          length: 14,
+        });
 
-      const embed = new EmbedBuilder()
-        .setTitle(`⏩ Seek`)
-        .setDescription(
-          `**[${song.title}](${song.url})**\n**${song.author}**\n` + bar
-        )
-        .setColor(0x25bfc4);
+        const embed = new EmbedBuilder()
+          .setTitle(`⏩ Seek`)
+          .setDescription(
+            `**[${song.title}](${song.url})**\n**${song.author}**\n` + bar
+          )
+          .setColor(0x25bfc4);
 
-      await interaction.editReply({ embeds: [embed] });
-      success = true;
+        await interaction.editReply({ embeds: [embed] });
+        success = true;
+      }, 1 * 1000);
     } else {
       failedEmbed
         .setTitle(`**Busy**`)

@@ -143,12 +143,6 @@ module.exports = {
         if (connection) {
           let embed = new EmbedBuilder();
 
-          if (newQueue) {
-            embed.setTitle("🎵 Now Playing");
-          } else {
-            embed.setTitle(`🎵 Track #${queue.tracks.size + 1}`);
-          }
-
           const favoriteButton = new ButtonBuilder()
             .setCustomId(`favorite`)
             .setEmoji(`🤍`)
@@ -206,6 +200,12 @@ module.exports = {
           if (!queue.node.isPlaying()) await queue.node.play();
           await queue.tasksQueue.release();
 
+          if (newQueue || queue.tracks.size === 0) {
+            embed.setTitle("🎵 Now Playing");
+          } else {
+            embed.setTitle(`🎵 Track #${queue.tracks.size}`);
+          }
+
           success = true;
           if (song.duration.length >= 7) {
             timer = 10 * 60;
@@ -242,13 +242,6 @@ module.exports = {
               embeds: [embed],
             });
           }
-          const track = queue.tracks.find((t) => t.url === song.url);
-          const position = queue.tracks.indexOf(track);
-          console.log(
-            `A new track has been added to the queue at position #${
-              position + 1
-            }`
-          );
         } else {
           failedEmbed
             .setTitle(`**Busy**`)

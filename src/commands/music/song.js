@@ -67,7 +67,7 @@ module.exports = {
       let song = queue.currentTrack;
 
       let embed = new EmbedBuilder()
-        .setTitle("**Currently Playing**")
+        .setTitle("🎵 **Currently Playing**")
         .setDescription(
           `**[${song.title}](${song.url})**\n**${song.author}**\n` + bar
         )
@@ -108,7 +108,7 @@ module.exports = {
               length: 14,
             });
             embed
-              .setTitle("**Currently Playing**")
+              .setTitle("🎵 **Currently Playing**")
               .setDescription(
                 `**[${song.title}](${song.url})**\n**${song.author}**\n` + bar
               );
@@ -120,7 +120,7 @@ module.exports = {
             if (!queue.currentTrack) return;
             if (paused) {
               resume();
-              embed.setTitle("**Currently Playing**");
+              embed.setTitle("🎵 **Currently Playing**");
             }
             if (!paused) {
               pause();
@@ -151,7 +151,7 @@ module.exports = {
             });
             if (nextSong == null || !nextSong) {
               embed
-              .setTitle("**Skipped**")
+              .setTitle("⏭ **Skipped**")
               .setDescription(
                 `**[${song.title}](${song.url})**\n**${song.author}**\n` + bar
               );

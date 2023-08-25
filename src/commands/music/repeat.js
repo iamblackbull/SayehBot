@@ -11,7 +11,7 @@ module.exports = {
       return option
         .setName(`mode`)
         .setDescription(`Select a mode to repeat the current track or repeat the current queue.`)
-        .setRequired(false)
+        .setRequired(true)
         .addChoices(
           {
             name: `Track`,
@@ -64,7 +64,7 @@ module.exports = {
       queue.connection.joinConfig.channelId ===
       interaction.member.voice.channel.id
     ) {
-      let mode = interaction.options.get("mode").value;
+      let mode = interaction.options.get("mode").value || null;
       if (!mode) mode = "track";
       if (!repeatMode) {
         repeatMode = true;
