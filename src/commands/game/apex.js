@@ -43,12 +43,14 @@ module.exports = {
           }
         )
     ),
+
   async execute(interaction, client) {
     const apexEmbed = await interaction.deferReply({
       fetchReply: true,
     });
 
     let success = false;
+
     const username = interaction.options.getString("username");
     let platform;
 
@@ -63,10 +65,10 @@ module.exports = {
         platform = "xbl";
         break;
     }
+
     await api
       .getApexPlayerStats(`${platform}`, `${username}`)
       .then((result) => {
-        console.log(JSON.stringify(result));
         let embed = new EmbedBuilder()
           .setTitle(`**${result.data.pInfo.platformUserID}**`)
           .setURL(
@@ -108,6 +110,7 @@ module.exports = {
               inline: true,
             }
           );
+
         const saveButton = new ButtonBuilder()
           .setCustomId(`apex`)
           .setLabel(`Save`)
@@ -145,10 +148,12 @@ module.exports = {
                 ApexPlatform: platform,
               });
               await apexList.save().catch(console.error);
+
               await interaction.reply({
                 embeds: [saveEmbed],
                 ephemeral: true,
               });
+
               console.log(
                 `${interaction.user.username} just saved their Apex Account to the database.`
               );
@@ -156,16 +161,19 @@ module.exports = {
               apexList = await apex.findOneAndDelete({
                 User: interaction.user.id,
               });
+
               const newApexList = new apex({
                 User: interaction.user.id,
                 ApexUsername: username,
                 ApexPlatform: platform,
               });
               await newApexList.save().catch(console.error);
+
               await interaction.reply({
                 embeds: [saveEmbed],
                 ephemeral: true,
               });
+
               console.log(
                 `${interaction.user.username} just edited their Apex Account in the database.`
               );
@@ -180,10 +188,10 @@ module.exports = {
           embeds: [embed],
           components: [new ActionRowBuilder().addComponents(saveButton)],
         });
+
         success = true;
       })
       .catch((e) => {
-        console.log(e);
         let failedEmbed = new EmbedBuilder()
           .setTitle(`**No Result**`)
           .setDescription(
@@ -193,14 +201,15 @@ module.exports = {
           .setThumbnail(
             `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
           );
+
         interaction.editReply({
           embeds: [failedEmbed],
         });
       });
     const timeoutDuration = success ? 5 * 60 * 1000 : 2 * 60 * 1000;
     const timeoutLog = success
-      ? "Failed to delete Apex interaction."
-      : "Failed to delete unsuccessfull Apex interaction.";
+      ? `Failed to delete ${interaction.commandName} interaction.`
+      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
       interaction.deleteReply().catch((e) => {
         console.log(timeoutLog);

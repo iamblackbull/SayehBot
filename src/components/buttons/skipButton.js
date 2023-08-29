@@ -7,8 +7,6 @@ const {
 const { musicChannelID } = process.env;
 
 module.exports = {
-  isNew: true,
-  isBeta: true,
   data: {
     name: `skipper`,
   },
@@ -22,16 +20,20 @@ module.exports = {
     )
       return;
 
-    queue.node.skip();
-    const nextSong = queue.tracks.at(0) || null;
     const currentSong = queue.currentSong;
+
+    queue.node.skip();
+
+    const nextSong = queue.tracks.at(0) || null;
 
     const user = interaction.user;
     const avatar = user.displayAvatarURL({ size: 1024, dynamic: true });
 
-    let embed = new EmbedBuilder()
-      .setAuthor({ name: user.username, iconURL: avatar, url: avatar })
-      .setColor(0xc42525);
+    let embed = new EmbedBuilder().setAuthor({
+      name: interaction.member.nickname || user.username,
+      iconURL: avatar,
+      url: avatar,
+    });
 
     let source;
     let success = false;
@@ -52,23 +54,6 @@ module.exports = {
         embeds: [embed],
       });
     } else {
-      const favoriteButton = new ButtonBuilder()
-        .setCustomId(`favorite`)
-        .setEmoji(`🤍`)
-        .setStyle(ButtonStyle.Danger);
-      const lyricsButton = new ButtonBuilder()
-        .setCustomId(`lyrics`)
-        .setEmoji(`🎤`)
-        .setStyle(ButtonStyle.Primary);
-      const downloadButton = new ButtonBuilder()
-        .setCustomId(`downloader`)
-        .setEmoji(`⬇`)
-        .setStyle(ButtonStyle.Secondary);
-      const skipButton = new ButtonBuilder()
-        .setCustomId(`skipper`)
-        .setEmoji(`⏭`)
-        .setStyle(ButtonStyle.Secondary);
-
       embed
         .setTitle(`🎵 **Playing Next**`)
         .setDescription(
@@ -94,11 +79,16 @@ module.exports = {
           iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
           text: `Soundcloud`,
         });
+      } else if (song.url.includes("apple")) {
+        source = "private";
+        embed.setColor(0xfb4f67).setFooter({
+          iconURL: `https://music.apple.com/assets/knowledge-graph/music.png`,
+          text: `Apple Music`,
+        });
       }
 
       if (!queue.node.isPlaying()) await queue.node.play();
 
-      success = true;
       if (nextSong.duration.length >= 7) {
         timer = 10 * 60;
       } else {
@@ -107,38 +97,41 @@ module.exports = {
         timer = +convertor[0] * 60 + +convertor[1];
       }
 
-      if (timer < 10 * 60) {
-        if (source === "public") {
-          await interaction.reply({
-            embeds: [embed],
-            components: [
-              new ActionRowBuilder()
-                .addComponents(favoriteButton)
-                .addComponents(lyricsButton)
-                .addComponents(downloadButton)
-                .addComponents(skipButton),
-            ],
-          });
-        } else {
-          await interaction.reply({
-            embeds: [embed],
-            components: [
-              new ActionRowBuilder()
-                .addComponents(favoriteButton)
-                .addComponents(lyricsButton)
-                .addComponents(skipButton),
-            ],
-          });
-        }
-      } else {
-        await interaction.reply({
-          embeds: [embed],
-        });
-      }
+      const skipButton = new ButtonBuilder()
+        .setCustomId(`skipper`)
+        .setEmoji(`⏭`)
+        .setStyle(ButtonStyle.Secondary);
+      const favoriteButton = new ButtonBuilder()
+        .setCustomId(`favorite`)
+        .setEmoji(`🤍`)
+        .setStyle(ButtonStyle.Danger);
+      const lyricsButton = new ButtonBuilder()
+        .setCustomId(`lyrics`)
+        .setEmoji(`🎤`)
+        .setStyle(ButtonStyle.Primary);
+      const downloadButton = new ButtonBuilder()
+        .setCustomId(`downloader`)
+        .setEmoji(`⬇`)
+        .setStyle(ButtonStyle.Secondary);
+
+      const button = new ActionRowBuilder()
+        .addComponents(skipButton)
+        .addComponents(timer < 10 * 60 ? favoriteButton : null)
+        .addComponents(lyricsButton)
+        .addComponents(
+          timer < 10 * 60 && source === public ? downloadButton : null
+        );
+
+      await interaction.reply({
+        embeds: [embed],
+        components: [button],
+      });
+      success = true;
     }
     success ? timer : (timer = 2 * 60);
     if (timer > 10 * 60) timer = 10 * 60;
     if (timer < 1 * 60) timer = 1 * 60;
+
     const timeoutLog = success
       ? `Failed to delete ${interaction.commandName} interaction.`
       : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;

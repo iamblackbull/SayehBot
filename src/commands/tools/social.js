@@ -10,6 +10,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("social")
     .setDescription("Returns Sayeh social links"),
+
   async execute(interaction, client) {
     const twitchButton = new ButtonBuilder()
       .setLabel(`Twitch`)
@@ -46,18 +47,19 @@ module.exports = {
         text: `Socials `,
       });
 
+    const button = new ActionRowBuilder()
+      .addComponents(twitchButton)
+      .addComponents(youtubeButton)
+      .addComponents(telegramButton);
+
     await interaction.reply({
       embeds: [embed],
-      components: [
-        new ActionRowBuilder()
-          .addComponents(twitchButton)
-          .addComponents(youtubeButton)
-          .addComponents(telegramButton),
-      ],
+      components: [button],
     });
+    
     setTimeout(() => {
       interaction.deleteReply().catch((e) => {
-        console.log(`Failed to delete Social interaction.`);
+        console.log(`Failed to delete ${interaction.commandName} interaction.`);
       });
     }, 10 * 60 * 1000);
   },

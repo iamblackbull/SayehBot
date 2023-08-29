@@ -6,8 +6,6 @@ const {
 } = require("discord.js");
 
 module.exports = {
-  isNew: true,
-  isBeta: true,
   name: "playerStart",
   isPlayerEvent: true,
   async execute(queue, song) {

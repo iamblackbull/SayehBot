@@ -14,21 +14,47 @@ module.exports = {
     )
     .addStringOption((option) =>
       option
-        .setName("url")
-        .setDescription("Input a playlist url.")
+        .setName("query")
+        .setDescription("Input playlist name or url.")
         .setRequired(true)
+        .setAutocomplete(true)
     )
     .setDMPermission(false),
 
-  async execute(interaction, client) {
-    await interaction.deferReply({
-      fetchReply: true,
+  async autocompleteRun(interaction, client) {
+    const player = useMainPlayer();
+    const query = interaction.options.getString("query", true);
+    if (!query) return;
+
+    const results = await player.search(query, {
+      requestedBy: interaction.user,
+      searchEngine: QueryType.AUTO,
     });
 
+    let respond;
+    if (results.playlist) {
+      respond = results.playlist.slice(0, 1).map((playlist) => ({
+        name: `${playlist.title} -- ${playlist.author} -- ${
+          playlist.length
+        } tracks -- ${
+          playlist.raw.source.charAt(0).toUpperCase() +
+          playlist.raw.source.slice(1)
+        }`,
+        value: playlist.url,
+      }));
+    } else return;
+
+    try {
+      await interaction.respond(respond);
+    } catch (error) {
+      return;
+    }
+  },
+
+  async execute(interaction, client) {
+    let failedEmbed = new EmbedBuilder();
     let success = false;
     let timer;
-    let failedEmbed = new EmbedBuilder();
-    let embed = new EmbedBuilder().setTitle(`🎶 Playlist`).setColor(0x256fc4);
 
     if (
       !interaction.guild.members.me.permissions.has(
@@ -42,7 +68,8 @@ module.exports = {
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
         );
-      interaction.editReply({
+
+      interaction.reply({
         embeds: [failedEmbed],
       });
     } else if (!interaction.member.voice.channel) {
@@ -55,44 +82,41 @@ module.exports = {
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
         );
-      await interaction.editReply({
+
+      await interaction.reply({
         embeds: [failedEmbed],
       });
     } else {
-      const url = interaction.options.getString("url", true);
-      
-      if (!url.toLowerCase().startsWith("https")) {
-        failedEmbed
-          .setTitle(`**No Result**`)
-          .setDescription(`You should input a link that starts with https.`)
-          .setColor(0xffea00)
-          .setThumbnail(
-            `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
-          );
-        return interaction.editReply({
-          embeds: [failedEmbed],
-        });
-      }
       const player = useMainPlayer();
+      const query = interaction.options.getString("query", true);
 
-      const result = await player.search(url, {
+      const result = await player.search(query, {
         requestedBy: interaction.user,
         searchEngine: QueryType.AUTO,
       });
 
       if (!result.hasPlaylist()) {
+        if (query.toLowerCase().startsWith("https")) {
+          failedEmbed.setDescription(`Make sure you input a valid link.`);
+        } else {
+          failedEmbed.setDescription(
+            `Make sure you input a valid playlist name.`
+          );
+        }
+
         failedEmbed
           .setTitle(`**No Result**`)
-          .setDescription(`Make sure you input a valid link.`)
           .setColor(0xffea00)
           .setThumbnail(
             `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
           );
-        interaction.editReply({
+
+        interaction.reply({
           embeds: [failedEmbed],
         });
       } else {
         let queue = client.player.nodes.get(interaction.guildId);
+
         if (!queue) {
           queue = await client.player.nodes.create(interaction.guild, {
             metadata: {
@@ -115,19 +139,41 @@ module.exports = {
             },
           });
         }
+
         if (!queue.connection) {
           await queue.connect(interaction.member.voice.channel);
         }
-        const connection =
+        const sameChannel =
           queue.connection.joinConfig.channelId ===
           interaction.member.voice.channel.id;
-        if (connection) {
+
+        if (!sameChannel) {
+          failedEmbed
+            .setTitle(`**Busy**`)
+            .setDescription(`Bot is busy in another voice channel.`)
+            .setColor(0x256fc4)
+            .setThumbnail(
+              `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
+            );
+          interaction.reply({
+            embeds: [failedEmbed],
+          });
+        } else {
+          await interaction.deferReply({
+            fetchReply: true,
+          });
+
+          let embed = new EmbedBuilder()
+            .setTitle(`🎶 Playlist`)
+            .setColor(0x256fc4);
+
           const playlist = result.playlist;
           await queue.addTrack(result.tracks);
+          if (!queue.node.isPlaying()) await queue.node.play();
 
           embed
             .setDescription(
-              `**[${playlist.title}](${playlist.url})**\n**${result.tracks.length} tracks**`
+              `**[${playlist.title}](${playlist.url})\n**${playlist.length} tracks**\n**${playlist.author}**`
             )
             .setThumbnail(playlist.thumbnail);
 
@@ -156,13 +202,6 @@ module.exports = {
             });
           }
 
-          if (!queue.node.isPlaying()) await queue.node.play();
-
-          await interaction.editReply({
-            embeds: [embed],
-          });
-          success = true;
-
           if (result.tracks[0].duration.length >= 7) {
             timer = 10 * 60;
           } else {
@@ -170,23 +209,18 @@ module.exports = {
             const convertor = duration.split(":");
             timer = +convertor[0] * 60 + +convertor[1];
           }
-        } else {
-          failedEmbed
-            .setTitle(`**Busy**`)
-            .setDescription(`Bot is busy in another voice channel.`)
-            .setColor(0x256fc4)
-            .setThumbnail(
-              `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
-            );
-          interaction.editReply({
-            embeds: [failedEmbed],
+
+          await interaction.editReply({
+            embeds: [embed],
           });
+          success = true;
         }
       }
     }
     success ? timer : (timer = 2 * 60);
     if (timer > 10 * 60) timer = 10 * 60;
     if (timer < 1 * 60) timer = 1 * 60;
+
     const timeoutLog = success
       ? `Failed to delete ${interaction.commandName} interaction.`
       : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;

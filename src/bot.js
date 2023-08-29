@@ -9,6 +9,7 @@ const {
 } = require("discord.js");
 const fs = require("fs");
 const { Player } = require("discord-player");
+const downloader = require("@discord-player/downloader").Downloader;
 const executing = require("node:process");
 
 const client = new Client({
@@ -57,6 +58,7 @@ client.player = new Player(client, {
   },
 });
 client.player.extractors.loadDefault();
+client.player.use("YOUTUBE_DL", downloader);
 
 executing.on("unhandledRejection", (reason) => {
   console.log(`Unhandled Rejection with reason:\n`, reason);

@@ -2,7 +2,7 @@ const { EmbedBuilder } = require("discord.js");
 
 module.exports = {
   data: {
-    name: `favorite`,
+    name: `disable`,
   },
   async execute(interaction, client) {
     let queue = client.player.nodes.get(interaction.guildId);

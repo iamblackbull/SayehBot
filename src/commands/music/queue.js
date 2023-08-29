@@ -17,21 +17,15 @@ module.exports = {
     .setDMPermission(false),
 
   async execute(interaction, client) {
-    const queueEmbed = await interaction.deferReply({
-      fetchReply: true,
-    });
+    const queue = client.player.nodes.get(interaction.guildId);
+
+    const sameChannel =
+      queue.connection.joinConfig.channelId ===
+      interaction.member.voice.channel.id;
 
     let failedEmbed = new EmbedBuilder();
     let success = false;
     let timer;
-
-    const queue = client.player.nodes.get(interaction.guildId);
-
-    let bar = queue.node.createProgressBar({
-      timecodes: true,
-      queue: false,
-      length: 14,
-    });
 
     if (!queue || !queue.connection) {
       failedEmbed
@@ -43,7 +37,7 @@ module.exports = {
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
         );
-      await interaction.editReply({
+      await interaction.reply({
         embeds: [failedEmbed],
       });
     } else if (!interaction.member.voice.channel) {
@@ -56,22 +50,43 @@ module.exports = {
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
         );
-      await interaction.editReply({
+      await interaction.reply({
         embeds: [failedEmbed],
       });
-    } else if (
-      queue.connection.joinConfig.channelId ===
-      interaction.member.voice.channel.id
-    ) {
+    } else if (!sameChannel) {
+      failedEmbed
+        .setTitle(`**Busy**`)
+        .setDescription(`Bot is busy in another voice channel.`)
+        .setColor(0x256fc4)
+        .setThumbnail(
+          `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
+        );
+      await interaction.reply({
+        embeds: [failedEmbed],
+      });
+    } else {
+      const queueEmbed = await interaction.deferReply({
+        fetchReply: true,
+      });
+
+      let embed = new EmbedBuilder().setTitle("🔗 Queue").setColor(0x6d25c4);
+      let currentSong = queue.currentTrack;
+
+      let bar = queue.node.createProgressBar({
+        timecodes: true,
+        queue: false,
+        length: 14,
+      });
+
       let totalPages = Math.ceil(queue.tracks.data.length / 10) || 1;
       let page = (interaction.options.getNumber("page") || 1) - 1;
-
       if (interaction.options.getNumber("page") > totalPages) {
         if (!interaction.options.getNumber("page")) return;
         else {
           page = totalPages - 1;
         }
       }
+
       let queueString = queue.tracks.data
         .slice(page * 10, page * 10 + 10)
         .map((song, i) => {
@@ -83,9 +98,27 @@ module.exports = {
 
       let queueStringLength = queueString.split("\n").length;
 
-      let currentSong = queue.currentTrack;
+      embed
+        .setDescription(
+          `### 🎵 Now Playing\n` +
+            (currentSong
+              ? `**[${currentSong.title}](${currentSong.url})**\n**${currentSong.author}**`
+              : "None") +
+            `\n\n` +
+            bar +
+            `\n\n### ⏭ Upcoming Tracks\n` +
+            (queueStringLength > 1 ? `${queueString}` : "None")
+        )
+        .setFooter({
+          text: `📄 Page ${page + 1} of ${totalPages} (${
+            queue.tracks.size
+          } Songs)`,
+        });
 
-      let embed = new EmbedBuilder().setTitle("🔗 Queue").setColor(0x6d25c4);
+      await interaction.editReply({
+        embeds: [embed],
+      });
+      success = true;
 
       queueEmbed.react(`⬅`);
       queueEmbed.react(`➡`);
@@ -95,159 +128,127 @@ module.exports = {
           user.id === interaction.user.id;
       };
       const collector = queueEmbed.createReactionCollector(filter);
-
       collector.on("collect", async (reaction, user) => {
         if (user.bot) return;
-        else {
-          reaction.users.remove(reaction.users.cache.get(user.id));
+        reaction.users.remove(reaction.users.cache.get(user.id));
 
-          if (reaction.emoji.name === `➡`) {
-            if (page < totalPages - 1) {
-              page++;
+        if (reaction.emoji.name === `➡`) {
+          if (page < totalPages - 1) {
+            page++;
 
-              queueString = queue.tracks.data
-                .slice(page * 10, page * 10 + 10)
-                .map((song, i) => {
-                  return `**${page * 10 + i + 1}.** \`[${song.duration}]\` [${
-                    song.title
-                  } -- ${song.author}](${song.url})`;
-                })
-                .join("\n");
+            queueString = queue.tracks.data
+              .slice(page * 10, page * 10 + 10)
+              .map((song, i) => {
+                return `**${page * 10 + i + 1}.** \`[${song.duration}]\` [${
+                  song.title
+                } -- ${song.author}](${song.url})`;
+              })
+              .join("\n");
 
-              queueStringLength = queueString.split("\n").length;
+            queueStringLength = queueString.split("\n").length;
 
-              currentSong = queue.currentTrack;
-              bar = queue.node.createProgressBar({
-                timecodes: true,
-                queue: false,
-                length: 14,
+            currentSong = queue.currentTrack;
+            bar = queue.node.createProgressBar({
+              timecodes: true,
+              queue: false,
+              length: 14,
+            });
+
+            embed
+              .setDescription(
+                `### 🎵 Now Playing\n` +
+                  (currentSong
+                    ? `**[${currentSong.title}](${currentSong.url})**\n**${currentSong.author}**`
+                    : "None") +
+                  `\n\n` +
+                  bar +
+                  `\n\n###⏭ Upcoming Tracks\n` +
+                  (queueStringLength > 1 ? `${queueString}` : "None")
+              )
+              .setFooter({
+                text: `📄 Page ${page + 1} of ${totalPages} (${
+                  queue.tracks.size
+                } Songs)`,
               });
 
-              embed
-                .setDescription(
-                  `### 🎵 Now Playing\n` +
-                    (currentSong
-                      ? `**[${currentSong.title}](${currentSong.url})**\n**${currentSong.author}**`
-                      : "None") +
-                    `\n` +
-                    bar +
-                    `\n\n###⏭ Upcoming Tracks\n` +
-                    (queueStringLength > 1 ? `${queueString}` : "None")
-                )
-                .setFooter({
-                  text: `📄 Page ${page + 1} of ${totalPages} (${
-                    queue.tracks.size
-                  } Songs)`,
-                });
-
-              await interaction.editReply({
-                embeds: [embed],
-              });
-              success = true;
-            }
-          } else {
-            if (reaction.emoji.name == `⬅`) {
-              if (page !== 0) {
-                --page;
-
-                queueString = queue.tracks.data
-                  .slice(page * 10, page * 10 + 10)
-                  .map((song, i) => {
-                    return `**${page * 10 + i + 1}.** \`[${song.duration}]\` [${
-                      song.title
-                    } -- ${song.author}](${song.url})`;
-                  })
-                  .join("\n");
-
-                queueStringLength = queueString.split("\n").length;
-
-                currentSong = queue.currentTrack;
-                bar = queue.node.createProgressBar({
-                  timecodes: true,
-                  queue: false,
-                  length: 14,
-                });
-
-                embed
-                  .setDescription(
-                    `### 🎵 Now Playing\n` +
-                      (currentSong
-                        ? `**[${currentSong.title}](${currentSong.url})**\n**${currentSong.author}**`
-                        : "None") +
-                      `\n` +
-                      bar +
-                      `\n\n### ⏭ Upcoming Tracks\n` +
-                      (queueStringLength > 1 ? `${queueString}` : "None")
-                  )
-                  .setFooter({
-                    text: `📄 Page ${page + 1} of ${totalPages} (${
-                      queue.tracks.size
-                    } Songs)`,
-                  });
-
-                await interaction.editReply({
-                  embeds: [embed],
-                });
-                success = true;
-              }
-            } else if (reaction.emoji.name == `🔀`) {
-              if (!queue) return;
-              if (!queue.current) return;
-              queue.tracks.shuffle();
-
-              queueString = queue.tracks.data
-                .slice(page * 10, page * 10 + 10)
-                .map((song, i) => {
-                  return `**${page * 10 + i + 1}.** \`[${song.duration}]\` [${
-                    song.title
-                  } -- ${song.author}](${song.url})`;
-                })
-                .join("\n");
-
-              queueStringLength = queueString.split("\n").length;
-
-              currentSong = queue.currentTrack;
-              bar = queue.node.createProgressBar({
-                timecodes: true,
-                queue: false,
-                length: 14,
-              });
-
-              embed
-                .setDescription(
-                  `### 🎵 Now Playing\n` +
-                    (currentSong
-                      ? `**[${currentSong.title}](${currentSong.url})**\n**${currentSong.author}**`
-                      : "None") +
-                    `\n` +
-                    bar +
-                    `\n\n### ⏭ Upcoming Tracks\n` +
-                    (queueStringLength > 1 ? `${queueString}` : "None")
-                )
-                .setFooter({
-                  text: `📄 Page ${page + 1} of ${totalPages} (${
-                    queue.tracks.size
-                  } Songs)`,
-                });
-
-              await interaction.editReply({
-                embeds: [embed],
-              });
-              success = true;
-            }
+            await interaction.editReply({
+              embeds: [embed],
+            });
+            success = true;
           }
-        }
-      });
+        } else if (reaction.emoji.name == `⬅`) {
+          if (page !== 0) {
+            --page;
 
-      await interaction.editReply({
-        embeds: [
+            queueString = queue.tracks.data
+              .slice(page * 10, page * 10 + 10)
+              .map((song, i) => {
+                return `**${page * 10 + i + 1}.** \`[${song.duration}]\` [${
+                  song.title
+                } -- ${song.author}](${song.url})`;
+              })
+              .join("\n");
+
+            queueStringLength = queueString.split("\n").length;
+
+            currentSong = queue.currentTrack;
+            bar = queue.node.createProgressBar({
+              timecodes: true,
+              queue: false,
+              length: 14,
+            });
+
+            embed
+              .setDescription(
+                `### 🎵 Now Playing\n` +
+                  (currentSong
+                    ? `**[${currentSong.title}](${currentSong.url})**\n**${currentSong.author}**`
+                    : "None") +
+                  `\n\n` +
+                  bar +
+                  `\n\n### ⏭ Upcoming Tracks\n` +
+                  (queueStringLength > 1 ? `${queueString}` : "None")
+              )
+              .setFooter({
+                text: `📄 Page ${page + 1} of ${totalPages} (${
+                  queue.tracks.size
+                } Songs)`,
+              });
+
+            await interaction.editReply({
+              embeds: [embed],
+            });
+            success = true;
+          }
+        } else if (reaction.emoji.name == `🔀`) {
+          if (!queue) return;
+          queue.tracks.shuffle();
+
+          queueString = queue.tracks.data
+            .slice(page * 10, page * 10 + 10)
+            .map((song, i) => {
+              return `**${page * 10 + i + 1}.** \`[${song.duration}]\` [${
+                song.title
+              } -- ${song.author}](${song.url})`;
+            })
+            .join("\n");
+
+          queueStringLength = queueString.split("\n").length;
+
+          currentSong = queue.currentTrack;
+          bar = queue.node.createProgressBar({
+            timecodes: true,
+            queue: false,
+            length: 14,
+          });
+
           embed
             .setDescription(
               `### 🎵 Now Playing\n` +
                 (currentSong
                   ? `**[${currentSong.title}](${currentSong.url})**\n**${currentSong.author}**`
                   : "None") +
-                `\n` +
+                `\n\n` +
                 bar +
                 `\n\n### ⏭ Upcoming Tracks\n` +
                 (queueStringLength > 1 ? `${queueString}` : "None")
@@ -256,9 +257,15 @@ module.exports = {
               text: `📄 Page ${page + 1} of ${totalPages} (${
                 queue.tracks.size
               } Songs)`,
-            }),
-        ],
+            });
+
+          await interaction.editReply({
+            embeds: [embed],
+          });
+          success = true;
+        }
       });
+
       const { timestamp } = useTimeline(interaction.guildId);
       if (currentSong.duration.length >= 7) {
         timer = 10 * 60;
@@ -273,35 +280,19 @@ module.exports = {
 
         timer = totalTimer - currentTimer;
       }
-      success = true;
-    } else {
-      failedEmbed
-        .setTitle(`**Busy**`)
-        .setDescription(`Bot is busy in another voice channel.`)
-        .setColor(0x256fc4)
-        .setThumbnail(
-          `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
-        );
-      await interaction.editReply({
-        embeds: [failedEmbed],
-      });
     }
     success ? timer : (timer = 2 * 60);
     if (timer > 10 * 60) timer = 10 * 60;
     if (timer < 1 * 60) timer = 1 * 60;
+
     const timeoutLog = success
       ? `Failed to delete ${interaction.commandName} interaction.`
       : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
       if (success && interaction.channel.id === musicChannelID) {
-        queueEmbed.reactions
-          .removeAll()
-          .catch((error) =>
-            console.error(
-              chalk.red("Failed to clear reactions from Queue interaction."),
-              error
-            )
-          );
+        queueEmbed.reactions.removeAll().catch((e) => {
+          return;
+        });
       } else {
         interaction.deleteReply().catch((e) => {
           console.log(timeoutLog);

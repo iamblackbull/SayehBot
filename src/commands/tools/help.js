@@ -20,11 +20,8 @@ module.exports = {
           }
         );
     }),
-  async execute(interaction, client) {
-    const helpEmbed = await interaction.deferReply({
-      fetchReply: true,
-    });
 
+  async execute(interaction, client) {
     const lan = interaction.options.get("language").value;
 
     const totalPages = 2;
@@ -41,6 +38,11 @@ module.exports = {
       .setTitle(`❔ Help`)
       .setDescription(firstPageEN)
       .setFooter({ text: `📄 Page ${page} of ${totalPages}` });
+
+    const helpEmbed = await interaction.editReply({
+      embeds: [embed],
+    });
+
     helpEmbed.react(`⬅`);
     helpEmbed.react(`➡`);
     const filter = (reaction, user) => {
@@ -50,39 +52,41 @@ module.exports = {
     const collector = helpEmbed.createReactionCollector(filter);
     collector.on("collect", async (reaction, user) => {
       if (user.bot) return;
-      else {
-        reaction.users.remove(reaction.users.cache.get(user.id));
-        if (reaction.emoji.name === `➡`) {
-          page = 2;
-          if (lan == "en") {
-            embed
-              .setDescription(secondPageEN)
-              .setFooter({ text: `📄 Page ${page} of ${totalPages}` });
-          } else if (lan == "fa") {
-            embed
-              .setDescription(secondPageFA)
-              .setFooter({ text: `📄 Page ${page} of ${totalPages}` });
-          }
-          await interaction.editReply({
-            embeds: [embed],
-          });
-        } else {
-          page = 1;
+
+      reaction.users.remove(reaction.users.cache.get(user.id));
+
+      if (reaction.emoji.name === `➡`) {
+        page = 2;
+
+        if (lan == "en") {
           embed
-            .setDescription(firstPageEN)
+            .setDescription(secondPageEN)
             .setFooter({ text: `📄 Page ${page} of ${totalPages}` });
-          await interaction.editReply({
-            embeds: [embed],
-          });
+        } else if (lan == "fa") {
+          embed
+            .setDescription(secondPageFA)
+            .setFooter({ text: `📄 Page ${page} of ${totalPages}` });
         }
+
+        await interaction.editReply({
+          embeds: [embed],
+        });
+      } else {
+        page = 1;
+
+        embed
+          .setDescription(firstPageEN)
+          .setFooter({ text: `📄 Page ${page} of ${totalPages}` });
+
+        await interaction.editReply({
+          embeds: [embed],
+        });
       }
     });
-    await interaction.editReply({
-      embeds: [embed],
-    });
+
     setTimeout(() => {
       interaction.deleteReply().catch((e) => {
-        console.log(`Failed to delete Help interaction.`);
+        console.log(`Failed to delete ${interaction.commandName} interaction.`);
       });
     }, 10 * 60 * 1000);
   },

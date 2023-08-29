@@ -4,13 +4,14 @@ const weather = require(`weather-js`);
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("weather")
-    .setDescription("Returns Weather data")
+    .setDescription("Get current weather data of a specific location.")
     .addStringOption((option) => {
       return option
         .setName("location")
-        .setDescription("Input a city name")
+        .setDescription("Input a location name.")
         .setRequired(false);
     }),
+
   async execute(interaction, client) {
     await interaction.deferReply({
       fetchReply: true,
@@ -30,9 +31,9 @@ module.exports = {
           .setThumbnail(
             `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
           );
+
         interaction.editReply({
           embeds: [failedEmbed],
-          ephemeral: true,
         });
       } else {
         try {
@@ -86,13 +87,16 @@ module.exports = {
               color = 0xffffff;
               break;
           }
+
           embed.setColor(color);
 
           interaction.editReply({
             embeds: [embed],
           });
+
         } catch (err) {
           console.log(err);
+
           failedEmbed
             .setTitle(`**No Response**`)
             .setDescription(
@@ -102,15 +106,16 @@ module.exports = {
             .setThumbnail(
               `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
             );
+
           interaction.editReply({
             embeds: [failedEmbed],
-            ephemeral: true,
           });
         }
       }
+      
       setTimeout(() => {
         interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete Weather interaction.`);
+          console.log(`Failed to delete ${interaction.commandName} interaction.`);
         });
       }, 10 * 60 * 1000);
     });

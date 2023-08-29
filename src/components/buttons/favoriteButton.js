@@ -6,22 +6,17 @@ module.exports = {
     name: `favorite`,
   },
   async execute(interaction, client) {
+    let favoriteMode;
+    const queue = client.player.nodes.get(interaction.guildId);
+    if (!queue) return;
+
+    const song = queue.currentTrack;
+    if (!song) return;
+
     await interaction.deferReply({
       fetchReply: true,
       ephemeral: true,
     });
-
-    let embed = new EmbedBuilder().setColor(0x25bfc4).setFooter({
-      iconURL: `https://www.linkpicture.com/q/2753995-201.png`,
-      text: "Favorite",
-    });
-
-    let queue = client.player.nodes.get(interaction.guildId);
-
-    if (!queue) return;
-
-    let song = queue.currentTrack;
-    let favoriteMode;
 
     let favoriteList = await favorite.findOne({
       User: interaction.user.id,
@@ -36,13 +31,18 @@ module.exports = {
           },
         ],
       });
+      
       await favoriteList.save().catch(console.error);
       favoriteMode = "add";
+    } else if (favoriteList.Playlist.length > 100) {
+      favoriteMode = "full";
     } else {
       let favoriteSongs = favoriteList.Playlist;
+
       const songIndex = favoriteSongs.findIndex(
         (favSong) => favSong.Url === song.url
       );
+
       if (songIndex === -1) {
         favoriteSongs.push({
           Url: song.url,
@@ -54,30 +54,47 @@ module.exports = {
       }
       await favoriteList.save().catch(console.error);
     }
+
+    let embed = new EmbedBuilder().setColor(0x25bfc4).setFooter({
+      iconURL: `https://www.linkpicture.com/q/2753995-201.png`,
+      text: "Favorite",
+    });
+
     if (favoriteMode === "add") {
       embed
         .setTitle(`Add Favorite`)
         .setDescription(
-          "Song has been added to your favorite playlist.\nUse </favorite:1108681222764367962> to see and play your playlist."
+          "Track has been added to your favorite playlist.\nUse </favorite:1108681222764367962> to interact with your playlist."
         )
         .setThumbnail(
           `https://cdn0.iconfinder.com/data/icons/small-n-flat/24/678087-heart-512.png`
         );
+
       console.log(
-        `${interaction.user.username} just added a song to their favorite playlist.`
+        `${interaction.user.username} just added a track to their favorite playlist.`
       );
     } else if (favoriteMode === "remove") {
       embed
         .setTitle(`Remove Favorite`)
         .setDescription(
-          "Song has been removed from your favorite playlist.\nUse </favorite:1108681222764367962> to see and play your playlist."
+          "Track has been removed from your favorite playlist.\nUse </favorite:1108681222764367962> to interact with your playlist."
         )
         .setThumbnail(
           `https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Broken_heart.svg/586px-Broken_heart.svg.png`
         );
+
       console.log(
-        `${interaction.user.username} just removed a song from their favorite playlist.`
+        `${interaction.user.username} just removed a track from their favorite playlist.`
       );
+    } else if (favoriteMode === "full") {
+      embed
+        .setTitle(`Playlist Full`)
+        .setDescription(
+          "Your favorite playlist is full. (**100** Tracks)\nUse </favorite:1108681222764367962> to interact with your playlist."
+        )
+        .setThumbnail(
+          `https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Broken_heart.svg/586px-Broken_heart.svg.png`
+        );
     } else {
       embed
         .setTitle(`**Action Failed**`)
@@ -88,6 +105,7 @@ module.exports = {
         );
       setFooter();
     }
+
     await interaction.editReply({
       embeds: [embed],
     });

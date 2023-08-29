@@ -7,8 +7,13 @@ module.exports = {
     .setName("shuffle")
     .setDescription("Shuffle the current queue.")
     .setDMPermission(false),
+
   async execute(interaction, client) {
     const queue = client.player.nodes.get(interaction.guildId);
+
+    const sameChannel =
+      queue.connection.joinConfig.channelId ===
+      interaction.member.voice.channel.id;
 
     let failedEmbed = new EmbedBuilder();
     let success = false;
@@ -39,25 +44,7 @@ module.exports = {
       await interaction.reply({
         embeds: [failedEmbed],
       });
-    } else if (
-      queue.connection.joinConfig.channelId ===
-      interaction.member.voice.channel.id
-    ) {
-      const embed = new EmbedBuilder()
-        .setTitle(`Shuffle`)
-        .setDescription(
-          `Queue of ${queue.tracks.data.length} songs have been shuffled!`
-        )
-        .setColor(0x25bfc4)
-        .setThumbnail(
-          `https://png.pngtree.com/png-vector/20230228/ourmid/pngtree-shuffle-vector-png-image_6622846.png`
-        );
-      queue.tracks.shuffle();
-      await interaction.reply({
-        embeds: [embed],
-      });
-      success = true;
-    } else {
+    } else if (!sameChannel) {
       failedEmbed
         .setTitle(`**Busy**`)
         .setDescription(`Bot is busy in another voice channel.`)
@@ -68,6 +55,24 @@ module.exports = {
       await interaction.reply({
         embeds: [failedEmbed],
       });
+    } else {
+      const embed = new EmbedBuilder()
+        .setTitle(`Shuffle`)
+        .setDescription(
+          `Queue of ${queue.tracks.data.length} tracks has been shuffled!`
+        )
+        .setColor(0x25bfc4)
+        .setThumbnail(
+          `https://png.pngtree.com/png-vector/20230228/ourmid/pngtree-shuffle-vector-png-image_6622846.png`
+        );
+
+      queue.tracks.shuffle();
+
+      await interaction.reply({
+        embeds: [embed],
+      });
+
+      success = true;
     }
 
     const { timestamp } = useTimeline(interaction.guildId);
@@ -79,7 +84,7 @@ module.exports = {
     const currentConvertor = currentDuration.split(":");
     const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
 
-    timer = totalTimer - currentTimer;
+    let timer = totalTimer - currentTimer;
 
     if (timer > 10 * 60) timer = 10 * 60;
     if (timer < 1 * 60) timer = 1 * 60;

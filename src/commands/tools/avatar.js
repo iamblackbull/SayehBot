@@ -10,6 +10,7 @@ module.exports = {
         .setDescription("Pick any member")
         .setRequired(false);
     }),
+    
   async execute(interaction, client) {
     const user = interaction.options.getUser("user") || interaction.user;
     const avatar = user.displayAvatarURL({ size: 1024, dynamic: true });

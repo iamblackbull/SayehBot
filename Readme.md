@@ -1,6 +1,6 @@
 #
 
-# **SayehBot v1.6.1 INSTALLATION GUIDE**
+# **SayehBot v1.6.2 INSTALLATION GUIDE**
 
 ## **UPDATE SERVER**
 

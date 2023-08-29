@@ -10,8 +10,10 @@ module.exports = {
         .setDescription("Pick any member")
         .setRequired(true);
     }),
+
   async execute(interaction, client) {
     const kissed = interaction.options.getUser("user");
+
     const embed = new EmbedBuilder()
       .setTitle(`Kiss`)
       .setImage(
@@ -19,6 +21,7 @@ module.exports = {
       )
       .setDescription(`😍 **${interaction.user}** kissed **${kissed}** 💋`)
       .setColor(0x25bfc4);
+      
     await interaction.reply({
       embeds: [embed],
     });

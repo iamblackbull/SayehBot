@@ -92,8 +92,8 @@ module.exports = {
     await interaction.deferReply({
       fetchReply: true,
     });
-
     let success = false;
+
     const { options } = interaction;
     const Sub = options.getSubcommand();
 
@@ -157,6 +157,7 @@ module.exports = {
                     inline: true,
                   }
                 );
+
               await interaction.editReply({
                 embeds: [embed],
               });
@@ -172,6 +173,7 @@ module.exports = {
                 .setThumbnail(
                   `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
                 );
+
               await interaction.editReply({
                 embeds: [failedEmbed],
               });
@@ -181,6 +183,7 @@ module.exports = {
       case "store":
         {
           const name = options.getString("input");
+
           game.find({ search: `${name}` }, async function (err, result) {
             if (err) {
               const failedEmbed = new EmbedBuilder()
@@ -192,6 +195,7 @@ module.exports = {
                 .setThumbnail(
                   `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
                 );
+
               await interaction.editReply({
                 embeds: [failedEmbed],
               });
@@ -229,6 +233,7 @@ module.exports = {
               const genre = result.genres[0].description
                 ? `${result.genres[0].description}`
                 : "Unknown";
+
               const resultName = result.name.replace(/\s+/g, "");
 
               const embed = new EmbedBuilder()
@@ -298,14 +303,15 @@ module.exports = {
                 )
                 .setStyle(ButtonStyle.Link);
 
+              const button = new ActionRowBuilder()
+                .addComponents(storeButton)
+                .addComponents(crackButton);
+
               await interaction.editReply({
                 embeds: [embed],
-                components: [
-                  new ActionRowBuilder()
-                    .addComponents(storeButton)
-                    .addComponents(crackButton),
-                ],
+                components: [button],
               });
+
               success = true;
             }
           });
@@ -315,10 +321,11 @@ module.exports = {
         console.log("Something went wrong while executing steam command...");
       }
     }
+    
     const timeoutDuration = success ? 5 * 60 * 1000 : 2 * 60 * 1000;
     const timeoutLog = success
-      ? "Failed to delete Steam interaction."
-      : "Failed to delete unsuccessfull Steam interaction.";
+    ? `Failed to delete ${interaction.commandName} interaction.`
+    : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
       if (success && interaction.channel.id === gameChannelID) return;
       else {

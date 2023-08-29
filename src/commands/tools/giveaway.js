@@ -75,14 +75,12 @@ module.exports = {
         )
     )
     .setDMPermission(false),
-  async execute(interaction, client) {
-    const member = interaction.member;
 
+  async execute(interaction, client) {
     const { options } = interaction;
     const Sub = options.getSubcommand();
 
     const errorEmbed = new EmbedBuilder().setColor(0xe01010);
-
     const successEmbed = new EmbedBuilder().setColor(0x46eb34);
 
     switch (Sub) {
@@ -107,8 +105,9 @@ module.exports = {
             })
             .then(async () => {
               successEmbed.setDescription(
-                "✅ Giveaway was Successfully started !"
+                "✅ Giveaway was Successfully started!"
               );
+
               return interaction.reply({
                 embeds: [successEmbed],
                 ephemeral: true,
@@ -116,6 +115,7 @@ module.exports = {
             })
             .catch((err) => {
               errorEmbed.setDescription("An error occurred...");
+
               return interaction.reply({
                 embeds: [errorEmbed],
                 ephemeral: true,
@@ -128,13 +128,15 @@ module.exports = {
         {
           const choice = options.getString("options");
           const meesageId = options.getString("message-id");
+
           switch (choice) {
             case "end":
               {
                 client.giveawaysManager
                   .end(meesageId)
                   .then(() => {
-                    successEmbed.setDescription("🏁 Giveaway has ended !");
+                    successEmbed.setDescription("🏁 Giveaway has ended!");
+
                     return interaction.reply({
                       embeds: [successEmbed],
                       ephemeral: true,
@@ -142,6 +144,7 @@ module.exports = {
                   })
                   .catch((err) => {
                     errorEmbed.setDescription("An error occurred...");
+
                     return interaction.reply({
                       embeds: [errorEmbed],
                       ephemeral: true,
@@ -154,7 +157,8 @@ module.exports = {
                 client.giveawaysManager
                   .pause(meesageId)
                   .then(() => {
-                    successEmbed.setDescription("⏸ Giveaway has been paused !");
+                    successEmbed.setDescription("⏸ Giveaway has been paused!");
+
                     return interaction.reply({
                       embeds: [successEmbed],
                       ephemeral: true,
@@ -162,6 +166,7 @@ module.exports = {
                   })
                   .catch((err) => {
                     errorEmbed.setDescription("An error occurred...");
+
                     return interaction.reply({
                       embeds: [errorEmbed],
                       ephemeral: true,
@@ -174,9 +179,8 @@ module.exports = {
                 client.giveawaysManager
                   .unpause(meesageId)
                   .then(() => {
-                    successEmbed.setDescription(
-                      "▶ Giveaway has been resumed !"
-                    );
+                    successEmbed.setDescription("▶ Giveaway has been resumed!");
+
                     return interaction.reply({
                       embeds: [successEmbed],
                       ephemeral: true,
@@ -184,6 +188,7 @@ module.exports = {
                   })
                   .catch((err) => {
                     errorEmbed.setDescription("An error occurred...");
+
                     return interaction.reply({
                       embeds: [errorEmbed],
                       ephemeral: true,
@@ -197,8 +202,9 @@ module.exports = {
                   .delete(meesageId)
                   .then(() => {
                     successEmbed.setDescription(
-                      "🚮 Giveaway has been removed !"
+                      "🚮 Giveaway has been removed!"
                     );
+
                     return interaction.reply({
                       embeds: [successEmbed],
                       ephemeral: true,
@@ -206,6 +212,7 @@ module.exports = {
                   })
                   .catch((err) => {
                     errorEmbed.setDescription("An error occurred...");
+
                     return interaction.reply({
                       embeds: [errorEmbed],
                       ephemeral: true,

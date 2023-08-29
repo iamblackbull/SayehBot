@@ -12,9 +12,10 @@ module.exports = {
     .setDMPermission(false),
 
   async execute(interaction, client) {
-    await interaction.deferReply({
-      fetchReply: true,
-    });
+    const rawLeaderboard = await Levels.fetchLeaderboard(
+      interaction.guild.id,
+      10
+    );
 
     let failedEmbed = new EmbedBuilder().setColor(0xffea00);
     let success = false;
@@ -28,52 +29,55 @@ module.exports = {
         .setThumbnail(
           `https://cdn.iconscout.com/icon/premium/png-256-thumb/error-in-internet-959268.png`
         );
+
+      interaction.reply({
+        embeds: [failedEmbed],
+      });
+    } else if (rawLeaderboard.length < 1) {
+      failedEmbed
+        .setTitle(`**Action Failed**`)
+        .setDescription(`Leaderboard is empty.`)
+        .setThumbnail(
+          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
+        );
+
       interaction.editReply({
         embeds: [failedEmbed],
       });
     } else {
-      const rawLeaderboard = await Levels.fetchLeaderboard(
-        interaction.guild.id,
-        10
+      await interaction.deferReply({
+        fetchReply: true,
+      });
+
+      const leaderboard = await Levels.computeLeaderboard(
+        client,
+        rawLeaderboard
       );
-      if (rawLeaderboard.length < 1) {
-        failedEmbed
-          .setTitle(`**Action Failed**`)
-          .setDescription(`Leaderboard is empty.`)
-          .setThumbnail(
-            `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-          );
-        interaction.editReply({
-          embeds: [failedEmbed],
-        });
-      } else {
-        const leaderboard = await Levels.computeLeaderboard(
-          client,
-          rawLeaderboard
-        );
-        const leaderboardString = leaderboard
-          .map((user) => {
-            return `**${user.position}.** ${user.username.toUpperCase()} \`[${
-              user.level
-            }]\``;
-          })
-          .join("\n\n");
 
-        let embed = new EmbedBuilder()
-          .setTitle("🎖 Leaderboard")
-          .setColor(0x25bfc4)
-          .setDescription(`${leaderboardString}`);
+      const leaderboardString = leaderboard
+        .map((user) => {
+          return `**${user.position}.** ${user.username.toUpperCase()} \`[${
+            user.level
+          }]\``;
+        })
+        .join("\n\n");
 
-        interaction.editReply({
-          embeds: [embed],
-        });
-        success = true;
-      }
+      let embed = new EmbedBuilder()
+        .setTitle("🎖 Leaderboard")
+        .setColor(0x25bfc4)
+        .setDescription(`${leaderboardString}`);
+
+      interaction.editReply({
+        embeds: [embed],
+      });
+
+      success = true;
     }
+
     const timeoutDuration = success ? 5 * 60 * 1000 : 2 * 60 * 1000;
     const timeoutLog = success
-      ? "Failed to delete Leaderboard interaction."
-      : "Failed to delete unsuccessfull Leaderboard interaction.";
+    ? `Failed to delete ${interaction.commandName} interaction.`
+    : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
       if (success && interaction.channel.id === rankChannelID) return;
       else {

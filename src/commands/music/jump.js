@@ -19,15 +19,17 @@ module.exports = {
         .setRequired(true)
     )
     .setDMPermission(false),
+
   async execute(interaction, client) {
     const queue = client.player.nodes.get(interaction.guildId);
-    let trackNum = interaction.options.getInteger("tracknumber");
 
-    let source;
-    let timer;
-    let success = false;
+    const sameChannel =
+      queue.connection.joinConfig.channelId ===
+      interaction.member.voice.channel.id;
+
     let failedEmbed = new EmbedBuilder();
-    let embed = new EmbedBuilder();
+    let success = false;
+    let timer;
 
     if (!queue) {
       failedEmbed
@@ -55,28 +57,30 @@ module.exports = {
       await interaction.reply({
         embeds: [failedEmbed],
       });
-    } else if (
-      queue.connection.joinConfig.channelId ===
-      interaction.member.voice.channel.id
-    ) {
+    } else if (!sameChannel) {
+      failedEmbed
+        .setTitle(`**Busy**`)
+        .setDescription(`Bot is busy in another voice channel.`)
+        .setColor(0x256fc4)
+        .setThumbnail(
+          `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
+        );
+      await interaction.reply({
+        embeds: [failedEmbed],
+      });
+    } else {
+      let embed = new EmbedBuilder();
+      let source;
+
+      let trackNum = interaction.options.getInteger("tracknumber");
       if (trackNum > queue.tracks.size) {
         trackNum = queue.tracks.size;
       }
-      queue.node.skipTo(trackNum - 1);
-      const nextSong = queue.tracks.at(0);
 
-      const favoriteButton = new ButtonBuilder()
-        .setCustomId(`favorite`)
-        .setEmoji(`🤍`)
-        .setStyle(ButtonStyle.Danger);
-      const lyricsButton = new ButtonBuilder()
-        .setCustomId(`lyrics`)
-        .setEmoji(`🎤`)
-        .setStyle(ButtonStyle.Primary);
-      const downloadButton = new ButtonBuilder()
-        .setCustomId(`downloader`)
-        .setEmoji(`⬇`)
-        .setStyle(ButtonStyle.Secondary);
+      queue.node.skipTo(trackNum - 1);
+      if (!queue.node.isPlaying()) await queue.node.play();
+
+      const nextSong = queue.tracks.at(0);
 
       embed
         .setTitle(`⏭ Jump`)
@@ -84,6 +88,7 @@ module.exports = {
           `**[${nextSong.title}](${nextSong.url})**\n**${nextSong.author}**\n${nextSong.duration}`
         )
         .setThumbnail(nextSong.thumbnail);
+
       if (nextSong.url.includes("youtube")) {
         source = "public";
         embed.setColor(0xff0000).setFooter({
@@ -110,8 +115,6 @@ module.exports = {
         });
       }
 
-      if (!queue.node.isPlaying()) await queue.node.play();
-      success = true;
       if (nextSong.duration.length >= 7) {
         timer = 10 * 60;
       } else {
@@ -119,47 +122,43 @@ module.exports = {
         const convertor = duration.split(":");
         timer = +convertor[0] * 60 + +convertor[1];
       }
-      if (timer < 10 * 60) {
-        if (source === "public") {
-          await interaction.reply({
-            embeds: [embed],
-            components: [
-              new ActionRowBuilder()
-                .addComponents(favoriteButton)
-                .addComponents(lyricsButton)
-                .addComponents(downloadButton),
-            ],
-          });
-        } else {
-          await interaction.reply({
-            embeds: [embed],
-            components: [
-              new ActionRowBuilder()
-                .addComponents(favoriteButton)
-                .addComponents(lyricsButton),
-            ],
-          });
-        }
-      } else {
-        await interaction.reply({
-          embeds: [embed],
-        });
-      }
-    } else {
-      failedEmbed
-        .setTitle(`**Busy**`)
-        .setDescription(`Bot is busy in another voice channel.`)
-        .setColor(0x256fc4)
-        .setThumbnail(
-          `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
+
+      const skipButton = new ButtonBuilder()
+        .setCustomId(`skipper`)
+        .setEmoji(`⏭`)
+        .setStyle(ButtonStyle.Secondary);
+      const favoriteButton = new ButtonBuilder()
+        .setCustomId(`favorite`)
+        .setEmoji(`🤍`)
+        .setStyle(ButtonStyle.Danger);
+      const lyricsButton = new ButtonBuilder()
+        .setCustomId(`lyrics`)
+        .setEmoji(`🎤`)
+        .setStyle(ButtonStyle.Primary);
+      const downloadButton = new ButtonBuilder()
+        .setCustomId(`downloader`)
+        .setEmoji(`⬇`)
+        .setStyle(ButtonStyle.Secondary);
+
+      const button = new ActionRowBuilder()
+        .addComponents(skipButton)
+        .addComponents(timer < 10 * 60 ? favoriteButton : null)
+        .addComponents(lyricsButton)
+        .addComponents(
+          timer < 10 * 60 && source === public ? downloadButton : null
         );
-      await interaction.reply({
-        embeds: [failedEmbed],
+
+      await interaction.editReply({
+        embeds: [embed],
+        components: [button],
       });
+
+      success = true;
     }
     success ? timer : (timer = 2 * 60);
     if (timer > 10 * 60) timer = 10 * 60;
     if (timer < 1 * 60) timer = 1 * 60;
+
     const timeoutLog = success
       ? `Failed to delete ${interaction.commandName} interaction.`
       : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;

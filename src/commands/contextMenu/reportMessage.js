@@ -14,8 +14,8 @@ module.exports = {
     .setName("report message")
     .setType(ApplicationCommandType.Message)
     .setDMPermission(false),
-  async execute(interaction, client) {
 
+  async execute(interaction, client) {
     const modal = new ModalBuilder()
       .setCustomId("report-modal")
       .setTitle(`Report Message`);
@@ -41,6 +41,7 @@ module.exports = {
       await interaction.showModal(modal);
 
       const filter = (interaction) => interaction.customId === "report-modal";
+
       await interaction
         .awaitModalSubmit({
           filter,
@@ -84,6 +85,7 @@ module.exports = {
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
         );
+        
       interaction.reply({
         embeds: [failedEmbed],
         ephemeral: true,

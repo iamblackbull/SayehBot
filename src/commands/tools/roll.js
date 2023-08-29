@@ -7,28 +7,26 @@ module.exports = {
     .setName("roll")
     .setDescription("Roll a random number between 1 - 100")
     .setDMPermission(false),
+
   async execute(interaction, client) {
-    await interaction.deferReply({
-      fetchReply: true,
+    let roll = Math.floor(Math.random() * 100) + 1;
+
+    roll > 100 ? (roll = 100) : roll < 1 ? (roll = 1) : roll;
+
+    await interaction.reply({
+      content: `🎲 ${interaction.user} rolls **${roll}** `,
     });
+    
+    setTimeout(() => {
+      interaction.deleteReply().catch((e) => {
+        console.log(`Failed to delete ${interaction.commandName} interaction.`);
+      });
+    }, 2 * 60 * 1000);
 
     const target = interaction.user;
     const user = await Levels.fetch(target.id, interaction.guild.id, true);
     const guild = await client.guilds.fetch(guildID).catch(console.error);
     const channel = guild.channels.cache.get(rankChannelID);
-
-    let roll = Math.floor(Math.random() * 100) + 1;
-
-    roll > 100 ? (roll = 100) : roll < 1 ? (roll = 1) : roll;
-
-    await interaction.editReply({
-      content: `🎲 ${interaction.user} rolls **${roll}** `,
-    });
-    setTimeout(() => {
-      interaction.deleteReply().catch((e) => {
-        console.log(`Failed to delete Roll interaction.`);
-      });
-    }, 2 * 60 * 1000);
 
     if (user.xp > 0 && user.level !== 60) {
       let gambleRoll = Math.floor(Math.random() * 10) + 1;
@@ -114,6 +112,7 @@ module.exports = {
       }
 
       if (type === "none") return;
+
       let XP = parseInt(amount);
 
       if (type === "winner") {
@@ -122,6 +121,7 @@ module.exports = {
           interaction.guild.id,
           XP
         );
+
         gambleEmbed
           .setTitle(`Winner`)
           .setDescription(`${interaction.user} won **${XP}** XP`)
@@ -129,10 +129,12 @@ module.exports = {
           .setThumbnail(
             `https://cdn1.iconfinder.com/data/icons/casino-and-gambling-4/50/Casino_and_Gambling_Colored-09-512.png`
           );
+
         await interaction.editReply({
           content: `🎲 ${interaction.user} rolls **${roll}** `,
           embeds: [gambleEmbed],
         });
+
         console.log(
           `${interaction.user.username} won ${XP} XP by rolling ${roll} `
         );
@@ -141,16 +143,20 @@ module.exports = {
             interaction.user.id,
             interaction.guild.id
           );
+
           console.log(
             `${interaction.user.uesrname} just advanced to Level ${leveluppedUser.level}`
           );
+
           channel.send(
             `🎊 ${interaction.user} just advanced to Level **${leveluppedUser.level}** 🙌`
           );
         }
       } else if (type === "loser") {
         XP > user.xp ? (XP = user.xp - 1) : XP;
+
         await Levels.subtractXp(interaction.user.id, interaction.guild.id, XP);
+
         gambleEmbed
           .setTitle(`Loser`)
           .setDescription(`${interaction.user} lost **${XP}** XP`)
@@ -158,10 +164,12 @@ module.exports = {
           .setThumbnail(
             `https://www.inventicons.com/uploads/iconset/669/wm/512/Deslikelose-78.png`
           );
+
         await interaction.editReply({
           content: `🎲 ${interaction.user} rolls **${roll}** `,
           embeds: [gambleEmbed],
         });
+
         console.log(
           `${interaction.user.username} lost ${XP} XP by rolling ${roll} `
         );

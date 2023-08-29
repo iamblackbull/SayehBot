@@ -18,9 +18,8 @@ module.exports = {
     })
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .setDMPermission(false),
-  async execute(interaction, client) {
-    const member = interaction.member;
 
+  async execute(interaction, client) {
     let failedEmbed = new EmbedBuilder();
     let amount = interaction.options.getInteger("amount");
 
@@ -47,6 +46,7 @@ module.exports = {
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
         );
+        
       interaction.reply({
         embeds: [failedEmbed],
         ephemeral: true,

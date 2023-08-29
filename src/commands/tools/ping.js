@@ -4,6 +4,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("ping")
     .setDescription("Returns bot latency"),
+    
   async execute(interaction, client) {
     const pingEmbed = await interaction.deferReply({
       fetchReply: true,
@@ -24,9 +25,10 @@ module.exports = {
     await interaction.editReply({
       embeds: [embed],
     });
+
     setTimeout(() => {
       interaction.deleteReply().catch((e) => {
-        console.log(`Failed to delete Ping interaction.`);
+        console.log(`Failed to delete ${interaction.commandName} interaction.`);
       });
     }, 1 * 60 * 1000);
   },

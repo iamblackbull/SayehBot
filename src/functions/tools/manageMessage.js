@@ -75,18 +75,20 @@ module.exports = (client) => {
         type = "text";
       }
     }
+
     if (banned) {
       console.log(
-        `Deleted a message contained a ${type} in ${message.channel.name} by ${message.author.username}`
+        `Deleted a message contained a ${type} in ${message.channel.name} by ${message.author.username}.`
       );
+
       message.delete();
     } else {
       if (message.channel.id === "791350432696893440") return;
 
-      let firstXp = parseInt(Math.floor(Math.random() * 32 + 7));
+      let firstXp = parseInt(Math.floor(Math.random() * 40 + 10));
 
       while (firstXp === cacheXp) {
-        firstXp = parseInt(Math.floor(Math.random() * 32 + 7));
+        firstXp = parseInt(Math.floor(Math.random() * 40 + 10));
       }
 
       const rawXp = parseInt(firstXp * 2);
@@ -94,16 +96,16 @@ module.exports = (client) => {
 
       if (user.level < 60) {
         if (message.member.roles.cache.has(subRole1)) {
-          finalXp = parseInt(rawXp * 1.2); //16 to 76
+          finalXp = parseInt(rawXp * 1.2); //24 to 96
         } else if (message.member.roles.cache.has(subRole2)) {
-          finalXp = parseInt(rawXp * 1.5); //21 to 96
+          finalXp = parseInt(rawXp * 1.5); //30 to 120
         } else if (message.member.roles.cache.has(subRole3)) {
-          finalXp = parseInt(rawXp * 2); //28 to 128
+          finalXp = parseInt(rawXp * 2); //40 to 160
         } else {
-          finalXp = parseInt(rawXp); //14 to 64
+          finalXp = parseInt(rawXp); //20 to 80
         }
       } else if (!user.level || user.level === undefined) {
-        finalXp = parseInt(rawXp); //14 to 64
+        finalXp = parseInt(rawXp); //20 to 80
       }
 
       const hasLevelUp = await Levels.appendXp(
@@ -113,12 +115,14 @@ module.exports = (client) => {
       );
 
       console.log(`${message.author.username} gained ${finalXp} XP.`);
-      
+
       if (hasLevelUp) {
         const user = await Levels.fetch(message.author.id, message.guild.id);
+
         console.log(
           `${message.author.username} just advanced to Level ${user.level}.`
         );
+
         await channel.send(
           `🎊 ${message.author} just advanced to Level **${user.level}** 🙌`
         );

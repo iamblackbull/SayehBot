@@ -8,6 +8,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("currency")
     .setDescription("Returns latest currencies exchange rates to IRR"),
+
   async execute(interaction, client) {
     await interaction.deferReply({
       fetchReply: true,
@@ -37,6 +38,7 @@ module.exports = {
         )}** IRR :flag_ir:\n
         :flag_us: USD = **${result.rates.IRR}** IRR :flag_ir:
         `;
+
         const embed = new EmbedBuilder()
           .setTitle(`**Exchange to IRR**`)
           .setColor(0x2ae83d)
@@ -51,6 +53,7 @@ module.exports = {
             iconURL: `https://www.freepnglogos.com/uploads/dollar-sign-png/dollar-sign-finance-dollar-financial-world-image-pixabay-0.png`,
             text: `Currencies`,
           });
+
         await interaction.editReply({
           embeds: [embed],
         });
@@ -65,13 +68,15 @@ module.exports = {
           .setThumbnail(
             `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
           );
+
         await interaction.editReply({
           embeds: [failedEmbed],
         });
       });
+      
     setTimeout(() => {
       interaction.deleteReply().catch((e) => {
-        console.log(`Failed to delete Currency interaction.`);
+        console.log(`Failed to delete ${interaction.commandName} interaction.`);
       });
     }, 10 * 60 * 1000);
   },

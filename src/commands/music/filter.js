@@ -24,6 +24,69 @@ AudioFilters.define(
   "normalizer"
 );
 
+const availableFilters = [
+  {
+    label: "8D",
+    value: "8D",
+    description: "Simulate surround audio effect.",
+    emoji: "🎧",
+  },
+  {
+    label: "Bass boost",
+    value: "bassboost_low",
+    description: "Boost the bass of the audio.",
+    emoji: "🔊",
+  },
+  {
+    label: "Nightcore",
+    value: "nightcore",
+    description: "Speed up the audio (higher pitch).",
+    emoji: "💨",
+  },
+  {
+    label: "Vaporwave",
+    value: "vaporwave",
+    description: "Slow down the audio (lower pitch).",
+    emoji: "🐌",
+  },
+  {
+    label: "Reverse",
+    value: "reverse",
+    description: "Reverse the audio.",
+    emoji: "◀",
+  },
+  {
+    label: "Fade-in",
+    value: "fadein",
+    description: "Add a progressive increase in the volume of the audio.",
+    emoji: "📈",
+  },
+  {
+    label: "Karaoke",
+    value: "karaoke",
+    description: "Lower the singer's voice from the audio.",
+    emoji: "🎤",
+  },
+  {
+    label: "Vibrato",
+    value: "vibrato",
+    description: "Make the notes change pitch subtly and quickly.",
+    emoji: "📳",
+  },
+  {
+    label: "Earrape",
+    value: "earrape",
+    description: "Add a extremely loud and distorted audio.",
+    emoji: "👂",
+  },
+  {
+    label: "Normalizer",
+    value: "normalizer",
+    description: "Normalize the audio (avoid distortion).",
+    emoji: "🎼",
+  },
+];
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("filter")
@@ -35,134 +98,19 @@ module.exports = {
         .setRequired(false);
     })
     .setDMPermission(false),
-  async execute(interaction, client) {
-    const filterEmbed = await interaction.deferReply({
-      fetchReply: true,
-    });
 
-    const availableFilters = [
-      {
-        label: "8D",
-        value: "8D",
-        description: "Simulate surround audio effect.",
-        emoji: "🎧",
-      },
-      {
-        label: "Bass boost",
-        value: "bassboost_low",
-        description: "Boost the bass of the audio.",
-        emoji: "🔊",
-      },
-      {
-        label: "Nightcore",
-        value: "nightcore",
-        description: "Speed up the audio (higher pitch).",
-        emoji: "💨",
-      },
-      {
-        label: "Vaporwave",
-        value: "vaporwave",
-        description: "Slow down the audio (lower pitch).",
-        emoji: "🐌",
-      },
-      {
-        label: "Reverse",
-        value: "reverse",
-        description: "Reverse the audio.",
-        emoji: "◀",
-      },
-      {
-        label: "Fade-in",
-        value: "fadein",
-        description: "Add a progressive increase in the volume of the audio.",
-        emoji: "📈",
-      },
-      {
-        label: "Karaoke",
-        value: "karaoke",
-        description: "Lower the singer's voice from the audio.",
-        emoji: "🎤",
-      },
-      {
-        label: "Vibrato",
-        value: "vibrato",
-        description: "Make the notes change pitch subtly and quickly.",
-        emoji: "📳",
-      },
-      {
-        label: "Earrape",
-        value: "earrape",
-        description: "Add a extremely loud and distorted audio.",
-        emoji: "👂",
-      },
-      {
-        label: "Normalizer",
-        value: "normalizer",
-        description: "Normalize the audio (avoid distortion).",
-        emoji: "🎼",
-      },
-    ];
+  async execute(interaction, client) {
+    let failedEmbed = new EmbedBuilder();
+    let success = false;
+    let timer;
 
     const queue = client.player.nodes.get(interaction.guildId);
 
-    let filtersOptions = [];
-    availableFilters.forEach((filter) => {
-      let isEnabled = false;
+    const sameChannel =
+      queue.connection.joinConfig.channelId ===
+      interaction.member.voice.channel.id;
 
-      if (queue.filters.ffmpeg.filters.includes(filter.value)) isEnabled = true;
-
-      filtersOptions.push(
-        new StringSelectMenuOptionBuilder()
-          .setLabel(filter.label)
-          .setDescription(filter.description)
-          .setValue(filter.value)
-          .setEmoji(filter.emoji)
-          .setDefault(isEnabled)
-      );
-    });
-
-    const filterMenu = new StringSelectMenuBuilder()
-      .setCustomId("filters")
-      .setPlaceholder("Select which filters to apply:")
-      .setMinValues(0)
-      .setMaxValues(filtersOptions.length)
-      .addOptions(filtersOptions);
-
-    const disableButton = new ButtonBuilder()
-      .setCustomId(`disable`)
-      .setLabel("Disable")
-      .setStyle(ButtonStyle.Danger);
-
-    let timer;
-    let success = false;
-    let embed = new EmbedBuilder()
-      .setColor(0xc42577)
-      .setTitle("✨ Current Filter");
-
-    if (queue.filters.ffmpeg.filters.length > 0) {
-      embed.setDescription(
-        `**${queue.filters.ffmpeg.filters.length}** filters are enabled.`
-      );
-    } else {
-      embed.setDescription(`Filters are disabled.`);
-    }
-
-    let failedEmbed = new EmbedBuilder();
-
-    if (!queue) {
-      failedEmbed
-        .setTitle(`**Action Failed**`)
-        .setDescription(
-          `Bot is already not playing in any voice channel.\nUse </play:1047903145071759425> to play a track.`
-        )
-        .setColor(0xffea00)
-        .setThumbnail(
-          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-        );
-      await interaction.editReply({
-        embeds: [failedEmbed],
-      });
-    } else if (!interaction.member.voice.channel) {
+    if (!interaction.member.voice.channel) {
       failedEmbed
         .setTitle(`**Action Failed**`)
         .setDescription(
@@ -172,13 +120,85 @@ module.exports = {
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
         );
-      await interaction.editReply({
+      await interaction.reply({
         embeds: [failedEmbed],
       });
-    } else if (
-      queue.connection.joinConfig.channelId ===
-      interaction.member.voice.channel.id
-    ) {
+    } else if (!queue) {
+      failedEmbed
+        .setTitle(`**Action Failed**`)
+        .setDescription(
+          `Bot is already not playing in any voice channel.\nUse </play:1047903145071759425> to play a track.`
+        )
+        .setColor(0xffea00)
+        .setThumbnail(
+          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
+        );
+      await interaction.reply({
+        embeds: [failedEmbed],
+      });
+    } else if (!sameChannel) {
+      failedEmbed
+        .setTitle(`**Busy**`)
+        .setDescription(`Bot is busy in another voice channel.`)
+        .setColor(0x256fc4)
+        .setThumbnail(
+          `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
+        );
+      await interaction.reply({
+        embeds: [failedEmbed],
+      });
+    } else {
+      let filtersOptions = [];
+      availableFilters.forEach((filter) => {
+        let isEnabled = false;
+
+        if (queue.filters.ffmpeg.filters.includes(filter.value))
+          isEnabled = true;
+
+        filtersOptions.push(
+          new StringSelectMenuOptionBuilder()
+            .setLabel(filter.label)
+            .setDescription(filter.description)
+            .setValue(filter.value)
+            .setEmoji(filter.emoji)
+            .setDefault(isEnabled)
+        );
+      });
+
+      let embed = new EmbedBuilder()
+        .setColor(0xc42577)
+        .setTitle("✨ Current Filter");
+
+      if (queue.filters.ffmpeg.filters.length > 0) {
+        embed.setDescription(
+          `**${queue.filters.ffmpeg.filters.length}** filters are enabled.`
+        );
+      } else {
+        embed.setDescription(`Filters are disabled.`);
+      }
+
+      const filterMenu = new StringSelectMenuBuilder()
+        .setCustomId("filters")
+        .setPlaceholder("Select which filters to apply")
+        .setMinValues(0)
+        .setMaxValues(filtersOptions.length)
+        .addOptions(filtersOptions);
+
+      const disableButton = new ButtonBuilder()
+        .setCustomId(`disable`)
+        .setLabel("Disable")
+        .setStyle(ButtonStyle.Danger);
+
+      const button = new ActionRowBuilder()
+        .addComponents(filterMenu)
+        .addComponents(disableButton);
+
+      const filterEmbed = await interaction.reply({
+        embeds: [embed],
+        components: [button],
+      });
+      success = true;
+
       const { timestamp } = useTimeline(interaction.guildId);
       const duration = timestamp.total.label;
       const convertor = duration.split(":");
@@ -193,10 +213,9 @@ module.exports = {
       if (timer > 10 * 60) timer = 10 * 60;
       if (timer < 1 * 60) timer = 1 * 60;
 
-      const collectorFilter = (i) => i.user.id === interaction.user.id;
       try {
         const confirmation = await filterEmbed.awaitMessageComponent({
-          filter: collectorFilter,
+          filter: (i) => i.user.id === interaction.user.id,
           time: timer,
         });
         confirmation.deferUpdate();
@@ -209,11 +228,6 @@ module.exports = {
           confirmation.values.length === 0
         ) {
           embed.setDescription("Filters are disabled.");
-
-          await interaction.editReply({
-            embeds: [embed],
-            components: [],
-          });
         } else {
           if (
             confirmation.values.includes("bassboost_low") &&
@@ -235,12 +249,11 @@ module.exports = {
               return `- **${filter.emoji} ${filter.label}**`;
             })
             .join("\n")}`);
-
-          await interaction.editReply({
-            embeds: [embed],
-            components: [],
-          });
         }
+        await interaction.editReply({
+          embeds: [embed],
+          components: [],
+        });
       } catch (error) {
         if (error.code === "InteractionCollectorError") {
           console.log(
@@ -252,25 +265,6 @@ module.exports = {
           );
         }
       }
-      await interaction.editReply({
-        embeds: [embed],
-        components: [
-          new ActionRowBuilder()
-            .addComponents(filterMenu)
-            .addComponents(disableButton),
-        ],
-      });
-    } else {
-      failedEmbed
-        .setTitle(`**Busy**`)
-        .setDescription(`Bot is busy in another voice channel.`)
-        .setColor(0x256fc4)
-        .setThumbnail(
-          `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
-        );
-      await interaction.editReply({
-        embeds: [failedEmbed],
-      });
     }
 
     const timeoutDuration = success ? timer * 1000 : 2 * 60 * 1000;

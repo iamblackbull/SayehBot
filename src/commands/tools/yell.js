@@ -8,42 +8,43 @@ require("dotenv").config();
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("yell")
-    .setDescription("Yell at everyone!")
+    .setDescription("Yell at everyone in a specific channel!")
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
     .addChannelOption((option) => {
       return option
         .setName("channel")
-        .setDescription("Select a channel")
+        .setDescription("Select a channel to yell in.")
         .setRequired(true);
     })
     .addStringOption((option) => {
       return option
         .setName("message")
-        .setDescription("Input the message you want to announce")
+        .setDescription("Input a message to announce.")
         .setRequired(true);
     })
     .setDMPermission(false),
+
   async execute(interaction, client) {
     const channel = interaction.options.getChannel("channel");
-    const member = interaction.member;
     const message = interaction.options.getString("message");
 
-    let failedEmbed = new EmbedBuilder();
-
     const embed = new EmbedBuilder().setDescription(message).setColor(0x25bfc4);
+
     await channel.send({
       content: `📢 Hey @everyone , ${interaction.user} yells: `,
       embeds: [embed],
     });
-    const embed2 = new EmbedBuilder()
+
+    const respond = new EmbedBuilder()
       .setTitle(`Yell`)
       .setDescription(`Message has been sent successfully.`)
       .setColor(0x25bfc4)
       .setThumbnail(
         `https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Flat_tick_icon.svg/768px-Flat_tick_icon.svg.png`
       );
+      
     await interaction.reply({
-      embeds: [embed2],
+      embeds: [respond],
       ephemeral: true,
     });
   },

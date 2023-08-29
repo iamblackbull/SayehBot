@@ -66,6 +66,44 @@ module.exports = {
 
         RIO.Character.getProfile(`${region}`, `${realm}`, `${character}`)
           .then((result) => {
+            let recentRun;
+            switch (result.mythic_plus_recent_runs[0].num_keystone_upgrades) {
+              case 1:
+                recentRun = `+`;
+                break;
+              case 2:
+                recentRun = `++`;
+                break;
+              case 3:
+                recentRun = `+++`;
+                break;
+              case 0:
+                recentRun = ``;
+                break;
+              case -1:
+                recentRun = `-`;
+                break;
+            }
+
+            let bestRun;
+            switch (result.mythic_plus_best_runs[0].num_keystone_upgrades) {
+              case 1:
+                bestRun = `+`;
+                break;
+              case 2:
+                bestRun = `++`;
+                break;
+              case 3:
+                bestRun = `+++`;
+                break;
+              case 0:
+                bestRun = ``;
+                break;
+              case -1:
+                bestRun = `-`;
+                break;
+            }
+
             const page1 = [
               {
                 name: `Class`,
@@ -119,43 +157,6 @@ module.exports = {
               },
             ];
 
-            let recentRun;
-            switch (result.mythic_plus_recent_runs[0].num_keystone_upgrades) {
-              case 1:
-                recentRun = `+`;
-                break;
-              case 2:
-                recentRun = `++`;
-                break;
-              case 3:
-                recentRun = `+++`;
-                break;
-              case 0:
-                recentRun = ``;
-                break;
-              case -1:
-                recentRun = `-`;
-                break;
-            }
-
-            let bestRun;
-            switch (result.mythic_plus_best_runs[0].num_keystone_upgrades) {
-              case 1:
-                bestRun = `+`;
-                break;
-              case 2:
-                bestRun = `++`;
-                break;
-              case 3:
-                bestRun = `+++`;
-                break;
-              case 0:
-                bestRun = ``;
-                break;
-              case -1:
-                bestRun = `-`;
-                break;
-            }
             let embed = new EmbedBuilder()
               .setTitle(`**${result.name}-${result.realm}**`)
               .setURL(`${result.profile_url}`)
@@ -166,6 +167,7 @@ module.exports = {
                 iconURL: `https://i.pinimg.com/originals/cf/f4/a5/cff4a59d9390e8f836581e55828fb9ca.png`,
                 text: `World of Warcraft`,
               });
+
             wowEmbed.react(`⬅`);
             wowEmbed.react(`➡`);
             const filter = (reaction, user) => {
@@ -175,49 +177,52 @@ module.exports = {
             const collector = wowEmbed.createReactionCollector(filter);
             collector.on("collect", async (reaction, user) => {
               if (user.bot) return;
-              else {
-                reaction.users.remove(reaction.users.cache.get(user.id));
-                if (reaction.emoji.name === `➡`) {
-                  const gearItems = [
-                    { name: "Head", slot: "head" },
-                    { name: "Neck", slot: "neck" },
-                    { name: "Shoulder", slot: "shoulder" },
-                    { name: "Back", slot: "back" },
-                    { name: "Chest", slot: "chest" },
-                    { name: "Waist", slot: "waist" },
-                    { name: "Wrist", slot: "wrist" },
-                    { name: "Hands", slot: "hands" },
-                    { name: "Legs", slot: "legs" },
-                    { name: "Feet", slot: "feet" },
-                    { name: "Finger 1", slot: "finger1" },
-                    { name: "Finger 2", slot: "finger2" },
-                    { name: "Trinket 1", slot: "trinket1" },
-                    { name: "Trinket 2", slot: "trinket2" },
-                    { name: "Main Hand", slot: "mainhand" },
-                    { name: "Off Hand", slot: "offhand" },
-                  ];
 
-                  gearItems.forEach((item) => {
-                    const itemLevel =
-                      result.gear.items[item.slot]?.item_level.toString() ||
-                      "Empty";
-                    embed.setFields({
-                      name: item.name,
-                      value: itemLevel,
-                      inline: true,
-                    });
+              reaction.users.remove(reaction.users.cache.get(user.id));
+
+              if (reaction.emoji.name === `➡`) {
+                const gearItems = [
+                  { name: "Head", slot: "head" },
+                  { name: "Neck", slot: "neck" },
+                  { name: "Shoulder", slot: "shoulder" },
+                  { name: "Back", slot: "back" },
+                  { name: "Chest", slot: "chest" },
+                  { name: "Waist", slot: "waist" },
+                  { name: "Wrist", slot: "wrist" },
+                  { name: "Hands", slot: "hands" },
+                  { name: "Legs", slot: "legs" },
+                  { name: "Feet", slot: "feet" },
+                  { name: "Finger 1", slot: "finger1" },
+                  { name: "Finger 2", slot: "finger2" },
+                  { name: "Trinket 1", slot: "trinket1" },
+                  { name: "Trinket 2", slot: "trinket2" },
+                  { name: "Main Hand", slot: "mainhand" },
+                  { name: "Off Hand", slot: "offhand" },
+                ];
+
+                gearItems.forEach((item) => {
+                  const itemLevel =
+                    result.gear.items[item.slot]?.item_level.toString() ||
+                    "Empty";
+                  embed.setFields({
+                    name: item.name,
+                    value: itemLevel,
+                    inline: true,
                   });
-                  await interaction.editReply({
-                    embeds: [embed],
-                  });
-                } else {
-                  embed.setFields(page1);
-                  await interaction.editReply({
-                    embeds: [embed],
-                  });
-                }
+                });
+
+                await interaction.editReply({
+                  embeds: [embed],
+                });
+              } else {
+                embed.setFields(page1);
+
+                await interaction.editReply({
+                  embeds: [embed],
+                });
               }
             });
+
             const recentButton = new ButtonBuilder()
               .setLabel(`M+ Recent Run`)
               .setURL(`${result.mythic_plus_recent_runs[0].url}`)
@@ -226,6 +231,7 @@ module.exports = {
               .setLabel(`M+ Best Run`)
               .setURL(`${result.mythic_plus_best_runs[0].url}`)
               .setStyle(ButtonStyle.Link);
+
             interaction.editReply({
               embeds: [embed],
               components: [
@@ -234,6 +240,7 @@ module.exports = {
                   .addComponents(bestButton),
               ],
             });
+
             success = true;
           })
           .catch((e) => {
@@ -245,12 +252,14 @@ module.exports = {
               .setThumbnail(
                 `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
               );
+
             interaction.editReply({
               embeds: [failedEmbed],
             });
           });
       }
     }
+    
     const timeoutDuration = success ? 5 * 60 * 1000 : 2 * 60 * 1000;
     const timeoutLog = success
       ? "Failed to delete WOW context menu interaction."

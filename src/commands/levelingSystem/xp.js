@@ -18,11 +18,11 @@ module.exports = {
         .addChoices(
           {
             name: "Give",
-            value: "give",
+            value: "granted",
           },
           {
             name: "Take",
-            value: "take",
+            value: "removed",
           }
         );
     })
@@ -56,10 +56,10 @@ module.exports = {
     })
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
     .setDMPermission(false),
+
   async execute(interaction, client) {
-    await interaction.deferReply({
-      fetchReply: true,
-    });
+    const user = interaction.options.getUser("user");
+    const userLevel = await Levels.fetch(user.id, interaction.guild.id, true);
 
     let failedEmbed = new EmbedBuilder().setColor(0xffea00);
 
@@ -75,84 +75,65 @@ module.exports = {
       interaction.editReply({
         embeds: [failedEmbed],
       });
+    } else if (userLevel <= 0) {
+      failedEmbed
+        .setTitle(`**Action Failed**`)
+        .setDescription(
+          `${user} has not gained enough xp. User should at least send **1** message in the server.`
+        )
+        .setThumbnail(
+          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
+        );
+      interaction.editReply({
+        embeds: [failedEmbed],
+      });
     } else {
+      await interaction.deferReply({
+        fetchReply: true,
+      });
+
       let embed = new EmbedBuilder().setTitle("🤖 Leveling System");
-      const user = interaction.options.getUser("user");
-      const userTarget = await Levels.fetch(
-        user.id,
-        interaction.guild.id,
-        true
-      );
 
-      if (userTarget <= 0) {
-        failedEmbed
-          .setTitle(`**Action Failed**`)
-          .setDescription(
-            `${user} has not gained enough xp. User should at least send **1** message in the server.`
-          )
-          .setThumbnail(
-            `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-          );
-        interaction.editReply({
-          embeds: [failedEmbed],
-        });
-      } else {
-        const action = interaction.options.get("action").value;
-        const unit = interaction.options.get("unit").value;
-        const amount = interaction.options.getInteger("amount");
-        if (action === "give") {
-          if (unit === "level") {
-            await Levels.appendLevel(user.id, interaction.guild.id, amount);
-            embed
-              .setDescription(
-                `Total of **${amount} levels** granted to ${user}`
-              )
-              .setColor(0x46eb34);
-            console.log(
-              `${interaction.user.username} added ${amount} levels to ${user.username}`
-            );
-          }
+      let action = interaction.options.get("action").value;
+      let unit = interaction.options.get("unit").value;
+      const amount = interaction.options.getInteger("amount");
 
-          if (unit === "xp") {
-            await Levels.appendXp(user.id, interaction.guild.id, amount);
-            embed
-              .setDescription(`Total of **${amount} XP** granted to ${user}`)
-              .setColor(0x46eb34);
-            console.log(
-              `${interaction.user.username} granted ${amount} XP to ${user.username}`
-            );
-          }
+      if (action === "granted") {
+        action = "granted to";
+        embed.setColor(0x46eb34);
+
+        if (unit === "level") {
+          await Levels.appendLevel(user.id, interaction.guild.id, amount);
         } else {
-          if (unit === "level") {
-            await Levels.subtractLevel(user.id, interaction.guild.id, amount);
-            embed
-              .setDescription(
-                `Total of **${amount} levels** removed from ${user}`
-              )
-              .setColor(0xe01010);
-            console.log(
-              `${interaction.user.username} removed ${amount} levels from ${user.username}`
-            );
-          }
-
-          if (unit === "xp") {
-            await Levels.subtractXp(user.id, interaction.guild.id, amount);
-            embed
-              .setDescription(`Total of **${amount} XP** removed from ${user}`)
-              .setColor(0xe01010);
-            console.log(
-              `${interaction.user.username} removed ${amount} XP from ${user.username}`
-            );
-          }
+          unit = "XP";
+          await Levels.appendXp(user.id, interaction.guild.id, amount);
         }
-        await interaction.editReply({
-          embeds: [embed],
-        });
+      } else {
+        action = "removed from";
+        embed.setColor(0xe01010);
+
+        if (unit === "level") {
+          await Levels.subtractLevel(user.id, interaction.guild.id, amount);
+        } else {
+          unit = "XP";
+          await Levels.subtractXp(user.id, interaction.guild.id, amount);
+        }
       }
+
+      embed.setDescription(`**${amount} ${unit}** ${action} ${user}`);
+
+      await interaction.editReply({
+        embeds: [embed],
+      });
+
+      console.log(
+        `${amount} ${unit} ${action} ${user} by ${interaction.user.username}.`
+      );
     }
+
     setTimeout(() => {
       interaction.deleteReply().catch((e) => {
-        console.log(`Failed to delete XP interaction.`);
+        console.log(`Failed to delete ${interaction.commandName} interaction.`);
       });
     }, 5 * 60 * 1000);
   },

@@ -12,14 +12,15 @@ module.exports = {
         .setDescription("Input the movie name you are looking for")
         .setRequired(true)
     ),
+
   async execute(interaction, client) {
     await interaction.deferReply({
       fetchReply: true,
     });
 
     let success = false;
-
     const name = interaction.options.getString("name");
+
     await movier
       .getTitleDetailsByName(`${name}`)
       .then(async function (result) {
@@ -81,13 +82,15 @@ module.exports = {
           .setThumbnail(
             `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
           );
+
         interaction.editReply({
           embeds: [failedEmbed],
         });
       });
+      
     const timeoutLog = success
-      ? "Failed to delete Movie interaction."
-      : "Failed to delete unsuccessfull Movie interaction.";
+    ? `Failed to delete ${interaction.commandName} interaction.`
+    : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
       if (success && interaction.channel.id === movieChannelID) return;
       else {

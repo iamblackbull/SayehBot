@@ -12,6 +12,7 @@ module.exports = {
         .setDescription("Input a song name.")
         .setRequired(true)
     ),
+
   async execute(interaction, client) {
     const lyricsEmbed = await interaction.deferReply({
       fetchReply: true,
@@ -25,6 +26,7 @@ module.exports = {
       .then(async function (result) {
         const song = result[0];
         const lyrics = await song.lyrics();
+
         let embed = new EmbedBuilder()
           .setTitle(`**${song.title}**`)
           .setAuthor({
@@ -41,10 +43,12 @@ module.exports = {
           let page = 0;
 
           let res = lyrics.slice(page * 1000, page * 1000 + 1000);
+
           embed.setDescription(res).setFooter({
             iconURL: `https://images.genius.com/0ca83e3130e1303a7f78ba351e3091cd.1000x1000x1.png`,
             text: `Genius | Page ${page + 1} of ${totalPages}`,
           });
+
           lyricsEmbed.react(`⬅`);
           lyricsEmbed.react(`➡`);
           const filter = (reaction, user) => {
@@ -55,35 +59,37 @@ module.exports = {
 
           collector.on("collect", async (reaction, user) => {
             if (user.bot) return;
-            else {
-              reaction.users.remove(
-                reaction.users.cache.get(interaction.user.id)
-              );
-              if (reaction.emoji.name === `➡`) {
-                if (page < totalPages - 1) {
-                  page++;
+            reaction.users.remove(
+              reaction.users.cache.get(interaction.user.id)
+            );
+            if (reaction.emoji.name === `➡`) {
+              if (page < totalPages - 1) {
+                page++;
+                res = lyrics.slice(page * 1000, page * 1000 + 1000);
+
+                embed.setDescription(res).setFooter({
+                  iconURL: `https://images.genius.com/0ca83e3130e1303a7f78ba351e3091cd.1000x1000x1.png`,
+                  text: `Genius | Page ${page + 1} of ${totalPages}`,
+                });
+
+                interaction.editReply({
+                  embeds: [embed],
+                });
+              }
+            } else {
+              if (reaction.emoji.name == `⬅`) {
+                if (page !== 0) {
+                  --page;
                   res = lyrics.slice(page * 1000, page * 1000 + 1000);
+
                   embed.setDescription(res).setFooter({
                     iconURL: `https://images.genius.com/0ca83e3130e1303a7f78ba351e3091cd.1000x1000x1.png`,
                     text: `Genius | Page ${page + 1} of ${totalPages}`,
                   });
+
                   interaction.editReply({
                     embeds: [embed],
                   });
-                }
-              } else {
-                if (reaction.emoji.name == `⬅`) {
-                  if (page !== 0) {
-                    --page;
-                    res = lyrics.slice(page * 1000, page * 1000 + 1000);
-                    embed.setDescription(res).setFooter({
-                      iconURL: `https://images.genius.com/0ca83e3130e1303a7f78ba351e3091cd.1000x1000x1.png`,
-                      text: `Genius | Page ${page + 1} of ${totalPages}`,
-                    });
-                    interaction.editReply({
-                      embeds: [embed],
-                    });
-                  }
                 }
               }
             }
@@ -91,12 +97,14 @@ module.exports = {
           interaction.editReply({
             embeds: [embed],
           });
+
           success = true;
         } else if (lyrics.length <= 1200) {
           embed.setDescription(lyrics).setFooter({
             iconURL: `https://images.genius.com/0ca83e3130e1303a7f78ba351e3091cd.1000x1000x1.png`,
             text: `Genius`,
           });
+
           interaction.editReply({
             embeds: [embed],
           });

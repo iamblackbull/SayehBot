@@ -22,11 +22,13 @@ module.exports = {
         .setRequired(false);
     })
     .setDMPermission(false),
+
   async execute(interaction, client) {
-    const seekEmbed = await interaction.deferReply({
-      fetchReply: true,
-    });
     const queue = client.player.nodes.get(interaction.guildId);
+
+    const sameChannel =
+      queue.connection.joinConfig.channelId ===
+      interaction.member.voice.channel.id;
 
     let failedEmbed = new EmbedBuilder();
     let success = false;
@@ -42,7 +44,7 @@ module.exports = {
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
         );
-      await interaction.editReply({
+      await interaction.reply({
         embeds: [failedEmbed],
       });
     } else if (!interaction.member.voice.channel) {
@@ -55,15 +57,27 @@ module.exports = {
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
         );
-      await interaction.editReply({
+      await interaction.reply({
         embeds: [failedEmbed],
       });
-    } else if (
-      queue.connection.joinConfig.channelId ===
-      interaction.member.voice.channel.id
-    ) {
-      let mins = interaction.options.getInteger("minutes");
-      let seconds = interaction.options.getInteger("seconds") || 0;
+    } else if (!sameChannel) {
+      failedEmbed
+        .setTitle(`**Busy**`)
+        .setDescription(`Bot is busy in another voice channel.`)
+        .setColor(0x256fc4)
+        .setThumbnail(
+          `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
+        );
+      await interaction.reply({
+        embeds: [failedEmbed],
+      });
+    } else {
+      await interaction.deferReply({
+        fetchReply: true,
+      });
+
+      const mins = interaction.options.getInteger("minutes");
+      const seconds = interaction.options.getInteger("seconds") || 0;
       let amount = mins * 60 + seconds;
 
       const song = queue.currentTrack;
@@ -108,22 +122,12 @@ module.exports = {
         await interaction.editReply({ embeds: [embed] });
         success = true;
       }, 1 * 1000);
-    } else {
-      failedEmbed
-        .setTitle(`**Busy**`)
-        .setDescription(`Bot is busy in another voice channel.`)
-        .setColor(0x256fc4)
-        .setThumbnail(
-          `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
-        );
-      await interaction.editReply({
-        embeds: [failedEmbed],
-      });
     }
 
     success ? timer : (timer = 2 * 60);
     if (timer > 10 * 60) timer = 10 * 60;
     if (timer < 1 * 60) timer = 1 * 60;
+
     const timeoutLog = success
       ? `Failed to delete ${interaction.commandName} interaction.`
       : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;

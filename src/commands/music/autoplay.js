@@ -4,21 +4,21 @@ const { musicChannelID } = process.env;
 let autoplayMode = false;
 
 module.exports = {
-  isNew: true,
-  isBeta: true,
   data: new SlashCommandBuilder()
     .setName("autoplay")
     .setDescription("Toggle autoplay mode of the current queue.")
     .setDMPermission(false),
+
   async execute(interaction, client) {
-    const repeatEmbed = await interaction.deferReply({
-      fetchReply: true,
-    });
     const queue = client.player.nodes.get(interaction.guildId);
 
-    let embed = new EmbedBuilder().setColor(0x25bfc4).setTitle(`⏯ Autoplay`);
+    const sameChannel =
+      queue.connection.joinConfig.channelId ===
+      interaction.member.voice.channel.id;
+
     let failedEmbed = new EmbedBuilder();
     let success = false;
+    let timer;
 
     if (!queue) {
       failedEmbed
@@ -30,7 +30,7 @@ module.exports = {
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
         );
-      await interaction.editReply({
+      await interaction.reply({
         embeds: [failedEmbed],
       });
     } else if (!interaction.member.voice.channel) {
@@ -43,52 +43,10 @@ module.exports = {
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
         );
-      await interaction.editReply({
+      await interaction.reply({
         embeds: [failedEmbed],
       });
-    } else if (
-      queue.connection.joinConfig.channelId ===
-      interaction.member.voice.channel.id
-    ) {
-      if (!autoplayMode) {
-        autoplayMode = true;
-        queue.setRepeatMode(3);
-        embed.setDescription(
-          `Autoplay mode is **ON**.\nUse </autoplay:1142494521683361874> again or react below to turn it off.`
-        );
-        repeatEmbed.react(`❌`);
-        const filter = (reaction, user) => {
-          [`❌`].includes(reaction.emoji.name) &&
-            user.id === interaction.user.id;
-        };
-        const collector = repeatEmbed.createReactionCollector(filter);
-        collector.on("collect", async (reaction, user) => {
-          if (user.bot) return;
-          else {
-            reaction.users.remove(reaction.users.cache.get(user.id));
-            autoplayMode = false;
-            queue.setRepeatMode(0);
-            embed.setDescription(
-              `Autoplay mode is **OFF**.\nUse </autoplay:1142494521683361874> again to turn it on.`
-            );
-            await interaction.editReply({
-              embeds: [embed],
-            });
-            success = true;
-          }
-        });
-      } else if (autoplayMode) {
-        autoplayMode = false;
-        queue.setRepeatMode(0);
-        embed.setDescription(
-          `Autoplay mode is **OFF**.\nUse </autoplay:1142494521683361874> again to turn it on.`
-        );
-      }
-      await interaction.editReply({
-        embeds: [embed],
-      });
-      success = true;
-    } else {
+    } else if (!sameChannel) {
       failedEmbed
         .setTitle(`**Busy**`)
         .setDescription(`Bot is busy in another voice channel.`)
@@ -96,21 +54,79 @@ module.exports = {
         .setThumbnail(
           `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
         );
-      await interaction.editReply({
+      await interaction.reply({
         embeds: [failedEmbed],
       });
+    } else {
+      const repeatEmbed = await interaction.deferReply({
+        fetchReply: true,
+      });
+
+      let embed = new EmbedBuilder().setColor(0x25bfc4).setTitle(`⏯ Autoplay`);
+
+      if (!autoplayMode) {
+        autoplayMode = true;
+        queue.setRepeatMode(3);
+
+        embed.setDescription(
+          `Autoplay mode is **ON**.\nUse </autoplay:1142494521683361874> again or react below to turn it off.`
+        );
+      } else if (autoplayMode) {
+        autoplayMode = false;
+        queue.setRepeatMode(0);
+
+        embed.setDescription(
+          `Autoplay mode is **OFF**.\nUse </autoplay:1142494521683361874> again or react below to turn it on.`
+        );
+      }
+
+      const { timestamp } = useTimeline(interaction.guildId);
+      const duration = timestamp.total.label;
+      const convertor = duration.split(":");
+      const totalTimer = +convertor[0] * 60 + +convertor[1];
+
+      const currentDuration = timestamp.current.label;
+      const currentConvertor = currentDuration.split(":");
+      const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
+
+      timer = totalTimer - currentTimer;
+
+      await interaction.editReply({
+        embeds: [embed],
+      });
+      success = true;
+
+      repeatEmbed.react(`🔄`);
+      const filter = (reaction, user) => {
+        [`🔄`].includes(reaction.emoji.name) && user.id === interaction.user.id;
+      };
+      const collector = repeatEmbed.createReactionCollector(filter);
+      collector.on("collect", async (reaction, user) => {
+        if (user.bot) return;
+        reaction.users.remove(reaction.users.cache.get(user.id));
+
+        if (autoplayMode) {
+          autoplayMode = false;
+          queue.setRepeatMode(0);
+
+          embed.setDescription(
+            `Autoplay mode is **OFF**.\nUse </autoplay:1142494521683361874> again to turn it on.`
+          );
+        } else {
+          autoplayMode = true;
+          queue.setRepeatMode(3);
+
+          embed.setDescription(
+            `Autoplay mode is **ON**.\nUse </autoplay:1142494521683361874> again or react below to turn it off.`
+          );
+        }
+
+        await interaction.editReply({
+          embeds: [embed],
+        });
+        success = true;
+      });
     }
-
-    const { timestamp } = useTimeline(interaction.guildId);
-    const duration = timestamp.total.label;
-    const convertor = duration.split(":");
-    const totalTimer = +convertor[0] * 60 + +convertor[1];
-
-    const currentDuration = timestamp.current.label;
-    const currentConvertor = currentDuration.split(":");
-    const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
-
-    timer = totalTimer - currentTimer;
 
     if (timer > 10 * 60) timer = 10 * 60;
     if (timer < 1 * 60) timer = 1 * 60;
@@ -121,14 +137,9 @@ module.exports = {
       : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
       if (success && interaction.channel.id === musicChannelID) {
-        repeatEmbed.reactions
-          .removeAll()
-          .catch((error) =>
-            console.error(
-              chalk.red("Failed to clear reactions from Autoplay interaction."),
-              error
-            )
-          );
+        repeatEmbed.reactions.removeAll().catch((e) => {
+          return;
+        });
       } else {
         interaction.deleteReply().catch((e) => {
           console.log(timeoutLog);
