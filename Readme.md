@@ -1,6 +1,6 @@
 #
 
-# **SayehBot v1.6.2 INSTALLATION GUIDE**
+# **SayehBot v1.6.3 INSTALLATION GUIDE**
 
 ## **UPDATE SERVER**
 
@@ -47,7 +47,7 @@
 - ## Install discord-player packages
   > - sudo npm i discord-player @discord-player/downloader @discord-player/extractor
 - ## Install ytdl-core
-  > - sudo npm i ytdl-core
+  > - sudo npm i ytdl-core@git+ssh://git@github.com:khlevon/node-ytdl-core.git#v4.11.4-patch.2
 
 #
 
@@ -77,11 +77,12 @@
 
 # **FIX COMMON ISSUES**
 
+- **NOTE**: After performing any changes or edites, you should restart the bot to apply the changes.
 - ## Duplicated messages or spamming
   > - Reboot the server with `sudo reboot`
   > - If the problem is still there, reset pm2 with `rm -rf ~/.pm2`
-  > - If the problem is still there, reset discord token and replace the new token in the .env file
-  > - Restart the bot
+  > - If the problem is still there, reset discord token and replace the new token in the .env file.
+  > - Restart the bot.
   >   > - **NOTE:** If the bot sends every message twice or more, it means that the bot is running twice at a time or more. Make sure that the bot is not online from another vm/local. This problem might happen if you run both `node .` command and `pm2 start` command together. A sign of this problem is that an error logs in console (isJSONEncodable is not a function) whenever the bot is triggered.
 - ## Twitch API errors
   > - If the error was a **ETIMEDOUT** problem, It means that the bot is unable to connect to the api. In that case, do as follows:
@@ -92,18 +93,20 @@
   > - If the error was a **TOKEN** problem, It means that the token has been expired. In that case, do as follows:
   >> - Refresh twitch bot OAuth token [here](https://twitchtokengenerator.com/).
   >>> - **Recommended:** If you have refresh access token, use it to refresh the token. It can be retrieved from .env file.
-  >>> - Else if you want to reset your tokens completely, I suggest you to tick all the scopes available. But the currently required scopes are **user_read** and **channel_editor**
-  >> - Replace the new token in the .env file
-  >> - Restart the bot
+  >>> - Else if you want to reset your tokens completely, I suggest you to tick all the scopes available. But the currently required scopes are **user_read** and **channel_editor**.
+  >> - Replace the new tokens in the .env file.
+  >> - Restart the bot.
 - ## Music features related issues
-  > - Check discord-player status and try different versions of it
-  > - If the problem is still there, check ytdl-core status and try different versions of it
-  > - If the problem is still there, check ffmpeg-static status and try different versions of it
-  > - Restart the bot
+  > - If the logged error was something like this: **Invalid or unexpected token**, then it's a **ytdl-core** related issue. In that case, do as follows:
+  >> - Check ytdl-core github repository [here](https://github.com/fent/node-ytdl-core) and make sure you have the latest version installed.
+  >> - Try downgrading to older versions. **4.10.0** usually works.  
+  > - Check **discord-player** repository [here](https://github.com/Androz2091/discord-player) and make sure you have the latest version installed.
+  > - Check **ffmpeg-static** repository [here](https://github.com/eugeneware/ffmpeg-static) and make sure you have the latest version installed.
+  > - Restart the bot.
 - ## Check packages versions
   > - `node -v` or `node --version` (Recommended: v16.17.1)
   > - `curl --version` (Recommended: 7.68.0)
-  > - `lsb_release -a` for ubuntu (Recommended: 20.04.6)
+  > - `lsb_release -a` for ubuntu (Recommended: 20.04.6) 
   > - `ffmpeg -version` (Recommended: 4.2.7-0ubuntu0.1)
 
 #
@@ -116,7 +119,7 @@
   > - To delete an empty directory use `rm [directory]`
   > - To delete a directory and all its contents use `rm -rf [directory]`
 - ## Basic commands
-  > - To copy a file use `cp [file] [destination directory]`
-  > - To cut or rename a file use `mv [file] [destination directory]`
+  > - To copy or cut a directory use `cp [current directory] [destination directory]`
+  > - To cut or rename a directory use `mv [current directory] [destination directory]`
 
 <p align="center"><a href="https://github.com/iamblackbull/SayehBot"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Up_arrow_white.svg/1024px-Up_arrow_white.svg.png" alt="Back to top" height="35"/></a></p>

@@ -85,27 +85,36 @@ module.exports = (client) => {
     } else {
       if (message.channel.id === "791350432696893440") return;
 
-      let firstXp = parseInt(Math.floor(Math.random() * 40 + 10));
-
-      while (firstXp === cacheXp) {
-        firstXp = parseInt(Math.floor(Math.random() * 40 + 10));
+      function getRandomXp() {
+        return Math.floor(Math.random() * 50 + 15);
       }
 
-      const rawXp = parseInt(firstXp * 2);
-      let finalXp;
+      let firstXp;
 
-      if (user.level < 60) {
-        if (message.member.roles.cache.has(subRole1)) {
-          finalXp = parseInt(rawXp * 1.2); //24 to 96
-        } else if (message.member.roles.cache.has(subRole2)) {
-          finalXp = parseInt(rawXp * 1.5); //30 to 120
-        } else if (message.member.roles.cache.has(subRole3)) {
-          finalXp = parseInt(rawXp * 2); //40 to 160
-        } else {
-          finalXp = parseInt(rawXp); //20 to 80
+      do {
+        firstXp = getRandomXp();
+      } while (firstXp === cacheXp);
+
+      const rawXp = parseInt(firstXp * 2);
+
+      const roleMultipliers = new Map([
+        [subRole1, 1.2],
+        [subRole2, 1.5],
+        [subRole3, 2],
+      ]);
+
+      let finalXp = parseInt(rawXp);
+
+      if (user.level < 60 || !user.level || user.level !== undefined) {
+        for (const [role, multiplier] of roleMultipliers) {
+          if (message.member.roles.cache.has(role)) {
+            finalXp = parseInt(rawXp * multiplier);
+            break;
+          } else {
+            finalXp = parseInt(rawXp); //30 to 100
+            break;
+          }
         }
-      } else if (!user.level || user.level === undefined) {
-        finalXp = parseInt(rawXp); //20 to 80
       }
 
       const hasLevelUp = await Levels.appendXp(

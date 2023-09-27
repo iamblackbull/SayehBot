@@ -2,6 +2,8 @@ require("dotenv").config();
 const { boostChannelID, rankChannelID, guildID } = process.env;
 const Levels = require("discord-xp");
 
+const boostMessageSent = new Set();
+
 module.exports = (client) => {
   client.on("guildMemberUpdate", async (oldMember, newMember) => {
     const oldStatus = oldMember.premiumSince;
@@ -10,10 +12,17 @@ module.exports = (client) => {
     const channel = guild.channels.cache.get(rankChannelID);
 
     if (!oldStatus && newStatus) {
+      if (boostMessageSent.has(newMember.id)) return;
+      boostMessageSent.add(newMember.id);
+
       client.channels.cache
         .get(boostChannelID)
         .send(`🚀 ${newMember.user} just boosted the server! 💜`);
-        
+
+      setTimeout(() => {
+        boostMessageSent.delete(newMember.id);
+      }, 10 * 60 * 1000);
+
       const user = await Levels.fetch(newMember.user.id, newMember.guild.id);
       if (!user.level || user.level === 0) return;
       const neededXp = Levels.xpFor(parseInt(user.level + 1));

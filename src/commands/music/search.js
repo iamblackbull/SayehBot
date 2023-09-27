@@ -3,6 +3,7 @@ const {
   EmbedBuilder,
   PermissionsBitField,
 } = require("discord.js");
+const playerDB = require("../../schemas/player-schema");
 const { useMainPlayer, QueryType } = require("discord-player");
 const { musicChannelID } = process.env;
 
@@ -90,10 +91,11 @@ module.exports = {
         if (!queue) {
           queue = await client.player.nodes.create(interaction.guild, {
             metadata: {
+              guild: interaction.guildId,
               channel: interaction.member.voice.channel,
               client: interaction.guild.members.me,
               requestedBy: interaction.user,
-              track: result.tracks[0],
+              track: undefined,
             },
             leaveOnEnd: true,
             leaveOnEmpty: true,
@@ -146,13 +148,19 @@ module.exports = {
             searchEmbed.reactions.removeAll();
 
             song = result.tracks[0];
-            queue.addTrack(song);
 
-            const currentSong = queue.currentTrack;
-            const nowPlaying = currentSong.url === song.url;
+            await queue.addTrack(song);
+            if (!queue.node.isPlaying()) await queue.node.play();
+
+            const nowPlaying = queue.tracks.size === 1;;
 
             if (nowPlaying) {
               embed.setTitle("🎵 Now Playing");
+
+              await playerDB.updateOne(
+                { guildId: interaction.guildId },
+                { isJustAdded: true }
+              );
             } else {
               embed.setTitle(`🎵 Track #${queue.tracks.size}`);
             }
@@ -250,13 +258,18 @@ module.exports = {
                 break;
             }
 
-            queue.addTrack(song);
-
-            const currentSong = queue.currentTrack;
-            const nowPlaying = currentSong.url === song.url;
+            await queue.addTrack(song);
+            if (!queue.node.isPlaying()) await queue.node.play();
+            
+            const nowPlaying = queue.tracks.size === 1;
 
             if (nowPlaying) {
               embed.setTitle("🎵 Now Playing");
+
+              await playerDB.updateOne(
+                { guildId: interaction.guildId },
+                { isJustAdded: true }
+              );
             } else {
               embed.setTitle(`🎵 Track #${queue.tracks.size}`);
             }

@@ -12,6 +12,8 @@ const parser = new Parser();
 const { mongoose } = require("mongoose");
 const video = require("../../schemas/video-schema");
 
+const notifiedChannels = new Set();
+
 module.exports = (client) => {
   client.checkVideo = async () => {
     if (mongoose.connection.readyState !== 1) return;
@@ -36,6 +38,9 @@ module.exports = (client) => {
       }
 
       if (videoList.VideoId !== data.items[0].id) {
+        if (notifiedChannels.has("sayeh")) return;
+        notifiedChannels.add("sayeh");
+
         videoList = await video.updateOne(
           { guild: guild.id },
           {
@@ -48,6 +53,7 @@ module.exports = (client) => {
           .catch(console.error);
 
         const { title, link, id, author } = data.items[0];
+
         const embed = new EmbedBuilder({
           title: `**${title}**`,
           url: link,
@@ -70,19 +76,28 @@ module.exports = (client) => {
             text: `YouTube`,
           },
         });
+
         const youtubeButton = new ButtonBuilder()
           .setLabel(`Watch Video`)
           .setURL(`${link}`)
           .setStyle(ButtonStyle.Link);
+
         console.log(`Sayeh just published a new video on YouTube!`);
-        await channel
-          .send({
-            embeds: [embed],
-            content: `Hey @everyone\n**Sayeh** just published a new video! 😍🔔\n\n## ${title}\n\n${link}`,
-            components: [new ActionRowBuilder().addComponents(youtubeButton)],
-          })
-          .catch(console.error);
-      } else return;
+
+        setTimeout(async () => {
+          await channel
+            .send({
+              embeds: [embed],
+              content: `Hey @everyone\n**Sayeh** just published a new video! 😍🔔\n\n## ${title}\n\n${link}`,
+              components: [new ActionRowBuilder().addComponents(youtubeButton)],
+            })
+            .catch(console.error);
+
+          setTimeout(() => {
+            notifiedChannels.delete("sayeh");
+          }, 10 * 60 * 1000);
+        }, 1 * 1000);
+      }
     } catch (error) {
       console.log(chalk.red(`Connection to YouTube API failed...`));
     }

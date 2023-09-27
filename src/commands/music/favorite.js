@@ -7,6 +7,7 @@ const {
   ComponentType,
 } = require("discord.js");
 const favorite = require("../../schemas/favorite-schema");
+const playerDB = require("../../schemas/player-schema");
 const { mongoose } = require("mongoose");
 const { useMainPlayer, useMetadata, QueryType } = require("discord-player");
 const { musicChannelID } = process.env;
@@ -110,20 +111,23 @@ module.exports = {
         .setTitle(`🎶 ${user}'s Playlist`)
         .setColor(0x256fc4)
         .setFooter({
-          iconURL: `https://www.linkpicture.com/q/2753995-201.png`,
+          iconURL: `https://cdn2.iconfinder.com/data/icons/music-256/512/Love_music-512.png`,
           text: "Favorite",
         });
 
       let queue = client.player.nodes.get(interaction.guildId);
 
+      let sameChannel = false;
+
       if (action === "play") {
         if (!queue) {
           queue = await client.player.nodes.create(interaction.guild, {
             metadata: {
+              guild: interaction.guildId,
               channel: interaction.member.voice.channel,
               client: interaction.guild.members.me,
               requestedBy: interaction.user,
-              track: result.tracks[0],
+              track: undefined,
             },
             leaveOnEnd: true,
             leaveOnEmpty: true,
@@ -139,15 +143,14 @@ module.exports = {
             },
           });
         }
-      }
+        if (!queue.connection) {
+          await queue.connect(interaction.member.voice.channel);
+        }
 
-      if (!queue.connection) {
-        await queue.connect(interaction.member.voice.channel);
+        sameChannel =
+          queue.connection.joinConfig.channelId ===
+          interaction.member.voice.channel.id;
       }
-
-      const sameChannel =
-        queue.connection.joinConfig.channelId ===
-        interaction.member.voice.channel.id;
 
       const playlist = favoriteList.Playlist.map((song) => song.Url).join("\n");
       const splitPlaylist = playlist.split("\n");
@@ -173,6 +176,9 @@ module.exports = {
 
         song = result.tracks[0];
 
+        mappedResultString[0] = `**${target}.** [${song.title} -- ${song.author}](${song.url})`;
+        mappedArray.push(mappedResultString[0]);
+
         if (action === "play" && sameChannel) {
           await queue.addTrack(song);
           setMetadata(song);
@@ -186,19 +192,17 @@ module.exports = {
             searchEngine: QueryType.AUTO,
           });
 
-          while (i === 0) {
-            song = result.tracks[0];
-            if (action === "play") {
-              setMetadata(song);
-            }
-          }
-
           mappedResultString[i] = `**${i + 1}.** [${
             result.tracks[0].title
           } -- ${result.tracks[0].author}](${result.tracks[0].url})`;
           mappedArray.push(mappedResultString[i]);
 
           if (action === "play" && sameChannel) {
+            if (i === 0) {
+              song = result.tracks[0];
+              setMetadata(song);
+            }
+
             await queue.addTrack(result.tracks[0]);
 
             if (!queue.node.isPlaying()) await queue.node.play();
@@ -230,6 +234,8 @@ module.exports = {
 
         switch (action) {
           case "play":
+            let nowPlaying = false;
+
             if (!sameChannel) {
               failedEmbed
                 .setTitle(`**Busy**`)
@@ -242,13 +248,17 @@ module.exports = {
                 embeds: [failedEmbed],
               });
             } else if (target) {
-              const currentSong = queue.currentTrack;
-              const nowPlaying = currentSong.url === song.url;
+              nowPlaying = queue.tracks.size === 1;
 
               if (nowPlaying) {
                 embed.setTitle("🎵 Now Playing");
+
+                await playerDB.updateOne(
+                  { guildId: interaction.guildId },
+                  { isJustAdded: true }
+                );
               } else {
-                embed.setTitle(`🎵 Track #${queue.tracks.size}`);
+                embed.setTitle(`🎵 Track #${queue.tracks.data.size}`);
               }
 
               embed
@@ -257,43 +267,8 @@ module.exports = {
                   `${user}'s Playlist, Track #${target}\n**[${song.title}](${song.url})**\n**${song.author}**`
                 );
 
-              let source;
-              if (song.url.includes("spotify")) source = "private";
-              else source = "public";
-
-              const skipButton = new ButtonBuilder()
-                .setCustomId(`skipper`)
-                .setEmoji(`⏭`)
-                .setStyle(ButtonStyle.Secondary);
-              const favoriteButton = new ButtonBuilder()
-                .setCustomId(`favorite`)
-                .setEmoji(`🤍`)
-                .setStyle(ButtonStyle.Danger);
-              const lyricsButton = new ButtonBuilder()
-                .setCustomId(`lyrics`)
-                .setEmoji(`🎤`)
-                .setStyle(ButtonStyle.Primary);
-              const downloadButton = new ButtonBuilder()
-                .setCustomId(`downloader`)
-                .setEmoji(`⬇`)
-                .setStyle(ButtonStyle.Secondary);
-
-              const button = new ActionRowBuilder()
-                .addComponents(nowPlaying ? skipButton : null)
-                .addComponents(
-                  nowPlaying && timer < 10 * 60 ? favoriteButton : null
-                )
-                .addComponents(nowPlaying ? lyricsButton : null)
-                .addComponents(
-                  nowPlaying && timer < 10 * 60 && source === public
-                    ? downloadButton
-                    : null
-                );
-
-              await interaction.editReply({
-                embeds: [embed],
-                components: [button],
-              });
+              let public = false;
+              if (song.url.includes("youtube")) public = true;
             } else {
               embed
                 .setThumbnail(song.thumbnail)
@@ -302,11 +277,33 @@ module.exports = {
                     mappedArray.length - 1
                   } other tracks**`
                 );
-
-              await interaction.editReply({
-                embeds: [embed],
-              });
             }
+            const skipButton = new ButtonBuilder()
+              .setCustomId(`skipper`)
+              .setEmoji(`⏭`)
+              .setDisabled(!nowPlaying)
+              .setStyle(ButtonStyle.Secondary);
+            const favoriteButton = new ButtonBuilder()
+              .setCustomId(`favorite`)
+              .setEmoji(`🤍`)
+              .setDisabled(!nowPlaying)
+              .setStyle(ButtonStyle.Danger);
+            const lyricsButton = new ButtonBuilder()
+              .setCustomId(`lyrics`)
+              .setEmoji(`🎤`)
+              .setDisabled(!nowPlaying)
+              .setStyle(ButtonStyle.Primary);
+
+            const button = new ActionRowBuilder()
+              .addComponents(skipButton)
+              .addComponents(favoriteButton)
+              .addComponents(lyricsButton);
+
+            await interaction.editReply({
+              embeds: [embed],
+              components: [button],
+            });
+
             success = true;
             break;
 
@@ -326,7 +323,7 @@ module.exports = {
                 mappedArray.length > 10
                   ? Math.ceil(mappedArray.length / 10)
                   : 1;
-              let page = totalPages - 1;
+              let page = 0;
 
               let joinedPlaylist = mappedArray
                 .slice(page * 10, page * 10 + 10)
@@ -338,21 +335,35 @@ module.exports = {
                 embeds: [embed],
               });
 
-              favoriteEmbed.react("⬅");
-              favoriteEmbed.react("➡");
+              if (totalPages > 1) {
+                favoriteEmbed.react("⬅");
+                favoriteEmbed.react("➡");
 
-              const filter = (reaction, user) => {
-                [`⬅`, `➡`].includes(reaction.emoji.name) &&
-                  user.id === interaction.user.id;
-              };
-              const collector = favoriteEmbed.createReactionCollector(filter);
-              collector.on("collect", async (reaction, user) => {
-                if (user.bot) return;
-                reaction.users.remove(reaction.users.cache.get(user.id));
+                const filter = (reaction, user) => {
+                  [`⬅`, `➡`].includes(reaction.emoji.name) &&
+                    user.id === interaction.user.id;
+                };
+                const collector = favoriteEmbed.createReactionCollector(filter);
+                collector.on("collect", async (reaction, user) => {
+                  if (user.bot) return;
+                  reaction.users.remove(reaction.users.cache.get(user.id));
 
-                if (reaction.emoji.name === `➡`) {
-                  if (page < totalPages - 1) {
-                    page++;
+                  if (reaction.emoji.name === `➡`) {
+                    if (page < totalPages - 1) {
+                      page++;
+
+                      joinedPlaylist = mappedArray
+                        .slice(page * 10, page * 10 + 10)
+                        .join("\n");
+
+                      embed.setDescription(`${joinedPlaylist}`);
+
+                      await interaction.editReply({
+                        embeds: [embed],
+                      });
+                    }
+                  } else if (page !== 0) {
+                    --page;
 
                     joinedPlaylist = mappedArray
                       .slice(page * 10, page * 10 + 10)
@@ -364,20 +375,8 @@ module.exports = {
                       embeds: [embed],
                     });
                   }
-                } else if (page !== 0) {
-                  --page;
-
-                  joinedPlaylist = mappedArray
-                    .slice(page * 10, page * 10 + 10)
-                    .join("\n");
-
-                  embed.setDescription(`${joinedPlaylist}`);
-
-                  await interaction.editReply({
-                    embeds: [embed],
-                  });
-                }
-              });
+                });
+              }
             }
             success = true;
             break;

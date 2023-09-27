@@ -6,19 +6,18 @@ const {
   ButtonBuilder,
   ButtonStyle,
 } = require("discord.js");
+const playerDB = require("../../schemas/player-schema");
 const { useMainPlayer, QueryType } = require("discord-player");
 const { musicChannelID } = process.env;
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("play")
-    .setDescription(
-      "Play a track from YouTube / Spotify / Soundcloud / Apple Music."
-    )
+    .setDescription("Play from YouTube / Spotify / Soundcloud / Apple Music.")
     .addStringOption((option) =>
       option
         .setName("query")
-        .setDescription("Input track name or url.")
+        .setDescription("Input track / playlist name or url.")
         .setRequired(true)
         .setAutocomplete(true)
     )
@@ -29,23 +28,29 @@ module.exports = {
     const query = interaction.options.getString("query", true);
     if (!query) return;
 
-    const results = await player.search(query, {
-      requestedBy: interaction.user,
-      searchEngine: QueryType.AUTO,
-    });
+    let results;
 
-    let length;
-    if (results.playlist) {
-      length = results.tracks.length;
-      if (length > 26) length = 26;
+    if (query.toLowerCase().startsWith("https")) {
+      results = await player.search(query, {
+        requestedBy: interaction.user,
+        searchEngine: QueryType.AUTO,
+      });
     } else {
-      length = 5;
+      results = await player.search(query, {
+        requestedBy: interaction.user,
+        searchEngine: QueryType.YOUTUBE,
+      });
     }
 
-    let respond = results.tracks.slice(0, length).map((song) => ({
-      name: `[${song.duration}] ${song.title} -- ${song.author} -- ${
-        song.raw.source.charAt(0).toUpperCase() + song.raw.source.slice(1)
-      }`,
+    if (!results.hasTracks()) {
+      results = await player.search(query, {
+        requestedBy: interaction.user,
+        searchEngine: QueryType.AUTO,
+      });
+    }
+
+    let respond = results.tracks.slice(0, 5).map((song) => ({
+      name: `[${song.duration}] ${song.title} -- ${song.author} -- ${song.raw.source}`,
       value: song.url,
     }));
 
@@ -93,23 +98,40 @@ module.exports = {
       const player = useMainPlayer();
       const query = interaction.options.getString("query", true);
 
-      const result = await player.search(query, {
-        requestedBy: interaction.user,
-        searchEngine: QueryType.AUTO,
-      });
+      let noResult = false;
+      let result;
+
+      if (query.toLowerCase().startsWith("https")) {
+        result = await player.search(query, {
+          requestedBy: interaction.user,
+          searchEngine: QueryType.AUTO,
+        });
+      } else {
+        result = await player.search(query, {
+          requestedBy: interaction.user,
+          searchEngine: QueryType.YOUTUBE,
+        });
+      }
 
       if (!result.hasTracks()) {
-        if (query.toLowerCase().startsWith("https")) {
-          failedEmbed.setDescription(`Make sure you input a valid link.`);
-        } else {
-          failedEmbed.setDescription(`Make sure you input a valid track name.`);
+        result = await player.search(query, {
+          requestedBy: interaction.user,
+          searchEngine: QueryType.AUTO,
+        });
+
+        if (!result.hasTracks()) {
+          noResult = true;
         }
+      }
+      if (noResult) {
         failedEmbed
           .setTitle(`**No Result**`)
+          .setDescription(`Make sure you input a valid query.`)
           .setColor(0xffea00)
           .setThumbnail(
             `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
           );
+
         interaction.reply({
           embeds: [failedEmbed],
         });
@@ -119,6 +141,7 @@ module.exports = {
         if (!queue) {
           queue = await client.player.nodes.create(interaction.guild, {
             metadata: {
+              guild: interaction.guildId,
               channel: interaction.member.voice.channel,
               client: interaction.guild.members.me,
               requestedBy: interaction.user,
@@ -164,52 +187,70 @@ module.exports = {
           });
 
           let embed = new EmbedBuilder();
-          let source;
-
-          const entry = queue.tasksQueue.acquire();
-          await entry.getTask();
+          let nowPlaying = false;
+          let public = false;
 
           const song = result.tracks[0];
-          await queue.addTrack(song);
 
-          if (!queue.node.isPlaying()) await queue.node.play();
-          await queue.tasksQueue.release();
+          if (result.playlist) {
+            const playlist = result.playlist;
 
-          const currentSong = queue.currentTrack;
-          const nowPlaying = currentSong.url === song.url;
+            await queue.addTrack(result.tracks);
 
-          if (nowPlaying) {
-            embed.setTitle("🎵 Now Playing");
+            let title = `🎶 Playlist`;
+            if (playlist.url.toLowerCase().includes("album")) {
+              title = `🎶 Album`;
+            }
+
+            embed
+              .title(title)
+              .setDescription(
+                `**[${playlist.title}](${playlist.url})**\n**${result.tracks.length} tracks**`
+              )
+              .setThumbnail(playlist.thumbnail);
           } else {
-            embed.setTitle(`🎵 Track #${queue.tracks.size}`);
+            await queue.addTrack(song);
+
+            nowPlaying = queue.tracks.size === 1;
+
+            if (nowPlaying) {
+              embed.setTitle("🎵 Now Playing");
+
+              await playerDB.updateOne(
+                { guildId: interaction.guildId },
+                { isJustAdded: true }
+              );
+            } else {
+              embed.setTitle(`🎵 Track #${queue.tracks.size}`);
+            }
+
+            embed
+              .setDescription(
+                `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`
+              )
+              .setThumbnail(song.thumbnail);
           }
 
-          embed
-            .setDescription(
-              `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`
-            )
-            .setThumbnail(song.thumbnail);
+          if (!queue.node.isPlaying()) await queue.node.play();
 
           if (song.url.includes("youtube")) {
-            source = "public";
+            public = true;
+
             embed.setColor(0xff0000).setFooter({
               iconURL: `https://www.iconpacks.net/icons/2/free-youtube-logo-icon-2431-thumb.png`,
               text: `YouTube`,
             });
           } else if (song.url.includes("spotify")) {
-            source = "private";
             embed.setColor(0x34eb58).setFooter({
               iconURL: `https://www.freepnglogos.com/uploads/spotify-logo-png/image-gallery-spotify-logo-21.png`,
               text: "Spotify",
             });
           } else if (song.url.includes("soundcloud")) {
-            source = "public";
             embed.setColor(0xeb5534).setFooter({
               iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
               text: `Soundcloud`,
             });
           } else if (song.url.includes("apple")) {
-            source = "private";
             embed.setColor(0xfb4f67).setFooter({
               iconURL: `https://music.apple.com/assets/knowledge-graph/music.png`,
               text: `Apple Music`,
@@ -227,31 +268,23 @@ module.exports = {
           const skipButton = new ButtonBuilder()
             .setCustomId(`skipper`)
             .setEmoji(`⏭`)
+            .setDisabled(!nowPlaying)
             .setStyle(ButtonStyle.Secondary);
           const favoriteButton = new ButtonBuilder()
             .setCustomId(`favorite`)
             .setEmoji(`🤍`)
+            .setDisabled(!nowPlaying)
             .setStyle(ButtonStyle.Danger);
           const lyricsButton = new ButtonBuilder()
             .setCustomId(`lyrics`)
             .setEmoji(`🎤`)
+            .setDisabled(!nowPlaying)
             .setStyle(ButtonStyle.Primary);
-          const downloadButton = new ButtonBuilder()
-            .setCustomId(`downloader`)
-            .setEmoji(`⬇`)
-            .setStyle(ButtonStyle.Secondary);
 
           const button = new ActionRowBuilder()
-            .addComponents(nowPlaying ? skipButton : null)
-            .addComponents(
-              nowPlaying && timer < 10 * 60 ? favoriteButton : null
-            )
-            .addComponents(nowPlaying ? lyricsButton : null)
-            .addComponents(
-              nowPlaying && timer < 10 * 60 && source === public
-                ? downloadButton
-                : null
-            );
+            .addComponents(skipButton)
+            .addComponents(favoriteButton)
+            .addComponents(lyricsButton);
 
           await interaction.editReply({
             embeds: [embed],
@@ -265,7 +298,7 @@ module.exports = {
     success ? timer : (timer = 2 * 60);
     if (timer > 10 * 60) timer = 10 * 60;
     if (timer < 1 * 60) timer = 1 * 60;
-    
+
     const timeoutLog = success
       ? `Failed to delete ${interaction.commandName} interaction.`
       : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;

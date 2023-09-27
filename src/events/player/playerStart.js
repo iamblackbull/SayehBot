@@ -4,16 +4,37 @@ const {
   ButtonBuilder,
   ButtonStyle,
 } = require("discord.js");
+const playerDB = require("../../schemas/player-schema");
 
 module.exports = {
   name: "playerStart",
   isPlayerEvent: true,
   async execute(queue, song) {
+    if (!song.url || song.url === undefined || song.url === null) return;
+    if (queue.metadata.track === undefined) return;
     if (queue.metadata.track.url === song.url) return;
-    const channel = queue.metadata.channel;
 
+    const playerList = await playerDB.findOne({
+      guildId: queue.metadata.guild,
+    });
+
+    if (playerList.isSkipped) {
+      return await playerDB.updateOne(
+        { guildId: queue.metadata.guild },
+        { isSkipped: false }
+      );
+    }
+    if (playerList.isJustAdded) {
+      return await playerDB.updateOne(
+        { guildId: queue.metadata.guild },
+        { isJustAdded: false }
+      );
+    }
+
+    const channel = queue.metadata.channel;
     let source;
     let timer;
+
     if (song.duration.length >= 7) {
       timer = 10 * 60;
     } else {
@@ -21,23 +42,6 @@ module.exports = {
       const convertor = duration.split(":");
       timer = +convertor[0] * 60 + +convertor[1];
     }
-
-    const favoriteButton = new ButtonBuilder()
-      .setCustomId(`favorite`)
-      .setEmoji(`🤍`)
-      .setStyle(ButtonStyle.Danger);
-    const lyricsButton = new ButtonBuilder()
-      .setCustomId(`lyrics`)
-      .setEmoji(`🎤`)
-      .setStyle(ButtonStyle.Primary);
-    const downloadButton = new ButtonBuilder()
-      .setCustomId(`downloader`)
-      .setEmoji(`⬇`)
-      .setStyle(ButtonStyle.Secondary);
-    const skipButton = new ButtonBuilder()
-      .setCustomId(`skipper`)
-      .setEmoji(`⏭`)
-      .setStyle(ButtonStyle.Secondary);
 
     let embed = new EmbedBuilder()
       .setTitle("🎵 Now Playing")
@@ -72,35 +76,32 @@ module.exports = {
       });
     }
 
-    let msg;
-    if (timer < 10 * 60) {
-      if (source === "public") {
-        msg = await channel.send({
-          embeds: [embed],
-          components: [
-            new ActionRowBuilder()
-              .addComponents(favoriteButton)
-              .addComponents(lyricsButton)
-              .addComponents(downloadButton)
-              .addComponents(skipButton),
-          ],
-        });
-      } else {
-        msg = await channel.send({
-          embeds: [embed],
-          components: [
-            new ActionRowBuilder()
-              .addComponents(favoriteButton)
-              .addComponents(lyricsButton)
-              .addComponents(skipButton),
-          ],
-        });
-      }
-    } else {
-      msg = await channel.send({
-        embeds: [embed],
-      });
-    }
+    const skipButton = new ButtonBuilder()
+      .setCustomId(`skipper`)
+      .setEmoji(`⏭`)
+      .setDisabled(false)
+      .setStyle(ButtonStyle.Secondary);
+    const favoriteButton = new ButtonBuilder()
+      .setCustomId(`favorite`)
+      .setEmoji(`🤍`)
+      .setDisabled(false)
+      .setStyle(ButtonStyle.Danger);
+    const lyricsButton = new ButtonBuilder()
+      .setCustomId(`lyrics`)
+      .setEmoji(`🎤`)
+      .setDisabled(false)
+      .setStyle(ButtonStyle.Primary);
+
+    const button = new ActionRowBuilder()
+      .addComponents(skipButton)
+      .addComponents(favoriteButton)
+      .addComponents(lyricsButton);
+
+    const msg = await channel.send({
+      embeds: [embed],
+      components: [button],
+    });
+
     if (timer > 10 * 60) timer = 10 * 60;
     if (timer < 1 * 60) timer = 1 * 60;
     setTimeout(() => {

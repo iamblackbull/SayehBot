@@ -4,6 +4,9 @@ const currentYear = date.getFullYear();
 const currentMonth = date.getMonth() + 1;
 const currentDate = date.getDate();
 
+const { guildID } = process.env;
+const playerDB = require("../../schemas/player-schema");
+
 module.exports = {
   name: "ready",
   once: true,
@@ -13,8 +16,8 @@ module.exports = {
     );
 
     setInterval(client.remindBirthday, 1 * 60 * 1000);
-    setInterval(client.checkStreamS, 2 * 60 * 1000);
-    setInterval(client.checkStreamH, 2 * 60 * 1000);
+    setInterval(client.checkStreamS, 5 * 60 * 1000);
+    setInterval(client.checkStreamH, 5 * 60 * 1000);
     setInterval(client.checkVideo, 5 * 60 * 1000);
 
     client.user.setPresence({
@@ -26,5 +29,12 @@ module.exports = {
       ],
       status: "online",
     });
+
+    const playerList = new playerDB({
+      guildId: guildID,
+      isSkipped: false,
+      isJustAdded: false,
+    });
+    await playerList.save().catch(console.error);
   },
 };

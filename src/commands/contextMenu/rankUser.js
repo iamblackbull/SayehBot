@@ -18,7 +18,7 @@ module.exports = {
     .setDMPermission(false),
 
   async execute(interaction, client) {
-    const target = interaction.options.getUser("user") || interaction.user;
+    const target = interaction.targetUser;
     let memberTarget = interaction.guild.members.cache.get(target.id);
     const user = await Levels.fetch(target.id, interaction.guild.id, true);
     const qualified = user.xp > 0;

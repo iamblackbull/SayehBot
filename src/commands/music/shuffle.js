@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder, time } = require("discord.js");
 const { useTimeline } = require("discord-player");
 const { musicChannelID } = process.env;
 
@@ -11,12 +11,9 @@ module.exports = {
   async execute(interaction, client) {
     const queue = client.player.nodes.get(interaction.guildId);
 
-    const sameChannel =
-      queue.connection.joinConfig.channelId ===
-      interaction.member.voice.channel.id;
-
     let failedEmbed = new EmbedBuilder();
     let success = false;
+    let timer;
 
     if (!queue) {
       failedEmbed
@@ -44,48 +41,53 @@ module.exports = {
       await interaction.reply({
         embeds: [failedEmbed],
       });
-    } else if (!sameChannel) {
-      failedEmbed
-        .setTitle(`**Busy**`)
-        .setDescription(`Bot is busy in another voice channel.`)
-        .setColor(0x256fc4)
-        .setThumbnail(
-          `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
-        );
-      await interaction.reply({
-        embeds: [failedEmbed],
-      });
     } else {
-      const embed = new EmbedBuilder()
-        .setTitle(`Shuffle`)
-        .setDescription(
-          `Queue of ${queue.tracks.data.length} tracks has been shuffled!`
-        )
-        .setColor(0x25bfc4)
-        .setThumbnail(
-          `https://png.pngtree.com/png-vector/20230228/ourmid/pngtree-shuffle-vector-png-image_6622846.png`
-        );
+      const sameChannel =
+        queue.connection.joinConfig.channelId ===
+        interaction.member.voice.channel.id;
 
-      queue.tracks.shuffle();
+      if (!sameChannel) {
+        failedEmbed
+          .setTitle(`**Busy**`)
+          .setDescription(`Bot is busy in another voice channel.`)
+          .setColor(0x256fc4)
+          .setThumbnail(
+            `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
+          );
+        await interaction.reply({
+          embeds: [failedEmbed],
+        });
+      } else {
+        const { timestamp } = useTimeline(interaction.guildId);
+        const duration = timestamp.total.label;
+        const convertor = duration.split(":");
+        const totalTimer = +convertor[0] * 60 + +convertor[1];
 
-      await interaction.reply({
-        embeds: [embed],
-      });
+        const currentDuration = timestamp.current.label;
+        const currentConvertor = currentDuration.split(":");
+        const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
 
-      success = true;
+        timer = totalTimer - currentTimer;
+
+        const embed = new EmbedBuilder()
+          .setTitle(`Shuffle`)
+          .setDescription(
+            `Queue of ${queue.tracks.data.length} tracks has been shuffled!`
+          )
+          .setColor(0x25bfc4)
+          .setThumbnail(
+            `https://png.pngtree.com/png-vector/20230228/ourmid/pngtree-shuffle-vector-png-image_6622846.png`
+          );
+
+        queue.tracks.shuffle();
+
+        await interaction.reply({
+          embeds: [embed],
+        });
+
+        success = true;
+      }
     }
-
-    const { timestamp } = useTimeline(interaction.guildId);
-    const duration = timestamp.total.label;
-    const convertor = duration.split(":");
-    const totalTimer = +convertor[0] * 60 + +convertor[1];
-
-    const currentDuration = timestamp.current.label;
-    const currentConvertor = currentDuration.split(":");
-    const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
-
-    let timer = totalTimer - currentTimer;
-
     if (timer > 10 * 60) timer = 10 * 60;
     if (timer < 1 * 60) timer = 1 * 60;
 
@@ -96,7 +98,7 @@ module.exports = {
     setTimeout(() => {
       if (success === true && interaction.channel.id === musicChannelID) return;
       else {
-        message.delete().catch((e) => {
+        interaction.deleteReply().catch((e) => {
           console.log(timeoutLog);
         });
       }

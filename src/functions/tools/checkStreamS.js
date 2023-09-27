@@ -34,6 +34,8 @@ let category;
 let Title;
 let embed;
 
+const notifiedChannels = new Set();
+
 module.exports = (client) => {
   client.checkStreamS = async () => {
     if (mongoose.connection.readyState !== 1) return;
@@ -60,7 +62,7 @@ module.exports = (client) => {
         }
 
         if (result !== undefined && result.type === "live") {
-          if (!streamList.IsLive) {
+          if (!streamList.IsLive && !notifiedChannels.has("sayeh")) {
             const { title, viewer_count, game_name, user_name } = data.data[0];
 
             embed = new EmbedBuilder()
@@ -98,13 +100,15 @@ module.exports = (client) => {
 
             const button = new ActionRowBuilder().addComponents(twitchButton);
 
-            await channel
-              .send({
-                embeds: [embed],
-                content: Content,
-                components: [button],
-              })
-              .catch(console.error);
+            setTimeout(async () => {
+              msg = await channel
+                .send({
+                  embeds: [embed],
+                  content: Content,
+                  components: [button],
+                })
+                .catch(console.error);
+            }, 1 * 1000);
 
             category = game_name;
             Title = title;
@@ -133,6 +137,8 @@ module.exports = (client) => {
               },
               { IsLive: true }
             );
+
+            notifiedChannels.add("sayeh");
           } else {
             const { title, viewer_count, game_name, user_name } = data.data[0];
 
@@ -156,12 +162,12 @@ module.exports = (client) => {
               embed.setTitle(`**${title}**`);
               Content = `Hey @everyone\n **${user_name}** is now LIVE on Twitch! 😍🔔\n❖ ──・──・──・──・──・── ❖\n!استریم داخل توییچ شروع شد\n\n## ${title}\n\n https://www.twitch.tv/${user_name}\n`;
 
-              if (!msg) return;
-
-              await msg.edit({
-                embeds: [embed],
-                content: Content,
-              });
+              if (msg) {
+                await msg.edit({
+                  embeds: [embed],
+                  content: Content,
+                });
+              }
             }
             if (category !== game_name) {
               category = game_name;
@@ -172,14 +178,17 @@ module.exports = (client) => {
                 }** for ${viewer_count} viewers`
               );
 
-              if (!msg) return;
-
-              await msg.edit({
-                embeds: [embed],
-              });
+              if (msg) {
+                await msg.edit({
+                  embeds: [embed],
+                  content: Content,
+                });
+              }
             }
           }
         } else if (streamList.IsLive === true) {
+          notifiedChannels.delete("sayeh");
+
           streamList = await stream.updateOne(
             {
               guild: guild.id,
@@ -194,12 +203,12 @@ module.exports = (client) => {
             );
             Content = `Stream is offline. 😢`;
 
-            if (!msg) return;
-
-            await msg.edit({
-              embeds: [embed],
-              content: Content,
-            });
+            if (msg) {
+              await msg.edit({
+                embeds: [embed],
+                content: Content,
+              });
+            }
           }
 
           client.user.setPresence({
@@ -216,20 +225,12 @@ module.exports = (client) => {
         }
       });
     } catch (error) {
-      if (error.code.includes("ETIMEDOUT")) {
-        console.log(
-          "Connection ETIMEDOUT while awaiting API response for Twitch (Sayeh)."
-        );
-      } else if (error.code.includes("TOKEN")) {
-        console.log("Twitch (Sayeh) API Token has been expired.");
-      } else {
-        console.log(
-          chalk.red(
-            `An unkown error occurred in Twitch (Sayeh) notification process:`
-          )
-        );
-        throw error;
-      }
+      console.log(
+        chalk.red(
+          `An unkown error occurred in Twitch (Sayeh) notification process:`
+        )
+      );
+      throw error;
     }
   };
 };

@@ -10,8 +10,9 @@ const { musicChannelID } = process.env;
 
 module.exports = {
   data: new ContextMenuCommandBuilder()
-    .setName("play their favorite")
-    .setType(ApplicationCommandType.User),
+    .setName("play favorite")
+    .setType(ApplicationCommandType.User)
+    .setDMPermission(false),
 
   async execute(interaction, client) {
     let failedEmbed = new EmbedBuilder();
@@ -75,7 +76,7 @@ module.exports = {
             channel: interaction.member.voice.channel,
             client: interaction.guild.members.me,
             requestedBy: user,
-            track: result.tracks[0],
+            track: undefined,
           },
           leaveOnEnd: true,
           leaveOnEmpty: true,
@@ -132,16 +133,16 @@ module.exports = {
             searchEngine: QueryType.AUTO,
           });
 
-          while (i === 0) {
-            song = result.tracks[0];
-            setMetadata(song);
-          }
-
           mappedResultString[i] = `**${i + 1}.** [${
             result.tracks[0].title
           } -- ${result.tracks[0].author}](${result.tracks[0].url})`;
           mappedArray.push(mappedResultString[i]);
 
+          if (i === 0) {
+            song = result.tracks[0];
+            setMetadata(song);
+          }
+          
           await queue.addTrack(result.tracks[0]);
 
           if (!queue.node.isPlaying()) await queue.node.play();
@@ -169,7 +170,7 @@ module.exports = {
             timer = +convertor[0] * 60 + +convertor[1];
 
             const embed = new EmbedBuilder()
-              .setTitle(`🎶 ${target}'s Playlist`)
+              .setTitle(`🎶 ${target.username}'s Playlist`)
               .setColor(0x256fc4)
               .setThumbnail(song.thumbnail)
               .setDescription(
@@ -178,7 +179,7 @@ module.exports = {
                 } other tracks**`
               )
               .setFooter({
-                iconURL: `https://www.linkpicture.com/q/2753995-201.png`,
+                iconURL: `https://cdn2.iconfinder.com/data/icons/music-256/512/Love_music-512.png`,
                 text: "Favorite",
               });
 

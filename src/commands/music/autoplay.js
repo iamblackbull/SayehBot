@@ -12,10 +12,6 @@ module.exports = {
   async execute(interaction, client) {
     const queue = client.player.nodes.get(interaction.guildId);
 
-    const sameChannel =
-      queue.connection.joinConfig.channelId ===
-      interaction.member.voice.channel.id;
-
     let failedEmbed = new EmbedBuilder();
     let success = false;
     let timer;
@@ -46,88 +42,96 @@ module.exports = {
       await interaction.reply({
         embeds: [failedEmbed],
       });
-    } else if (!sameChannel) {
-      failedEmbed
-        .setTitle(`**Busy**`)
-        .setDescription(`Bot is busy in another voice channel.`)
-        .setColor(0x256fc4)
-        .setThumbnail(
-          `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
-        );
-      await interaction.reply({
-        embeds: [failedEmbed],
-      });
     } else {
-      const repeatEmbed = await interaction.deferReply({
-        fetchReply: true,
-      });
+      const sameChannel =
+        queue.connection.joinConfig.channelId ===
+        interaction.member.voice.channel.id;
 
-      let embed = new EmbedBuilder().setColor(0x25bfc4).setTitle(`⏯ Autoplay`);
-
-      if (!autoplayMode) {
-        autoplayMode = true;
-        queue.setRepeatMode(3);
-
-        embed.setDescription(
-          `Autoplay mode is **ON**.\nUse </autoplay:1142494521683361874> again or react below to turn it off.`
-        );
-      } else if (autoplayMode) {
-        autoplayMode = false;
-        queue.setRepeatMode(0);
-
-        embed.setDescription(
-          `Autoplay mode is **OFF**.\nUse </autoplay:1142494521683361874> again or react below to turn it on.`
-        );
-      }
-
-      const { timestamp } = useTimeline(interaction.guildId);
-      const duration = timestamp.total.label;
-      const convertor = duration.split(":");
-      const totalTimer = +convertor[0] * 60 + +convertor[1];
-
-      const currentDuration = timestamp.current.label;
-      const currentConvertor = currentDuration.split(":");
-      const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
-
-      timer = totalTimer - currentTimer;
-
-      await interaction.editReply({
-        embeds: [embed],
-      });
-      success = true;
-
-      repeatEmbed.react(`🔄`);
-      const filter = (reaction, user) => {
-        [`🔄`].includes(reaction.emoji.name) && user.id === interaction.user.id;
-      };
-      const collector = repeatEmbed.createReactionCollector(filter);
-      collector.on("collect", async (reaction, user) => {
-        if (user.bot) return;
-        reaction.users.remove(reaction.users.cache.get(user.id));
-
-        if (autoplayMode) {
-          autoplayMode = false;
-          queue.setRepeatMode(0);
-
-          embed.setDescription(
-            `Autoplay mode is **OFF**.\nUse </autoplay:1142494521683361874> again to turn it on.`
+      if (!sameChannel) {
+        failedEmbed
+          .setTitle(`**Busy**`)
+          .setDescription(`Bot is busy in another voice channel.`)
+          .setColor(0x256fc4)
+          .setThumbnail(
+            `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
           );
-        } else {
+        await interaction.reply({
+          embeds: [failedEmbed],
+        });
+      } else {
+        const repeatEmbed = await interaction.deferReply({
+          fetchReply: true,
+        });
+
+        let embed = new EmbedBuilder()
+          .setColor(0x25bfc4)
+          .setTitle(`⏯ Autoplay`);
+
+        if (!autoplayMode) {
           autoplayMode = true;
           queue.setRepeatMode(3);
 
           embed.setDescription(
             `Autoplay mode is **ON**.\nUse </autoplay:1142494521683361874> again or react below to turn it off.`
           );
+        } else if (autoplayMode) {
+          autoplayMode = false;
+          queue.setRepeatMode(0);
+
+          embed.setDescription(
+            `Autoplay mode is **OFF**.\nUse </autoplay:1142494521683361874> again or react below to turn it on.`
+          );
         }
+
+        const { timestamp } = useTimeline(interaction.guildId);
+        const duration = timestamp.total.label;
+        const convertor = duration.split(":");
+        const totalTimer = +convertor[0] * 60 + +convertor[1];
+
+        const currentDuration = timestamp.current.label;
+        const currentConvertor = currentDuration.split(":");
+        const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
+
+        timer = totalTimer - currentTimer;
 
         await interaction.editReply({
           embeds: [embed],
         });
         success = true;
-      });
-    }
 
+        repeatEmbed.react(`🔄`);
+        const filter = (reaction, user) => {
+          [`🔄`].includes(reaction.emoji.name) &&
+            user.id === interaction.user.id;
+        };
+        const collector = repeatEmbed.createReactionCollector(filter);
+        collector.on("collect", async (reaction, user) => {
+          if (user.bot) return;
+          reaction.users.remove(reaction.users.cache.get(user.id));
+
+          if (autoplayMode) {
+            autoplayMode = false;
+            queue.setRepeatMode(0);
+
+            embed.setDescription(
+              `Autoplay mode is **OFF**.\nUse </autoplay:1142494521683361874> again to turn it on.`
+            );
+          } else {
+            autoplayMode = true;
+            queue.setRepeatMode(3);
+
+            embed.setDescription(
+              `Autoplay mode is **ON**.\nUse </autoplay:1142494521683361874> again or react below to turn it off.`
+            );
+          }
+
+          await interaction.editReply({
+            embeds: [embed],
+          });
+          success = true;
+        });
+      }
+    }
     if (timer > 10 * 60) timer = 10 * 60;
     if (timer < 1 * 60) timer = 1 * 60;
 

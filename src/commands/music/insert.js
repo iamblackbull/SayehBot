@@ -5,6 +5,7 @@ const {
   ButtonBuilder,
   ButtonStyle,
 } = require("discord.js");
+const playerDB = require("../../schemas/player-schema");
 const { useMainPlayer, QueryType } = require("discord-player");
 const { musicChannelID } = process.env;
 
@@ -37,23 +38,29 @@ module.exports = {
     const query = interaction.options.getString("query", true);
     if (!query) return;
 
-    const results = await player.search(query, {
-      requestedBy: interaction.user,
-      searchEngine: QueryType.AUTO,
-    });
+    let results;
 
-    let length;
-    if (results.playlist) {
-      length = results.tracks.length;
-      if (length > 26) length = 26;
+    if (query.toLowerCase().startsWith("https")) {
+      results = await player.search(query, {
+        requestedBy: interaction.user,
+        searchEngine: QueryType.AUTO,
+      });
     } else {
-      length = 5;
+      results = await player.search(query, {
+        requestedBy: interaction.user,
+        searchEngine: QueryType.YOUTUBE,
+      });
     }
 
-    let respond = results.tracks.slice(0, length).map((song) => ({
-      name: `[${song.duration}] ${song.title} -- ${song.author} -- ${
-        song.raw.source.charAt(0).toUpperCase() + song.raw.source.slice(1)
-      }`,
+    if (!results.hasTracks()) {
+      results = await player.search(query, {
+        requestedBy: interaction.user,
+        searchEngine: QueryType.AUTO,
+      });
+    }
+
+    let respond = results.tracks.slice(0, 5).map((song) => ({
+      name: `[${song.duration}] ${song.title} -- ${song.author} -- ${song.raw.source}`,
       value: song.url,
     }));
 
@@ -86,23 +93,40 @@ module.exports = {
       const player = useMainPlayer();
       const query = interaction.options.getString("query", true);
 
-      const result = await player.search(query, {
-        requestedBy: interaction.user,
-        searchEngine: QueryType.AUTO,
-      });
+      let noResult = false;
+      let result;
 
-      if (result.tracks.length === 0) {
-        if (url.toLowerCase().startsWith("https")) {
-          failedEmbed.setDescription(`Make sure you input a valid link.`);
-        } else {
-          failedEmbed.setDescription(`Make sure you input a valid song name.`);
+      if (query.toLowerCase().startsWith("https")) {
+        result = await player.search(query, {
+          requestedBy: interaction.user,
+          searchEngine: QueryType.AUTO,
+        });
+      } else {
+        result = await player.search(query, {
+          requestedBy: interaction.user,
+          searchEngine: QueryType.YOUTUBE,
+        });
+      }
+
+      if (!result.hasTracks()) {
+        result = await player.search(query, {
+          requestedBy: interaction.user,
+          searchEngine: QueryType.AUTO,
+        });
+
+        if (!result.hasTracks()) {
+          noResult = true;
         }
+      }
+      if (noResult) {
         failedEmbed
           .setTitle(`**No Result**`)
+          .setDescription(`Make sure you input a valid query.`)
           .setColor(0xffea00)
           .setThumbnail(
             `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
           );
+
         interaction.reply({
           embeds: [failedEmbed],
         });
@@ -112,6 +136,7 @@ module.exports = {
         if (!queue) {
           queue = await client.player.nodes.create(interaction.guild, {
             metadata: {
+              guild: interaction.guildId,
               channel: interaction.member.voice.channel,
               client: interaction.guild.members.me,
               requestedBy: interaction.user,
@@ -156,11 +181,12 @@ module.exports = {
           });
 
           let embed = new EmbedBuilder();
-          let source;
+          let nowPlaying = false;
+          let public = false;
 
           let trackNum = interaction.options.getInteger("tracknumber");
-          if (trackNum > queue.tracks.size) {
-            trackNum = queue.tracks.size + 1;
+          if (trackNum > queue.tracks.data.size) {
+            trackNum = queue.tracks.data.size + 1;
           }
 
           const song = result.tracks[0];
@@ -168,11 +194,15 @@ module.exports = {
           await queue.insertTrack(song, trackNum - 1);
           if (!queue.node.isPlaying()) await queue.node.play();
 
-          const currentSong = queue.currentTrack;
-          const nowPlaying = currentSong.url === song.url;
+          nowPlaying = queue.tracks.size === 1;
 
           if (nowPlaying) {
             embed.setTitle("🎵 Now Playing");
+
+            await playerDB.updateOne(
+              { guildId: interaction.guildId },
+              { isJustAdded: true }
+            );
           } else {
             embed.setTitle(`🎵 Track #${trackNum}`);
           }
@@ -184,25 +214,23 @@ module.exports = {
             .setThumbnail(song.thumbnail);
 
           if (song.url.includes("youtube")) {
-            source = "public";
+            public = true;
+
             embed.setColor(0xff0000).setFooter({
               iconURL: `https://www.iconpacks.net/icons/2/free-youtube-logo-icon-2431-thumb.png`,
               text: `YouTube`,
             });
           } else if (song.url.includes("spotify")) {
-            source = "private";
             embed.setColor(0x34eb58).setFooter({
               iconURL: `https://www.freepnglogos.com/uploads/spotify-logo-png/image-gallery-spotify-logo-21.png`,
               text: `Spotify`,
             });
           } else if (song.url.includes("soundcloud")) {
-            source = "public";
             embed.setColor(0xeb5534).setFooter({
               iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
               text: `Soundcloud`,
             });
           } else if (song.url.includes("apple")) {
-            source = "private";
             embed.setColor(0xfb4f67).setFooter({
               iconURL: `https://music.apple.com/assets/knowledge-graph/music.png`,
               text: `Apple Music`,
@@ -220,37 +248,28 @@ module.exports = {
           const skipButton = new ButtonBuilder()
             .setCustomId(`skipper`)
             .setEmoji(`⏭`)
+            .setDisabled(!nowPlaying)
             .setStyle(ButtonStyle.Secondary);
           const favoriteButton = new ButtonBuilder()
             .setCustomId(`favorite`)
             .setEmoji(`🤍`)
+            .setDisabled(!nowPlaying)
             .setStyle(ButtonStyle.Danger);
           const lyricsButton = new ButtonBuilder()
             .setCustomId(`lyrics`)
             .setEmoji(`🎤`)
+            .setDisabled(!nowPlaying)
             .setStyle(ButtonStyle.Primary);
-          const downloadButton = new ButtonBuilder()
-            .setCustomId(`downloader`)
-            .setEmoji(`⬇`)
-            .setStyle(ButtonStyle.Secondary);
 
           const button = new ActionRowBuilder()
-            .addComponents(nowPlaying ? skipButton : null)
-            .addComponents(
-              nowPlaying && timer < 10 * 60 ? favoriteButton : null
-            )
-            .addComponents(nowPlaying ? lyricsButton : null)
-            .addComponents(
-              nowPlaying && timer < 10 * 60 && source === public
-                ? downloadButton
-                : null
-            );
+            .addComponents(skipButton)
+            .addComponents(favoriteButton)
+            .addComponents(lyricsButton);
 
           await interaction.editReply({
             embeds: [embed],
             components: [button],
           });
-
           success = true;
         }
       }

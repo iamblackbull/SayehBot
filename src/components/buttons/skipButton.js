@@ -4,6 +4,7 @@ const {
   ButtonBuilder,
   ButtonStyle,
 } = require("discord.js");
+const playerDB = require("../../schemas/player-schema");
 const { musicChannelID } = process.env;
 
 module.exports = {
@@ -20,23 +21,28 @@ module.exports = {
     )
       return;
 
-    const currentSong = queue.currentSong;
+    const currentSong = queue.currentTrack;
 
-    queue.node.skip();
+    await queue.node.skip();
 
     const nextSong = queue.tracks.at(0) || null;
+
+    await playerDB.updateOne(
+      { guildId: interaction.guildId },
+      { isSkipped: true }
+    );
 
     const user = interaction.user;
     const avatar = user.displayAvatarURL({ size: 1024, dynamic: true });
 
-    let embed = new EmbedBuilder().setAuthor({
+    let embed = new EmbedBuilder().setColor(0xc42525).setAuthor({
       name: interaction.member.nickname || user.username,
       iconURL: avatar,
       url: avatar,
     });
 
-    let source;
     let success = false;
+    let public = false;
     let timer;
 
     if (nextSong == null || !nextSong) {
@@ -62,25 +68,23 @@ module.exports = {
         .setThumbnail(nextSong.thumbnail);
 
       if (nextSong.url.includes("youtube")) {
-        source = "public";
+        public = true;
+
         embed.setColor(0xff0000).setFooter({
           iconURL: `https://www.iconpacks.net/icons/2/free-youtube-logo-icon-2431-thumb.png`,
           text: `YouTube`,
         });
       } else if (nextSong.url.includes("spotify")) {
-        source = "private";
         embed.setColor(0x34eb58).setFooter({
           iconURL: `https://www.freepnglogos.com/uploads/spotify-logo-png/image-gallery-spotify-logo-21.png`,
           text: `Spotify`,
         });
       } else if (nextSong.url.includes("soundcloud")) {
-        source = "public";
         embed.setColor(0xeb5534).setFooter({
           iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
           text: `Soundcloud`,
         });
       } else if (song.url.includes("apple")) {
-        source = "private";
         embed.setColor(0xfb4f67).setFooter({
           iconURL: `https://music.apple.com/assets/knowledge-graph/music.png`,
           text: `Apple Music`,
@@ -100,27 +104,23 @@ module.exports = {
       const skipButton = new ButtonBuilder()
         .setCustomId(`skipper`)
         .setEmoji(`⏭`)
+        .setDisabled(false)
         .setStyle(ButtonStyle.Secondary);
       const favoriteButton = new ButtonBuilder()
         .setCustomId(`favorite`)
         .setEmoji(`🤍`)
+        .setDisabled(false)
         .setStyle(ButtonStyle.Danger);
       const lyricsButton = new ButtonBuilder()
         .setCustomId(`lyrics`)
         .setEmoji(`🎤`)
+        .setDisabled(false)
         .setStyle(ButtonStyle.Primary);
-      const downloadButton = new ButtonBuilder()
-        .setCustomId(`downloader`)
-        .setEmoji(`⬇`)
-        .setStyle(ButtonStyle.Secondary);
 
       const button = new ActionRowBuilder()
         .addComponents(skipButton)
-        .addComponents(timer < 10 * 60 ? favoriteButton : null)
-        .addComponents(lyricsButton)
-        .addComponents(
-          timer < 10 * 60 && source === public ? downloadButton : null
-        );
+        .addComponents(favoriteButton)
+        .addComponents(lyricsButton);
 
       await interaction.reply({
         embeds: [embed],

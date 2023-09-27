@@ -10,10 +10,6 @@ module.exports = {
   async execute(interaction, client) {
     let queue = client.player.nodes.get(interaction.guildId);
 
-    const sameChannel =
-      queue.connection.joinConfig.channelId ===
-      interaction.member.voice.channel.id;
-
     let failedEmbed = new EmbedBuilder();
     let success = false;
 
@@ -43,33 +39,38 @@ module.exports = {
       await interaction.reply({
         embeds: [failedEmbed],
       });
-    } else if (!sameChannel) {
-      failedEmbed
-        .setTitle(`**Busy**`)
-        .setDescription(`Bot is busy in another voice channel.`)
-        .setColor(0x256fc4)
-        .setThumbnail(
-          `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
-        );
-      await interaction.reply({
-        embeds: [failedEmbed],
-      });
     } else {
-      let embed = new EmbedBuilder()
-        .setTitle(`❎ Leave`)
-        .setDescription(`Queue has been reset.`)
-        .setColor(0x256fc4)
-        .setThumbnail(
-          `https://icons.veryicon.com/png/o/miscellaneous/programming-software-icons/reset-28.png`
-        );
+      const sameChannel =
+        queue.connection.joinConfig.channelId ===
+        interaction.member.voice.channel.id;
 
-      queue.delete();
+      if (!sameChannel) {
+        failedEmbed
+          .setTitle(`**Busy**`)
+          .setDescription(`Bot is busy in another voice channel.`)
+          .setColor(0x256fc4)
+          .setThumbnail(
+            `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
+          );
+        await interaction.reply({
+          embeds: [failedEmbed],
+        });
+      } else {
+        let embed = new EmbedBuilder()
+          .setTitle(`❎ Leave`)
+          .setDescription(`Queue has been reset.`)
+          .setColor(0x256fc4)
+          .setThumbnail(
+            `https://icons.veryicon.com/png/o/miscellaneous/programming-software-icons/reset-28.png`
+          );
 
-      await interaction.reply({ embeds: [embed] });
+        queue.delete();
 
-      success = true;
+        await interaction.reply({ embeds: [embed] });
+
+        success = true;
+      }
     }
-
     const timeoutDuration = success ? 5 * 60 * 1000 : 2 * 60 * 1000;
     const timeoutLog = success
       ? `Failed to delete ${interaction.commandName} interaction.`

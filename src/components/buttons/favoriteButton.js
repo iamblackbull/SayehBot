@@ -56,7 +56,7 @@ module.exports = {
     }
 
     let embed = new EmbedBuilder().setColor(0x25bfc4).setFooter({
-      iconURL: `https://www.linkpicture.com/q/2753995-201.png`,
+      iconURL: `https://cdn2.iconfinder.com/data/icons/music-256/512/Love_music-512.png`,
       text: "Favorite",
     });
 

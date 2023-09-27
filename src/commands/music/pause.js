@@ -17,10 +17,6 @@ module.exports = {
   async execute(interaction, client) {
     const queue = client.player.nodes.get(interaction.guildId);
 
-    const sameChannel =
-      queue.connection.joinConfig.channelId ===
-      interaction.member.voice.channel.id;
-
     const { timestamp, paused, pause, resume } = useTimeline(
       interaction.guildId
     );
@@ -56,67 +52,73 @@ module.exports = {
       await interaction.reply({
         embeds: [failedEmbed],
       });
-    } else if (!sameChannel) {
-      failedEmbed
-        .setTitle(`**Busy**`)
-        .setDescription(`Bot is busy in another voice channel.`)
-        .setColor(0x256fc4)
-        .setThumbnail(
-          `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
-        );
-      await interaction.reply({
-        embeds: [failedEmbed],
-      });
     } else {
-      if (!paused) {
-        await pause();
+      const sameChannel =
+        queue.connection.joinConfig.channelId ===
+        interaction.member.voice.channel.id;
 
-        embed
-          .setTitle(`Paused`)
-          .setDescription(
-            "Use </pause:1047903145071759424> again or click the button below to resume the music."
-          )
+      if (!sameChannel) {
+        failedEmbed
+          .setTitle(`**Busy**`)
+          .setDescription(`Bot is busy in another voice channel.`)
           .setColor(0x256fc4)
           .setThumbnail(
-            `https://cdn-icons-png.flaticon.com/512/148/148746.png`
+            `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
           );
+        await interaction.reply({
+          embeds: [failedEmbed],
+        });
       } else {
-        await resume();
-        if (!queue.node.isPlaying()) await queue.node.play();
+        if (!paused) {
+          await pause();
 
-        embed
-          .setTitle(`Resumed`)
-          .setDescription(
-            "Use </pause:1047903145071759424> again or click the button below to pause the music."
-          )
-          .setColor(0x256fc4)
-          .setThumbnail(
-            `https://www.freepnglogos.com/uploads/play-button-png/index-media-cover-art-play-button-overlay-5.png`
-          );
+          embed
+            .setTitle(`Paused`)
+            .setDescription(
+              "Use </pause:1047903145071759424> again or click the button below to resume the music."
+            )
+            .setColor(0x256fc4)
+            .setThumbnail(
+              `https://cdn-icons-png.flaticon.com/512/148/148746.png`
+            );
+        } else {
+          await resume();
+          if (!queue.node.isPlaying()) await queue.node.play();
+
+          embed
+            .setTitle(`Resumed`)
+            .setDescription(
+              "Use </pause:1047903145071759424> again or click the button below to pause the music."
+            )
+            .setColor(0x256fc4)
+            .setThumbnail(
+              `https://www.freepnglogos.com/uploads/play-button-png/index-media-cover-art-play-button-overlay-5.png`
+            );
+        }
+
+        const duration = timestamp.total.label;
+        const convertor = duration.split(":");
+        const totalTimer = +convertor[0] * 60 + +convertor[1];
+
+        const currentDuration = timestamp.current.label;
+        const currentConvertor = currentDuration.split(":");
+        const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
+
+        timer = totalTimer - currentTimer;
+
+        const pauseButton = new ButtonBuilder()
+          .setCustomId(`pause-button`)
+          .setEmoji(`⏸`)
+          .setStyle(ButtonStyle.Secondary);
+
+        const button = new ActionRowBuilder().addComponents(pauseButton);
+
+        await interaction.reply({
+          embeds: [embed],
+          components: [button],
+        });
+        success = true;
       }
-
-      const duration = timestamp.total.label;
-      const convertor = duration.split(":");
-      const totalTimer = +convertor[0] * 60 + +convertor[1];
-
-      const currentDuration = timestamp.current.label;
-      const currentConvertor = currentDuration.split(":");
-      const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
-
-      timer = totalTimer - currentTimer;
-
-      const pauseButton = new ButtonBuilder()
-        .setCustomId(`pause-button`)
-        .setEmoji(`⏸`)
-        .setStyle(ButtonStyle.Secondary);
-
-      const button = new ActionRowBuilder().addComponents(pauseButton);
-
-      await interaction.reply({
-        embeds: [embed],
-        components: [button],
-      });
-      success = true;
     }
 
     if (timer > 10 * 60) timer = 10 * 60;
