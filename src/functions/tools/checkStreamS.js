@@ -207,6 +207,7 @@ module.exports = (client) => {
               await msg.edit({
                 embeds: [embed],
                 content: Content,
+                components: [],
               });
             }
           }
