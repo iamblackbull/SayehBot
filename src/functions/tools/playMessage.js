@@ -109,7 +109,7 @@ module.exports = (client) => {
           type = "playlist";
         else if (
           query.toLowerCase().startsWith("https") &&
-          query.url.toLowerCase().includes("album")
+          query.toLowerCase().includes("album")
         )
           type = "album";
         else type = "track";
@@ -260,7 +260,7 @@ module.exports = (client) => {
             .addComponents(favoriteButton)
             .addComponents(lyricsButton);
 
-          await message.reply({
+          msg = await message.reply({
             embeds: [embed],
             components: [button],
           });
@@ -283,7 +283,7 @@ module.exports = (client) => {
           await firstMsg.delete();
           await msg.delete();
 
-          console.log("Deleted an unsuccessfull Play message.");
+          console.log("Deleted an Play message.");
         } catch (e) {
           console.log(timeoutLog);
         }

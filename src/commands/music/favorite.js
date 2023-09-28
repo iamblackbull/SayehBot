@@ -56,7 +56,7 @@ module.exports = {
   async execute(interaction, client) {
     let failedEmbed = new EmbedBuilder();
     let success = false;
-    let timer;
+    let timer = 2 * 60;
 
     const action = interaction.options.get("action").value;
     const target = interaction.options.getUser("user") || interaction.user;
@@ -224,16 +224,16 @@ module.exports = {
           embeds: [failedEmbed],
         });
       } else {
-        if (song.duration.length >= 7) {
-          timer = 10 * 60;
-        } else {
-          const duration = song.duration;
-          const convertor = duration.split(":");
-          timer = +convertor[0] * 60 + +convertor[1];
-        }
-
         switch (action) {
           case "play":
+            if (song.duration.length >= 7) {
+              timer = 10 * 60;
+            } else {
+              const duration = song.duration;
+              const convertor = duration.split(":");
+              timer = +convertor[0] * 60 + +convertor[1];
+            }
+
             let nowPlaying = false;
 
             if (!sameChannel) {

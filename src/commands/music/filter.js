@@ -243,7 +243,7 @@ module.exports = {
 
           await interaction.editReply({
             embeds: [embed],
-            components: [button],
+            components: [],
           });
         } catch (error) {
           if (error.code === "InteractionCollectorError") {

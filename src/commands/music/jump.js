@@ -74,6 +74,10 @@ module.exports = {
           embeds: [failedEmbed],
         });
       } else {
+        await interaction.deferReply({
+          fetchReply: true,
+        });
+        
         let trackNum = interaction.options.getInteger("tracknumber");
         if (trackNum > queue.tracks.size) {
           trackNum = queue.tracks.size;

@@ -4,9 +4,6 @@ const currentYear = date.getFullYear();
 const currentMonth = date.getMonth() + 1;
 const currentDate = date.getDate();
 
-const { guildID } = process.env;
-const playerDB = require("../../schemas/player-schema");
-
 module.exports = {
   name: "ready",
   once: true,
@@ -29,12 +26,5 @@ module.exports = {
       ],
       status: "online",
     });
-
-    const playerList = new playerDB({
-      guildId: guildID,
-      isSkipped: false,
-      isJustAdded: false,
-    });
-    await playerList.save().catch(console.error);
   },
 };

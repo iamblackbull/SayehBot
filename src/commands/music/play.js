@@ -203,7 +203,7 @@ module.exports = {
             }
 
             embed
-              .title(title)
+              .setTitle(title)
               .setDescription(
                 `**[${playlist.title}](${playlist.url})**\n**${result.tracks.length} tracks**`
               )

@@ -21,13 +21,13 @@ module.exports = {
     if (playerList.isSkipped) {
       return await playerDB.updateOne(
         { guildId: queue.metadata.guild },
-        { isSkipped: false }
+        { isSkipped: false, isJustAdded: false }
       );
     }
     if (playerList.isJustAdded) {
       return await playerDB.updateOne(
         { guildId: queue.metadata.guild },
-        { isJustAdded: false }
+        { isSkipped: false, isJustAdded: false }
       );
     }
 
