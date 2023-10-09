@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const Genius = require("genius-lyrics");
 const genius = new Genius.Client();
-const errorHandler = require("../../functions/handlers/handleErrors");
+const errorHandler = require("../../utils/handleErrors");
 
 module.exports = {
   data: new SlashCommandBuilder()

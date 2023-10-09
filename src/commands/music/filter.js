@@ -7,7 +7,7 @@ const {
 } = require("discord.js");
 const { AudioFilters, useTimeline } = require("discord-player");
 const { musicChannelID } = process.env;
-const errorHandler = require("../../functions/handlers/handleErrors");
+const errorHandler = require("../../utils/handleErrors");
 
 let filterMenu;
 

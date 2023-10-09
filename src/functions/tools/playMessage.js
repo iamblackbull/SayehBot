@@ -3,7 +3,7 @@ const playerDB = require("../../schemas/player-schema");
 const { useMainPlayer, QueryType } = require("discord-player");
 require("dotenv").config();
 const { musicChannelID } = process.env;
-const errorHandler = require("../handlers/handleErrors");
+const errorHandler = require("../../utils/handleErrors");
 const queueCreator = require("../../utils/createQueue");
 const footerSetter = require("../../utils/setFooter");
 const buttonCreator = require("../../utils/createButtons");
@@ -70,7 +70,7 @@ module.exports = (client) => {
       } else {
         const queue =
           client.player.nodes.get(message.guild.id) ||
-          queueCreator.createMessageQueue(message, result);
+          await queueCreator.createMessageQueue(client, message, result);
 
         if (!queue.connection) {
           await queue.connect(message.member.voice.channel);

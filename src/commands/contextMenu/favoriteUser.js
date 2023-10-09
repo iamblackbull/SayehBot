@@ -7,9 +7,9 @@ const favorite = require("../../schemas/favorite-schema");
 const { mongoose } = require("mongoose");
 const { useMainPlayer, useMetadata, QueryType } = require("discord-player");
 const { musicChannelID } = process.env;
-const errorHandler = require("../../functions/handlers/handleErrors");
-const queueCreator = require("../utils/createQueue");
-const buttonCreator = require("../utils/createButtons");
+const errorHandler = require("../../utils/handleErrors");
+const queueCreator = require("../../utils/createQueue");
+const buttonCreator = require("../../utils/createButtons");
 
 module.exports = {
   data: new ContextMenuCommandBuilder()
@@ -41,7 +41,7 @@ module.exports = {
 
       const queue =
         client.player.nodes.get(interaction.guildId) ||
-        queueCreator.createFavoriteQueue(interaction);
+        await queueCreator.createFavoriteQueue(client, interaction);
 
       if (!queue.connection) {
         await queue.connect(interaction.member.voice.channel);

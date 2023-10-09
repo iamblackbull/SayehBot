@@ -2,7 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { useTimeline } = require("discord-player");
 const { musicChannelID } = process.env;
 let repeatMode = false;
-const errorHandler = require("../../functions/handlers/handleErrors");
+const errorHandler = require("../../utils/handleErrors");
 
 module.exports = {
   data: new SlashCommandBuilder()

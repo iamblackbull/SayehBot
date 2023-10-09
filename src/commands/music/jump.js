@@ -1,9 +1,9 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const playerDB = require("../../schemas/player-schema");
 const { musicChannelID } = process.env;
-const errorHandler = require("../../functions/handlers/handleErrors");
-const footerSetter = require("../utils/setFooter");
-const buttonCreator = require("../utils/createButtons");
+const errorHandler = require("../../utils/handleErrors");
+const footerSetter = require("../../utils/setFooter");
+const buttonCreator = require("../../utils/createButtons");
 
 module.exports = {
   data: new SlashCommandBuilder()

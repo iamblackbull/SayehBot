@@ -1,5 +1,5 @@
-async function createQueue(interaction, result) {
-  await client.player.nodes.create(interaction.guild, {
+async function createQueue(client, interaction, result) {
+  const queue = await client.player.nodes.create(interaction.guild, {
     metadata: {
       guild: interaction.guildId,
       channel: interaction.member.voice.channel,
@@ -21,10 +21,12 @@ async function createQueue(interaction, result) {
       highWaterMark: 1 << 25,
     },
   });
+
+  return queue;
 }
 
-async function createFavoriteQueue(interaction) {
-  await client.player.nodes.create(interaction.guild, {
+async function createFavoriteQueue(client, interaction) {
+  const queue = await client.player.nodes.create(interaction.guild, {
     metadata: {
       guild: interaction.guildId,
       channel: interaction.member.voice.channel,
@@ -46,10 +48,12 @@ async function createFavoriteQueue(interaction) {
       highWaterMark: 1 << 25,
     },
   });
+
+  return queue;
 }
 
-async function createMessageQueue(message, result) {
-  await client.player.nodes.create(message.guild, {
+async function createMessageQueue(client, message, result) {
+  const queue = await client.player.nodes.create(message.guild, {
     metadata: {
       guild: message.guild.id,
       channel: message.member.voice.channel,
@@ -70,6 +74,8 @@ async function createMessageQueue(message, result) {
       highWaterMark: 1 << 25,
     },
   });
+
+  return queue;
 }
 
 module.exports = {

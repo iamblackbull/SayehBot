@@ -60,18 +60,12 @@ function createSongButtons() {
     .setEmoji(`🎤`)
     .setStyle(ButtonStyle.Primary);
 
-  const replayButton = new ButtonBuilder()
-    .setCustomId(`replay-button`)
-    .setEmoji(`🔄`)
-    .setStyle(ButtonStyle.Secondary);
-
   const button = new ActionRowBuilder()
     .addComponents(previousButton)
     .addComponents(pauseButton)
     .addComponents(skipButton)
     .addComponents(favoriteButton)
-    .addComponents(lyricsButton)
-    .addComponents(replayButton);
+    .addComponents(lyricsButton);
 
   return button;
 }

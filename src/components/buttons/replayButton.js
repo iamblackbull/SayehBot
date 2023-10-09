@@ -1,7 +1,7 @@
 const { EmbedBuilder } = require("discord.js");
 const { musicChannelID } = process.env;
-const footerSetter = require("../utils/setFooter");
-const buttonCreator = require("../utils/createButtons");
+const footerSetter = require("../../utils/setFooter");
+const buttonCreator = require("../../utils/createButtons");
 
 module.exports = {
   data: {
@@ -18,6 +18,10 @@ module.exports = {
       interaction.member.voice.channel.id
     )
       return;
+
+    await interaction.deferReply({
+      fetchReply: true,
+    });
 
     let success = false;
     let timer;
@@ -54,7 +58,7 @@ module.exports = {
 
     const button = buttonCreator.createButtons(true);
 
-    await interaction.reply({
+    await interaction.editReply({
       embeds: [embed],
       components: [button],
     });

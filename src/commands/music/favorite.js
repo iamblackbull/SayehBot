@@ -11,9 +11,9 @@ const playerDB = require("../../schemas/player-schema");
 const { mongoose } = require("mongoose");
 const { useMainPlayer, useMetadata, QueryType } = require("discord-player");
 const { musicChannelID } = process.env;
-const errorHandler = require("../../functions/handlers/handleErrors");
-const queueCreator = require("../utils/createQueue");
-const buttonCreator = require("../utils/createButtons");
+const errorHandler = require("../../utils/handleErrors");
+const queueCreator = require("../../utils/createQueue");
+const buttonCreator = require("../../utils/createButtons");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -89,7 +89,7 @@ module.exports = {
 
       const queue =
         client.player.nodes.get(interaction.guildId) ||
-        queueCreator.createFavoriteQueue(interaction);
+        await queueCreator.createFavoriteQueue(client, interaction);
 
       let sameChannel = false;
 

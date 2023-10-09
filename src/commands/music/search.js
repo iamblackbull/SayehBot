@@ -6,9 +6,9 @@ const {
 const playerDB = require("../../schemas/player-schema");
 const { useMainPlayer, QueryType } = require("discord-player");
 const { musicChannelID } = process.env;
-const errorHandler = require("../../functions/handlers/handleErrors");
-const queueCreator = require("../utils/createQueue");
-const buttonCreator = require("../utils/createButtons");
+const errorHandler = require("../../utils/handleErrors");
+const queueCreator = require("../../utils/createQueue");
+const buttonCreator = require("../../utils/createButtons");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -97,7 +97,7 @@ module.exports = {
         collector.on("collect", async (reaction, user) => {
           const queue =
             client.player.nodes.get(interaction.guildId) ||
-            queueCreator.createQueue(interaction, result);
+            await queueCreator.createQueue(client, interaction, result);
 
           if (user.bot) return;
           if (!interaction.member.voice.channel) return;

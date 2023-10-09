@@ -54,7 +54,7 @@ async function handleDatabaseError(interaction) {
       `https://cdn.iconscout.com/icon/premium/png-256-thumb/error-in-internet-959268.png`
     );
 
-  if (interaction.deferReply) {
+  if (interaction.deferred || interaction.replied) {
     await interaction.editReply({
       embeds: [databaseError],
     });
@@ -68,7 +68,7 @@ async function handleDatabaseError(interaction) {
 async function handlePermissionError(interaction) {
   actionFailedError.setDescription(`Bot doesn't have the required permission!`);
 
-  if (interaction.deferReply) {
+  if (interaction.deferred || interaction.replied) {
     await interaction.editReply({
       embeds: [actionFailedError],
     });
@@ -94,7 +94,7 @@ async function handleVoiceChannelError(interaction) {
     `You need to be in a voice channel to use this command.`
   );
 
-  if (interaction.deferReply) {
+  if (interaction.deferred || interaction.replied) {
     await interaction.editReply({
       embeds: [actionFailedError],
     });
@@ -122,7 +122,7 @@ async function handleQueueError(interaction) {
     `There is no queue or queue history is not available.`
   );
 
-  if (interaction.deferReply) {
+  if (interaction.deferred || interaction.replied) {
     await interaction.editReply({
       embeds: [actionFailedError],
     });
@@ -134,7 +134,7 @@ async function handleQueueError(interaction) {
 }
 
 async function handleNoResultError(interaction) {
-  if (interaction.deferReply) {
+  if (interaction.deferred || interaction.replied) {
     await interaction.editReply({
       embeds: [noResultError],
     });
@@ -154,7 +154,7 @@ async function handleNoResultErrorMessage(message) {
 }
 
 async function handleBusyError(interaction) {
-  if (interaction.deferReply) {
+  if (interaction.deferred || interaction.replied) {
     await interaction.editReply({
       embeds: [busyError],
     });
@@ -174,7 +174,7 @@ async function handleBusyErrorMessage(message) {
 }
 
 async function handleRestriceError(interaction) {
-  if (interaction.deferReply) {
+  if (interaction.deferred || interaction.replied) {
     await interaction.editReply({
       embeds: [restriceError],
     });
@@ -194,7 +194,7 @@ async function handleRestriceErrorMessage(message) {
 }
 
 async function handleThirdPartyError(interaction) {
-  if (interaction.deferReply) {
+  if (interaction.deferred || interaction.replied) {
     await interaction.editReply({
       embeds: [thirdPartyError],
     });
@@ -214,7 +214,7 @@ async function handleThirdPartyErrorMessage(message) {
 }
 
 async function handleUnknownError(interaction) {
-  if (interaction.deferReply) {
+  if (interaction.deferred || interaction.replied) {
     await interaction.editReply({
       embeds: [unknownError],
     });
@@ -242,7 +242,7 @@ async function handleEmptyPlaylistError(interaction, owner) {
     .setColor(0xffea00)
     .setThumbnail(`https://cdn-icons-png.flaticon.com/128/5994/5994754.png`);
 
-  if (interaction.deferReply) {
+  if (interaction.deferred || interaction.replied) {
     await interaction.editReply({
       embeds: [emptyPlaylistError],
     });
@@ -260,7 +260,7 @@ async function handleAccessDeniedError(interaction) {
     .setColor(0xe01010)
     .setThumbnail(`https://cdn-icons-png.flaticon.com/512/2913/2913133.png`);
 
-  if (interaction.deferReply) {
+  if (interaction.deferred || interaction.replied) {
     await interaction.editReply({
       embeds: [accessDeniedError],
     });

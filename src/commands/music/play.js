@@ -6,10 +6,10 @@ const {
 const playerDB = require("../../schemas/player-schema");
 const { useMainPlayer, QueryType } = require("discord-player");
 const { musicChannelID } = process.env;
-const errorHandler = require("../../functions/handlers/handleErrors");
-const queueCreator = require("../utils/createQueue");
-const footerSetter = require("../utils/setFooter");
-const buttonCreator = require("../utils/createButtons")
+const errorHandler = require("../../utils/handleErrors");
+const queueCreator = require("../../utils/createQueue");
+const footerSetter = require("../../utils/setFooter");
+const buttonCreator = require("../../utils/createButtons");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -58,7 +58,7 @@ module.exports = {
     try {
       await interaction.respond(respond);
     } catch (error) {
-      return console.error("Error responding to autocomplete:", error);
+      return;
     }
   },
 
@@ -108,7 +108,7 @@ module.exports = {
       } else {
         const queue =
           client.player.nodes.get(interaction.guildId) ||
-          queueCreator.createQueue(interaction, result);
+          (await queueCreator.createQueue(client, interaction, result));
 
         if (!queue.connection) {
           await queue.connect(interaction.member.voice.channel);
@@ -190,25 +190,25 @@ module.exports = {
                   `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`
                 )
                 .setThumbnail(song.thumbnail);
-
-              footerSetter.setFooter(embed, song);
-
-              if (song.duration.length >= 7) {
-                timer = 10 * 60;
-              } else {
-                const duration = song.duration;
-                const convertor = duration.split(":");
-                timer = +convertor[0] * 60 + +convertor[1];
-              }
-
-              const button = buttonCreator.createButtons(nowPlaying);
-
-              await interaction.editReply({
-                embeds: [embed],
-                components: [button],
-              });
-              success = true;
             }
+
+            footerSetter.setFooter(embed, song);
+
+            if (song.duration.length >= 7) {
+              timer = 10 * 60;
+            } else {
+              const duration = song.duration;
+              const convertor = duration.split(":");
+              timer = +convertor[0] * 60 + +convertor[1];
+            }
+
+            const button = buttonCreator.createButtons(nowPlaying);
+
+            await interaction.editReply({
+              embeds: [embed],
+              components: [button],
+            });
+            success = true;
           } catch (error) {
             if (
               error.message.includes("Sign in to confirm your age.") ||
