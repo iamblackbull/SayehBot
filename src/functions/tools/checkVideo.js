@@ -96,7 +96,7 @@ module.exports = (client) => {
           setTimeout(() => {
             notifiedChannels.delete("sayeh");
           }, 10 * 60 * 1000);
-        }, 1 * 1000);
+        }, 3 * 1000);
       }
     } catch (error) {
       console.log(chalk.red(`Connection to YouTube API failed...`));

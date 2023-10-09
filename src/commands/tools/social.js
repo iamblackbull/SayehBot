@@ -12,30 +12,15 @@ module.exports = {
     .setDescription("Returns Sayeh social links"),
 
   async execute(interaction, client) {
-    const twitchButton = new ButtonBuilder()
-      .setLabel(`Twitch`)
-      .setURL(`https://twitch.tv/Sayeh`)
-      .setStyle(ButtonStyle.Link);
-    const youtubeButton = new ButtonBuilder()
-      .setLabel(`YouTube`)
-      .setURL(`https://youtube.com/c/Sayehh/?sub_confirmation=1`)
-      .setStyle(ButtonStyle.Link);
-    const instagramButton = new ButtonBuilder()
-      .setLabel(`Instagram`)
-      .setURL(`https://www.instagram.com/sayeh_game`)
-      .setStyle(ButtonStyle.Link);
-    const telegramButton = new ButtonBuilder()
-      .setLabel("Telegram")
-      .setURL(`https://t.me/sayeh_game`)
-      .setStyle(ButtonStyle.Link);
-
     let embed = new EmbedBuilder()
       .setTitle(`Follow & Subscribe now!`)
       .setDescription(`Don't forget to follow Sayeh on social media!`)
       .setFields(
         { name: `Twitch`, value: `/Sayeh`, inline: true },
+        { name: `Kick`, value: `/Sayeh`, inline: true },
         { name: `YouTube`, value: `@Say3h`, inline: true },
-        { name: `Telegram`, value: `@sayeh_game`, inline: true }
+        { name: `Telegram`, value: `@sayeh_game`, inline: true },
+        { name: `Instagram`, value: `@sayeh_game`, inline: true }
       )
       .setColor(0x25bfc4)
       .setURL(`https://twitch.tv/Sayeh`)
@@ -47,16 +32,39 @@ module.exports = {
         text: `Socials `,
       });
 
+    const twitchButton = new ButtonBuilder()
+      .setLabel(`Twitch`)
+      .setURL(`https://twitch.tv/Sayeh`)
+      .setStyle(ButtonStyle.Link);
+    const kickButton = new ButtonBuilder()
+      .setLabel(`Kick`)
+      .setURL(`https://kick.com/sayeh`)
+      .setStyle(ButtonStyle.Link);
+    const youtubeButton = new ButtonBuilder()
+      .setLabel(`YouTube`)
+      .setURL(`https://youtube.com/c/Sayehh/?sub_confirmation=1`)
+      .setStyle(ButtonStyle.Link);
+    const telegramButton = new ButtonBuilder()
+      .setLabel("Telegram")
+      .setURL(`https://t.me/sayeh_game`)
+      .setStyle(ButtonStyle.Link);
+    const instagramButton = new ButtonBuilder()
+      .setLabel(`Instagram`)
+      .setURL(`https://www.instagram.com/sayeh_game`)
+      .setStyle(ButtonStyle.Link);
+
     const button = new ActionRowBuilder()
       .addComponents(twitchButton)
+      .addComponents(kickButton)
       .addComponents(youtubeButton)
-      .addComponents(telegramButton);
+      .addComponents(telegramButton)
+      .addComponents(instagramButton);
 
     await interaction.reply({
       embeds: [embed],
       components: [button],
     });
-    
+
     setTimeout(() => {
       interaction.deleteReply().catch((e) => {
         console.log(`Failed to delete ${interaction.commandName} interaction.`);

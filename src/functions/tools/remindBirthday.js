@@ -1,4 +1,5 @@
 require("dotenv").config();
+const { ActivityType } = require("discord.js");
 const { birthdayChannelID, guildID } = process.env;
 const birthday = require("../../schemas/birthday-schema");
 const checkBirthday = require("../../schemas/checkBirthday-schema");
@@ -46,7 +47,17 @@ module.exports = (client) => {
 
           let content;
           if (user === "481094367407374348") {
-            content = `🎈 🎂 👑 Today is **Our Queen**'s birthday! Happy birthday your majesty **<@${birthdayProfile.User}>**! (Age **${age}**) 👑 🥳 🎉`;
+            content = `🎈 🎂 👑 Today is **Our Queen**'s birthday! Happy birthday **<@${birthdayProfile.User}>**! (Age **${age}**) 👑 🥳 🎉`;
+
+            client.user.setPresence({
+              activities: [
+                {
+                  name: "Sayeh's birthday 🎂",
+                  type: ActivityType.Watching,
+                },
+              ],
+              status: "online",
+            });
           } else {
             content = `🎈 🎂 Today is **<@${birthdayProfile.User}>**'s birthday! (Age **${age}**) Happy birthday! 🥳 🎉`;
           }

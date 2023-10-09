@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const Genius = require("genius-lyrics");
 const genius = new Genius.Client();
+const errorHandler = require("../../functions/handlers/handleErrors");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -40,10 +41,12 @@ module.exports = {
           .setColor(0x256fc4);
 
         if (lyrics.length > 1200) {
-          let totalPages = Math.ceil(lyrics.length / 1000) || 1;
+          const chunks = lyrics.match(/(.|[\r\n]){1,1000}/g);
+
+          let totalPages = chunks.length;
           let page = 0;
 
-          let res = lyrics.slice(page * 1000, page * 1000 + 1000);
+          let res = chunks[page];
 
           embed.setDescription(res).setFooter({
             iconURL: `https://images.genius.com/0ca83e3130e1303a7f78ba351e3091cd.1000x1000x1.png`,
@@ -75,7 +78,7 @@ module.exports = {
 
             if (reaction.emoji.name === `➡` && page < totalPages - 1) {
               page++;
-              res = lyrics.slice(page * 1000, page * 1000 + 1000);
+              res = chunks[page];
 
               embed.setDescription(res).setFooter({
                 iconURL: `https://images.genius.com/0ca83e3130e1303a7f78ba351e3091cd.1000x1000x1.png`,
@@ -87,7 +90,7 @@ module.exports = {
               });
             } else if (reaction.emoji.name == `⬅` && page !== 0) {
               --page;
-              res = lyrics.slice(page * 1000, page * 1000 + 1000);
+              res = chunks[page];
 
               embed.setDescription(res).setFooter({
                 iconURL: `https://images.genius.com/0ca83e3130e1303a7f78ba351e3091cd.1000x1000x1.png`,
@@ -113,19 +116,7 @@ module.exports = {
         }
       })
       .catch((error) => {
-        const failedEmbed = new EmbedBuilder()
-          .setTitle(`**No Result**`)
-          .setDescription(
-            `Make sure you input a valid song name.\nTry again with </lyrics:1100831574787891240>`
-          )
-          .setColor(0xffea00)
-          .setThumbnail(
-            `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
-          );
-
-        interaction.editReply({
-          embeds: [failedEmbed],
-        });
+        errorHandler.handleNoResultError(interaction);
       });
     const timeoutDuration = success ? 10 * 60 * 1000 : 2 * 60 * 1000;
 

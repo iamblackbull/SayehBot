@@ -120,7 +120,7 @@ module.exports = (client) => {
       setTimeout(() => {
         welcomeMessageSent.delete(member.id);
       }, 10 * 60 * 1000);
-    }, 1 * 1000);
+    }, 2 * 1000);
   });
 
   client.on("guildMemberRemove", async (member) => {
@@ -136,7 +136,7 @@ module.exports = (client) => {
       await channel.send({
         content: `**${member.user.username}** left the server.`,
       });
-    }, 1 * 1000);
+    }, 2 * 1000);
 
     setTimeout(() => {
       leaveMessageSent.delete(member.id);

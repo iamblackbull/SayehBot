@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { musicChannelID } = process.env;
+const errorHandler = require("../../functions/handlers/handleErrors");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -9,54 +10,23 @@ module.exports = {
 
   async execute(interaction, client) {
     let queue = client.player.nodes.get(interaction.guildId);
-
-    let failedEmbed = new EmbedBuilder();
     let success = false;
 
-    if (!queue || !queue.connection) {
-      failedEmbed
-        .setTitle(`**Action Failed**`)
-        .setDescription(
-          `Bot is already not playing in any voice channel.\nUse </play:1047903145071759425> to play a track.`
-        )
-        .setColor(0xffea00)
-        .setThumbnail(
-          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-        );
-      await interaction.reply({
-        embeds: [failedEmbed],
-      });
-    } else if (!interaction.member.voice.channel) {
-      failedEmbed
-        .setTitle(`**Action Failed**`)
-        .setDescription(
-          `You need to be in a voice channel to use this command.`
-        )
-        .setColor(0xffea00)
-        .setThumbnail(
-          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-        );
-      await interaction.reply({
-        embeds: [failedEmbed],
-      });
+    if (!interaction.member.voice.channel) {
+      errorHandler.handleVoiceChannelError(interaction);
+    } else if (!queue || !queue.connection) {
+      errorHandler.handleQueueError(interaction);
     } else {
       const sameChannel =
         queue.connection.joinConfig.channelId ===
         interaction.member.voice.channel.id;
 
       if (!sameChannel) {
-        failedEmbed
-          .setTitle(`**Busy**`)
-          .setDescription(`Bot is busy in another voice channel.`)
-          .setColor(0x256fc4)
-          .setThumbnail(
-            `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
-          );
-        await interaction.reply({
-          embeds: [failedEmbed],
-        });
+        errorHandler.handleBusyError(interaction);
       } else {
-        let embed = new EmbedBuilder()
+        queue.delete();
+
+        const embed = new EmbedBuilder()
           .setTitle(`❎ Leave`)
           .setDescription(`Queue has been reset.`)
           .setColor(0x256fc4)
@@ -64,10 +34,7 @@ module.exports = {
             `https://icons.veryicon.com/png/o/miscellaneous/programming-software-icons/reset-28.png`
           );
 
-        queue.delete();
-
         await interaction.reply({ embeds: [embed] });
-
         success = true;
       }
     }

@@ -1,10 +1,7 @@
-const {
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-} = require("discord.js");
+const { EmbedBuilder } = require("discord.js");
 const playerDB = require("../../schemas/player-schema");
+const footerSetter = require("../../functions/utils/setFooter");
+const buttonCreator = require("../../functions/utils/createButtons");
 
 module.exports = {
   name: "playerStart",
@@ -18,13 +15,7 @@ module.exports = {
       guildId: queue.metadata.guild,
     });
 
-    if (playerList.isSkipped) {
-      return await playerDB.updateOne(
-        { guildId: queue.metadata.guild },
-        { isSkipped: false, isJustAdded: false }
-      );
-    }
-    if (playerList.isJustAdded) {
+    if (playerList.isSkipped || playerList.isJustAdded) {
       return await playerDB.updateOne(
         { guildId: queue.metadata.guild },
         { isSkipped: false, isJustAdded: false }
@@ -32,7 +23,8 @@ module.exports = {
     }
 
     const channel = queue.metadata.channel;
-    let source;
+    if (!channel) return;
+
     let timer;
 
     if (song.duration.length >= 7) {
@@ -50,52 +42,9 @@ module.exports = {
       )
       .setThumbnail(song.thumbnail);
 
-    if (song.url.includes("youtube")) {
-      source = "public";
-      embed.setColor(0xff0000).setFooter({
-        iconURL: `https://www.iconpacks.net/icons/2/free-youtube-logo-icon-2431-thumb.png`,
-        text: `YouTube`,
-      });
-    } else if (song.url.includes("spotify")) {
-      source = "private";
-      embed.setColor(0x34eb58).setFooter({
-        iconURL: `https://www.freepnglogos.com/uploads/spotify-logo-png/image-gallery-spotify-logo-21.png`,
-        text: "Spotify",
-      });
-    } else if (song.url.includes("soundcloud")) {
-      source = "public";
-      embed.setColor(0xeb5534).setFooter({
-        iconURL: `https://st-aug.edu/wp-content/uploads/2021/09/soundcloud-logo-soundcloud-icon-transparent-png-1.png`,
-        text: `Soundcloud`,
-      });
-    } else if (song.url.includes("apple")) {
-      source = "private";
-      embed.setColor(0xfb4f67).setFooter({
-        iconURL: `https://music.apple.com/assets/knowledge-graph/music.png`,
-        text: `Apple Music`,
-      });
-    }
+    footerSetter.setFooter(embed, song);
 
-    const skipButton = new ButtonBuilder()
-      .setCustomId(`skipper`)
-      .setEmoji(`⏭`)
-      .setDisabled(false)
-      .setStyle(ButtonStyle.Secondary);
-    const favoriteButton = new ButtonBuilder()
-      .setCustomId(`favorite`)
-      .setEmoji(`🤍`)
-      .setDisabled(false)
-      .setStyle(ButtonStyle.Danger);
-    const lyricsButton = new ButtonBuilder()
-      .setCustomId(`lyrics`)
-      .setEmoji(`🎤`)
-      .setDisabled(false)
-      .setStyle(ButtonStyle.Primary);
-
-    const button = new ActionRowBuilder()
-      .addComponents(skipButton)
-      .addComponents(favoriteButton)
-      .addComponents(lyricsButton);
+    const button = buttonCreator.createButtons(true);
 
     const msg = await channel.send({
       embeds: [embed],

@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { useTimeline } = require("discord-player");
 const { musicChannelID } = process.env;
+const errorHandler = require("../../functions/handlers/handleErrors");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -19,52 +20,20 @@ module.exports = {
   async execute(interaction, client) {
     const queue = client.player.nodes.get(interaction.guildId);
 
-    let failedEmbed = new EmbedBuilder();
     let success = false;
     let timer;
 
-    if (!queue || !queue.connection) {
-      failedEmbed
-        .setTitle(`**Action Failed**`)
-        .setDescription(
-          `Bot is already not playing in any voice channel.\nUse </play:1047903145071759425> to play a track.`
-        )
-        .setColor(0xffea00)
-        .setThumbnail(
-          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-        );
-      await interaction.reply({
-        embeds: [failedEmbed],
-      });
-    } else if (!interaction.member.voice.channel) {
-      failedEmbed
-        .setTitle(`**Action Failed**`)
-        .setDescription(
-          `You need to be in a voice channel to use this command.`
-        )
-        .setColor(0xffea00)
-        .setThumbnail(
-          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-        );
-      await interaction.reply({
-        embeds: [failedEmbed],
-      });
+    if (!interaction.member.voice.channel) {
+      errorHandler.handleVoiceChannelError(interaction);
+    } else if (!queue || !queue.connection || !queue.node.isPlaying()) {
+      errorHandler.handleQueueError(interaction);
     } else {
       const sameChannel =
         queue.connection.joinConfig.channelId ===
         interaction.member.voice.channel.id;
 
       if (!sameChannel) {
-        failedEmbed
-          .setTitle(`**Busy**`)
-          .setDescription(`Bot is busy in another voice channel.`)
-          .setColor(0x256fc4)
-          .setThumbnail(
-            `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
-          );
-        await interaction.reply({
-          embeds: [failedEmbed],
-        });
+        errorHandler.handleBusyError(interaction);
       } else {
         const queueEmbed = await interaction.deferReply({
           fetchReply: true,
@@ -111,9 +80,9 @@ module.exports = {
               (queueStringLength > 1 ? `${queueString}` : "None")
           )
           .setFooter({
-            text: `📄 Page ${page + 1} of ${totalPages} (${
-              queue.tracks.size
-            } Songs)`,
+            text: `📄 Page ${
+              page + 1
+            } of ${totalPages} (${queueStringLength} Songs)`,
           });
 
         await interaction.editReply({
@@ -164,13 +133,13 @@ module.exports = {
                         : "None") +
                       `\n\n` +
                       bar +
-                      `\n\n###⏭ Upcoming Tracks\n` +
+                      `\n\n### ⏭ Upcoming Tracks\n` +
                       (queueStringLength > 1 ? `${queueString}` : "None")
                   )
                   .setFooter({
-                    text: `📄 Page ${page + 1} of ${totalPages} (${
-                      queue.tracks.size
-                    } Songs)`,
+                    text: `📄 Page ${
+                      page + 1
+                    } of ${totalPages} (${queueStringLength} Songs)`,
                   });
 
                 await interaction.editReply({
@@ -212,9 +181,9 @@ module.exports = {
                       (queueStringLength > 1 ? `${queueString}` : "None")
                   )
                   .setFooter({
-                    text: `📄 Page ${page + 1} of ${totalPages} (${
-                      queue.tracks.size
-                    } Songs)`,
+                    text: `📄 Page ${
+                      page + 1
+                    } of ${totalPages} (${queueStringLength} Songs)`,
                   });
 
                 await interaction.editReply({
@@ -256,9 +225,9 @@ module.exports = {
                     (queueStringLength > 1 ? `${queueString}` : "None")
                 )
                 .setFooter({
-                  text: `📄 Page ${page + 1} of ${totalPages} (${
-                    queue.tracks.size
-                  } Songs)`,
+                  text: `📄 Page ${
+                    page + 1
+                  } of ${totalPages} (${queueStringLength} Songs)`,
                 });
 
               await interaction.editReply({

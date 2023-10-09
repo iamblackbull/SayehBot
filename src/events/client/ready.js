@@ -12,7 +12,7 @@ module.exports = {
       `SayehBot is online!\nToday's date: ${currentYear}.${currentMonth}.${currentDate}`
     );
 
-    setInterval(client.remindBirthday, 1 * 60 * 1000);
+    setInterval(client.remindBirthday, 5 * 60 * 1000);
     setInterval(client.checkStreamS, 5 * 60 * 1000);
     setInterval(client.checkStreamH, 5 * 60 * 1000);
     setInterval(client.checkVideo, 5 * 60 * 1000);

@@ -1,17 +1,17 @@
 const { EmbedBuilder } = require("discord.js");
-const playerDB = require("../../schemas/player-schema");
 const { musicChannelID } = process.env;
 const footerSetter = require("../../functions/utils/setFooter");
 const buttonCreator = require("../../functions/utils/createButtons");
 
 module.exports = {
   data: {
-    name: `previous-button`,
+    name: `replay-button`,
   },
   async execute(interaction, client) {
     const queue = client.player.nodes.get(interaction.guildId);
+    if (!queue) return;
+    if (!queue.node.isPlaying()) return;
 
-    if (!queue || !queue.history) return;
     if (!interaction.member.voice.channel) return;
     if (
       queue.connection.joinConfig.channelId !==
@@ -20,43 +20,12 @@ module.exports = {
       return;
 
     let success = false;
-    let nowPlaying = false;
     let timer;
 
     const user = interaction.user;
     const avatar = user.displayAvatarURL({ size: 1024, dynamic: true });
 
-    await queue.history.back();
-
     const song = queue.currentTrack;
-
-    nowPlaying = queue.tracks.size === 1;
-
-    if (nowPlaying) {
-      embed.title(`🎵 Now Playing`);
-
-      await playerDB.updateOne(
-        { guildId: interaction.guildId },
-        { isSkipped: true }
-      );
-    } else {
-      embed.setTitle(`🎵 Previous`);
-    }
-
-    let embed = new EmbedBuilder()
-      .setAuthor({
-        name: interaction.member.nickname || user.username,
-        iconURL: avatar,
-        url: avatar,
-      })
-      .setDescription(
-        `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`
-      )
-      .setThumbnail(song.thumbnail);
-
-    footerSetter.setFooter(embed, song);
-
-    if (!queue.node.isPlaying()) await queue.node.play();
 
     if (song.duration.length >= 7) {
       timer = 10 * 60;
@@ -66,7 +35,24 @@ module.exports = {
       timer = +convertor[0] * 60 + +convertor[1];
     }
 
-    const button = buttonCreator.createButtons(nowPlaying);
+    await queue.node.seek(0);
+
+    const embed = new EmbedBuilder()
+      .setAuthor({
+        name: interaction.member.nickname || user.username,
+        iconURL: avatar,
+        url: avatar,
+      })
+      .setTitle(`🔄 Replay`)
+      .setDescription(
+        `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`
+      )
+      .setThumbnail(song.thumbnail)
+      .setColor(0x25bfc4);
+
+    footerSetter.setFooter(embed, song);
+
+    const button = buttonCreator.createButtons(true);
 
     await interaction.reply({
       embeds: [embed],
@@ -82,9 +68,8 @@ module.exports = {
       ? `Failed to delete ${interaction.commandName} interaction.`
       : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
-      if (success && interaction.channel.id === musicChannelID) {
-        interaction.editReply({ components: [] });
-      } else {
+      if (success && interaction.channel.id === musicChannelID) return;
+      else {
         interaction.deleteReply().catch((e) => {
           console.log(timeoutLog);
         });

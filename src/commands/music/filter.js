@@ -7,6 +7,9 @@ const {
 } = require("discord.js");
 const { AudioFilters, useTimeline } = require("discord-player");
 const { musicChannelID } = process.env;
+const errorHandler = require("../../functions/handlers/handleErrors");
+
+let filterMenu;
 
 AudioFilters.define(
   "8D",
@@ -92,57 +95,22 @@ module.exports = {
     .setDMPermission(false),
 
   async execute(interaction, client) {
-    let failedEmbed = new EmbedBuilder();
     let success = false;
     let timer;
 
     const queue = client.player.nodes.get(interaction.guildId);
 
     if (!interaction.member.voice.channel) {
-      failedEmbed
-        .setTitle(`**Action Failed**`)
-        .setDescription(
-          `You need to be in a voice channel to use this command.`
-        )
-        .setColor(0xffea00)
-        .setThumbnail(
-          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-        );
-
-      await interaction.reply({
-        embeds: [failedEmbed],
-      });
-    } else if (!queue) {
-      failedEmbed
-        .setTitle(`**Action Failed**`)
-        .setDescription(
-          `Bot is already not playing in any voice channel.\nUse </play:1047903145071759425> to play a track.`
-        )
-        .setColor(0xffea00)
-        .setThumbnail(
-          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-        );
-
-      await interaction.reply({
-        embeds: [failedEmbed],
-      });
+      errorHandler.handleVoiceChannelError(interaction);
+    } else if (!queue || !queue.node.isPlaying()) {
+      errorHandler.handleQueueError(interaction);
     } else {
       const sameChannel =
         queue.connection.joinConfig.channelId ===
         interaction.member.voice.channel.id;
 
       if (!sameChannel) {
-        failedEmbed
-          .setTitle(`**Busy**`)
-          .setDescription(`Bot is busy in another voice channel.`)
-          .setColor(0x256fc4)
-          .setThumbnail(
-            `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
-          );
-
-        await interaction.reply({
-          embeds: [failedEmbed],
-        });
+        errorHandler.handleBusyError(interaction);
       } else {
         let embed = new EmbedBuilder()
           .setColor(0xc42577)
@@ -176,7 +144,7 @@ module.exports = {
           embed.setDescription(`Filters are disabled.`);
         }
 
-        const filterMenu = new StringSelectMenuBuilder()
+        filterMenu = new StringSelectMenuBuilder()
           .setCustomId(`filters`)
           .setPlaceholder("Select which filters to apply")
           .setMinValues(0)
@@ -243,7 +211,7 @@ module.exports = {
 
           await interaction.editReply({
             embeds: [embed],
-            components: [],
+            components: [button],
           });
         } catch (error) {
           if (error.code === "InteractionCollectorError") {

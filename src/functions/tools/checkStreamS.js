@@ -108,7 +108,7 @@ module.exports = (client) => {
                   components: [button],
                 })
                 .catch(console.error);
-            }, 1 * 1000);
+            }, 3 * 1000);
 
             category = game_name;
             Title = title;

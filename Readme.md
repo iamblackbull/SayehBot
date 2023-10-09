@@ -1,6 +1,6 @@
 #
 
-# **SayehBot v1.6.3 INSTALLATION GUIDE**
+# **SayehBot v1.6.4 INSTALLATION GUIDE**
 
 ## **UPDATE SERVER**
 
@@ -47,7 +47,7 @@
 - ## Install discord-player packages
   > - sudo npm i discord-player @discord-player/downloader @discord-player/extractor
 - ## Install ytdl-core
-  > - sudo npm i ytdl-core@git+ssh://git@github.com:khlevon/node-ytdl-core.git#v4.11.4-patch.2
+  > - sudo npm i @distube/ytdl-core
 
 #
 

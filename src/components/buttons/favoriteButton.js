@@ -3,12 +3,13 @@ const { EmbedBuilder } = require("discord.js");
 
 module.exports = {
   data: {
-    name: `favorite`,
+    name: `favorite-button`,
   },
   async execute(interaction, client) {
     let favoriteMode;
     const queue = client.player.nodes.get(interaction.guildId);
     if (!queue) return;
+    if (!queue.node.isPlaying()) return;
 
     const song = queue.currentTrack;
     if (!song) return;
@@ -31,7 +32,7 @@ module.exports = {
           },
         ],
       });
-      
+
       await favoriteList.save().catch(console.error);
       favoriteMode = "add";
     } else if (favoriteList.Playlist.length > 100) {
@@ -56,7 +57,7 @@ module.exports = {
     }
 
     let embed = new EmbedBuilder().setColor(0x25bfc4).setFooter({
-      iconURL: `https://cdn2.iconfinder.com/data/icons/music-256/512/Love_music-512.png`,
+      iconURL: `https://sendabuddy.com/cdn/shop/files/newlogo_8_2048x2048.png?v=1661517305`,
       text: "Favorite",
     });
 

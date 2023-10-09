@@ -11,6 +11,9 @@ const playerDB = require("../../schemas/player-schema");
 const { mongoose } = require("mongoose");
 const { useMainPlayer, useMetadata, QueryType } = require("discord-player");
 const { musicChannelID } = process.env;
+const errorHandler = require("../../functions/handlers/handleErrors");
+const queueCreator = require("../../functions/utils/createQueue");
+const buttonCreator = require("../../functions/utils/createButtons");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -54,54 +57,23 @@ module.exports = {
     .setDMPermission(false),
 
   async execute(interaction, client) {
-    let failedEmbed = new EmbedBuilder();
     let success = false;
     let timer = 2 * 60;
 
     const action = interaction.options.get("action").value;
-    const target = interaction.options.getUser("user") || interaction.user;
-    const user = target.username;
+    const interactor = interaction.user;
+    const owner = interaction.options.getUser("user") || interactor;
+    const user = owner.username;
     let favoriteList = await favorite.findOne({
-      User: target.id,
+      User: owner.id,
     });
 
     if (mongoose.connection.readyState !== 1) {
-      failedEmbed
-        .setTitle(`**Connection Timed out!**`)
-        .setDescription(`Connection to database has been timed out.`)
-        .setColor(0xffea00)
-        .setThumbnail(
-          `https://cdn.iconscout.com/icon/premium/png-256-thumb/error-in-internet-959268.png`
-        );
-      await interaction.reply({
-        embeds: [failedEmbed],
-      });
+      errorHandler.handleDatabaseError(interaction);
     } else if (!favoriteList || favoriteList.Playlist.length === 0) {
-      failedEmbed
-        .setTitle(`**Action Failed**`)
-        .setDescription(
-          `**${target}** doesn't have a favorite playlist. Like at least **1** track to create your own playlist.\nTry again with </favorite:1108681222764367962>.`
-        )
-        .setColor(0xffea00)
-        .setThumbnail(
-          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-        );
-      await interaction.reply({
-        embeds: [failedEmbed],
-      });
+      errorHandler.handleEmptyPlaylistError(interaction, owner);
     } else if (action === "play" && !interaction.member.voice.channel) {
-      failedEmbed
-        .setTitle(`**Action Failed**`)
-        .setDescription(
-          `You need to be in a voice channel to use this command.`
-        )
-        .setColor(0xffea00)
-        .setThumbnail(
-          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-        );
-      await interaction.reply({
-        embeds: [failedEmbed],
-      });
+      errorHandler.handleVoiceChannelError(interaction);
     } else {
       const favoriteEmbed = await interaction.deferReply({
         fetchReply: true,
@@ -111,38 +83,17 @@ module.exports = {
         .setTitle(`🎶 ${user}'s Playlist`)
         .setColor(0x256fc4)
         .setFooter({
-          iconURL: `https://cdn2.iconfinder.com/data/icons/music-256/512/Love_music-512.png`,
+          iconURL: `https://sendabuddy.com/cdn/shop/files/newlogo_8_2048x2048.png?v=1661517305`,
           text: "Favorite",
         });
 
-      let queue = client.player.nodes.get(interaction.guildId);
+      const queue =
+        client.player.nodes.get(interaction.guildId) ||
+        queueCreator.createFavoriteQueue(interaction);
 
       let sameChannel = false;
 
       if (action === "play") {
-        if (!queue) {
-          queue = await client.player.nodes.create(interaction.guild, {
-            metadata: {
-              guild: interaction.guildId,
-              channel: interaction.member.voice.channel,
-              client: interaction.guild.members.me,
-              requestedBy: interaction.user,
-              track: undefined,
-            },
-            leaveOnEnd: true,
-            leaveOnEmpty: true,
-            leaveOnStop: true,
-            leaveOnStopCooldown: 5 * 60 * 1000,
-            leaveOnEndCooldown: 5 * 60 * 1000,
-            leaveOnEmptyCooldown: 5 * 1000,
-            smoothVolume: true,
-            ytdlOptions: {
-              filter: "audioonly",
-              quality: "highestaudio",
-              highWaterMark: 1 << 25,
-            },
-          });
-        }
         if (!queue.connection) {
           await queue.connect(interaction.member.voice.channel);
         }
@@ -182,8 +133,6 @@ module.exports = {
         if (action === "play" && sameChannel) {
           await queue.addTrack(song);
           setMetadata(song);
-
-          if (!queue.node.isPlaying()) await queue.node.play();
         }
       } else {
         for (let i = 0; i < playlistLength; ++i) {
@@ -204,25 +153,12 @@ module.exports = {
             }
 
             await queue.addTrack(result.tracks[0]);
-
-            if (!queue.node.isPlaying()) await queue.node.play();
           }
         }
       }
 
       if (mappedArray.length === 0) {
-        failedEmbed
-          .setTitle(`**No Result**`)
-          .setDescription(
-            `Make sure you have a valid track url in your playlist.\nTry again with </favorite:1108681222764367962>.`
-          )
-          .setColor(0xffea00)
-          .setThumbnail(
-            `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
-          );
-        await interaction.editReply({
-          embeds: [failedEmbed],
-        });
+        errorHandler.handleNoResultError(interaction);
       } else {
         switch (action) {
           case "play":
@@ -236,20 +172,18 @@ module.exports = {
 
             let nowPlaying = false;
 
-            if (!sameChannel) {
-              failedEmbed
-                .setTitle(`**Busy**`)
-                .setDescription(`Bot is busy in another voice channel.`)
-                .setColor(0x256fc4)
-                .setThumbnail(
-                  `https://cdn-icons-png.flaticon.com/512/1830/1830857.png`
-                );
-              await interaction.editReply({
-                embeds: [failedEmbed],
-              });
-            } else if (target) {
-              nowPlaying = queue.tracks.size === 1;
+            let queueSize = queue.tracks.size;
 
+            if (!queue.node.isPlaying()) {
+              queueSize = 0;
+              await queue.node.play();
+            }
+
+            nowPlaying = queueSize === 0;
+
+            if (!sameChannel) {
+              errorHandler.handleBusyError(interaction);
+            } else if (target) {
               if (nowPlaying) {
                 embed.setTitle("🎵 Now Playing");
 
@@ -258,7 +192,12 @@ module.exports = {
                   { isJustAdded: true }
                 );
               } else {
-                embed.setTitle(`🎵 Track #${queue.tracks.data.size}`);
+                embed.setTitle(`🎵 Track #${queueSize}`);
+
+                await playerDB.updateOne(
+                  { guildId: interaction.guildId },
+                  { isJustAdded: false }
+                );
               }
 
               embed
@@ -266,9 +205,6 @@ module.exports = {
                 .setDescription(
                   `${user}'s Playlist, Track #${target}\n**[${song.title}](${song.url})**\n**${song.author}**`
                 );
-
-              let public = false;
-              if (song.url.includes("youtube")) public = true;
             } else {
               embed
                 .setThumbnail(song.thumbnail)
@@ -278,26 +214,8 @@ module.exports = {
                   } other tracks**`
                 );
             }
-            const skipButton = new ButtonBuilder()
-              .setCustomId(`skipper`)
-              .setEmoji(`⏭`)
-              .setDisabled(!nowPlaying)
-              .setStyle(ButtonStyle.Secondary);
-            const favoriteButton = new ButtonBuilder()
-              .setCustomId(`favorite`)
-              .setEmoji(`🤍`)
-              .setDisabled(!nowPlaying)
-              .setStyle(ButtonStyle.Danger);
-            const lyricsButton = new ButtonBuilder()
-              .setCustomId(`lyrics`)
-              .setEmoji(`🎤`)
-              .setDisabled(!nowPlaying)
-              .setStyle(ButtonStyle.Primary);
 
-            const button = new ActionRowBuilder()
-              .addComponents(skipButton)
-              .addComponents(favoriteButton)
-              .addComponents(lyricsButton);
+            const button = buttonCreator.createButtons(nowPlaying);
 
             await interaction.editReply({
               embeds: [embed],
@@ -382,17 +300,8 @@ module.exports = {
             break;
 
           case "remove":
-            if (favoriteList.User !== target.id) {
-              failedEmbed
-                .setTitle(`**Access denied**`)
-                .setDescription(`You don't have access to perform this action.`)
-                .setColor(0xe01010)
-                .setThumbnail(
-                  `https://cdn-icons-png.flaticon.com/512/4201/4201965.png`
-                );
-              await interaction.editReply({
-                embeds: [failedEmbed],
-              });
+            if (favoriteList.User !== interactor.id) {
+              errorHandler.handleAccessDeniedError(interaction);
             } else {
               let warningEmbed = new EmbedBuilder()
                 .setThumbnail(

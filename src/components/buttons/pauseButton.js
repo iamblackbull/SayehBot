@@ -13,6 +13,7 @@ module.exports = {
     );
 
     if (!queue) return;
+    if (!queue.node.isPlaying()) return;
     if (!interaction.member.voice.channel) return;
     if (
       queue.connection.joinConfig.channelId !==
@@ -36,7 +37,7 @@ module.exports = {
       await pause();
 
       embed
-        .setTitle(`Paused`)
+        .setTitle(`⏸ Paused`)
         .setDescription(
           "Use </pause:1047903145071759424> or click the button again to resume the music."
         )
@@ -47,7 +48,7 @@ module.exports = {
       if (!queue.node.isPlaying()) await queue.node.play();
 
       embed
-        .setTitle(`Paused`)
+        .setTitle(`▶ Resumed`)
         .setDescription(
           "Use </pause:1047903145071759424> or click the button again to pause the music."
         )

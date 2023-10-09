@@ -1,12 +1,13 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { useTimeline } = require("discord-player");
 const { musicChannelID } = process.env;
 const errorHandler = require("../../functions/handlers/handleErrors");
+const footerSetter = require("../../functions/utils/setFooter");
+const buttonCreator = require("../../functions/utils/createButtons");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("shuffle")
-    .setDescription("Shuffle the current queue.")
+    .setName("seek")
+    .setDescription("Replay the currently playing track back from the top.")
     .setDMPermission(false),
 
   async execute(interaction, client) {
@@ -27,50 +28,53 @@ module.exports = {
       if (!sameChannel) {
         errorHandler.handleBusyError(interaction);
       } else {
-        const { timestamp } = useTimeline(interaction.guildId);
-        const duration = timestamp.total.label;
-        const convertor = duration.split(":");
-        const totalTimer = +convertor[0] * 60 + +convertor[1];
-
-        const currentDuration = timestamp.current.label;
-        const currentConvertor = currentDuration.split(":");
-        const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
-
-        timer = totalTimer - currentTimer;
-
-        const embed = new EmbedBuilder()
-          .setTitle(`Shuffle`)
-          .setDescription(
-            `Queue of ${queue.tracks.data.length} tracks has been shuffled!`
-          )
-          .setColor(0x25bfc4)
-          .setThumbnail(
-            `https://png.pngtree.com/png-vector/20230228/ourmid/pngtree-shuffle-vector-png-image_6622846.png`
-          );
-
-        queue.tracks.shuffle();
-
-        await interaction.reply({
-          embeds: [embed],
+        await interaction.deferReply({
+          fetchReply: true,
         });
 
+        const song = queue.currentTrack;
+
+        if (song.duration.length >= 7) {
+          timer = 10 * 60;
+        } else {
+          const duration = song.duration;
+          const convertor = duration.split(":");
+          timer = +convertor[0] * 60 + +convertor[1];
+        }
+
+        await queue.node.seek(0);
+
+        const embed = new EmbedBuilder()
+          .setTitle(`🔄 Replay`)
+          .setDescription(
+            `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`
+          )
+          .setThumbnail(song.thumbnail)
+          .setColor(0x25bfc4);
+
+        footerSetter.setFooter(embed, song);
+
+        const button = buttonCreator.createButtons(true);
+
+        await interaction.editReply({ embeds: [embed], components: [button] });
         success = true;
       }
     }
+
+    success ? timer : (timer = 2 * 60);
     if (timer > 10 * 60) timer = 10 * 60;
     if (timer < 1 * 60) timer = 1 * 60;
 
-    const timeoutDuration = success ? timer * 1000 : 2 * 60 * 1000;
     const timeoutLog = success
       ? `Failed to delete ${interaction.commandName} interaction.`
       : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
-      if (success === true && interaction.channel.id === musicChannelID) return;
+      if (success && interaction.channel.id === musicChannelID) return;
       else {
         interaction.deleteReply().catch((e) => {
           console.log(timeoutLog);
         });
       }
-    }, timeoutDuration);
+    }, timer * 1000);
   },
 };
