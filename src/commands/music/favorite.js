@@ -12,8 +12,8 @@ const { mongoose } = require("mongoose");
 const { useMainPlayer, useMetadata, QueryType } = require("discord-player");
 const { musicChannelID } = process.env;
 const errorHandler = require("../../functions/handlers/handleErrors");
-const queueCreator = require("../../functions/utils/createQueue");
-const buttonCreator = require("../../functions/utils/createButtons");
+const queueCreator = require("../utils/createQueue");
+const buttonCreator = require("../utils/createButtons");
 
 module.exports = {
   data: new SlashCommandBuilder()

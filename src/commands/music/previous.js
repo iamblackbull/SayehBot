@@ -6,8 +6,8 @@ const {
 const playerDB = require("../../schemas/player-schema");
 const { musicChannelID } = process.env;
 const errorHandler = require("../../functions/handlers/handleErrors");
-const footerSetter = require("../../functions/utils/setFooter");
-const buttonCreator = require("../../functions/utils/createButtons");
+const footerSetter = require("../utils/setFooter");
+const buttonCreator = require("../utils/createButtons");
 
 module.exports = {
   data: new SlashCommandBuilder()

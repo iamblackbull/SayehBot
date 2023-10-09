@@ -4,9 +4,9 @@ const { useMainPlayer, QueryType } = require("discord-player");
 require("dotenv").config();
 const { musicChannelID } = process.env;
 const errorHandler = require("../handlers/handleErrors");
-const queueCreator = require("../utils/createQueue");
-const footerSetter = require("../utils/setFooter");
-const buttonCreator = require("../utils/createButtons");
+const queueCreator = require("../../utils/createQueue");
+const footerSetter = require("../../utils/setFooter");
+const buttonCreator = require("../../utils/createButtons");
 
 module.exports = (client) => {
   client.on("messageCreate", async (message) => {

@@ -1,7 +1,7 @@
 const { EmbedBuilder } = require("discord.js");
 const playerDB = require("../../schemas/player-schema");
-const footerSetter = require("../../functions/utils/setFooter");
-const buttonCreator = require("../../functions/utils/createButtons");
+const footerSetter = require("../utils/setFooter");
+const buttonCreator = require("../utils/createButtons");
 
 module.exports = {
   name: "playerStart",
