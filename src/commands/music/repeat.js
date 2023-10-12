@@ -80,7 +80,10 @@ module.exports = {
         });
         success = true;
 
-        repeatEmbed.react(`❌`);
+        if (repeatMode) {
+          repeatEmbed.react(`❌`);
+        }
+
         const filter = (reaction, user) => {
           [`❌`].includes(reaction.emoji.name) &&
             user.id === interaction.user.id;

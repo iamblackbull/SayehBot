@@ -29,10 +29,10 @@ const twitch = new TwitchAPI({
 let presence = false;
 let notified = false;
 let msg = false;
+let embed = false;
 let Content;
 let category;
 let Title;
-let embed;
 
 const notifiedChannels = new Set();
 
@@ -156,29 +156,27 @@ module.exports = (client) => {
               presence = true;
             }
 
-            if (Title !== title) {
-              Title = title;
+            if (msg && embed) {
+              if (Title !== title) {
+                Title = title;
 
-              embed.setTitle(`**${title}**`);
-              Content = `Hey @everyone\n **${user_name}** is now LIVE on Twitch! 😍🔔\n❖ ──・──・──・──・──・── ❖\n!استریم داخل توییچ شروع شد\n\n## ${title}\n\n https://www.twitch.tv/${user_name}\n`;
+                embed.setTitle(`**${title}**`);
+                Content = `Hey @everyone\n **${user_name}** is now LIVE on Twitch! 😍🔔\n❖ ──・──・──・──・──・── ❖\n!استریم داخل توییچ شروع شد\n\n## ${title}\n\n https://www.twitch.tv/${user_name}\n`;
 
-              if (msg) {
                 await msg.edit({
                   embeds: [embed],
                   content: Content,
                 });
               }
-            }
-            if (category !== game_name) {
-              category = game_name;
+              if (category !== game_name) {
+                category = game_name;
 
-              embed.setDescription(
-                `Streaming **${
-                  game_name || `Just Chatting`
-                }** for ${viewer_count} viewers`
-              );
+                embed.setDescription(
+                  `Streaming **${
+                    game_name || `Just Chatting`
+                  }** for ${viewer_count} viewers`
+                );
 
-              if (msg) {
                 await msg.edit({
                   embeds: [embed],
                   content: Content,
@@ -197,19 +195,17 @@ module.exports = (client) => {
             { IsLive: false }
           );
 
-          if (notified) {
+          if (notified && msg && embed) {
             embed.setImage(
               `https://static-cdn.jtvnw.net/jtv_user_pictures/509a4ac1-b2ba-4261-9b0c-ca7ac3a632eb-channel_offline_image-1920x1080.jpeg`
             );
             Content = `Stream is offline. 😢`;
 
-            if (msg) {
-              await msg.edit({
-                embeds: [embed],
-                content: Content,
-                components: [],
-              });
-            }
+            await msg.edit({
+              embeds: [embed],
+              content: Content,
+              components: [],
+            });
           }
 
           client.user.setPresence({

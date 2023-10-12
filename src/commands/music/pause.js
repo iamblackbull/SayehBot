@@ -18,17 +18,15 @@ module.exports = {
   async execute(interaction, client) {
     const queue = client.player.nodes.get(interaction.guildId);
 
-    const { timestamp, paused, pause, resume } = useTimeline(
-      interaction.guildId
-    );
+    const { timestamp } = useTimeline(interaction.guildId);
 
-    let embed = new EmbedBuilder();
+    let embed = new EmbedBuilder().setColor(0x256fc4);
     let success = false;
     let timer;
 
     if (!interaction.member.voice.channel) {
       errorHandler.handleVoiceChannelError(interaction);
-    } else if (!queue || !queue.node.isPlaying()) {
+    } else if (!queue || queue.tracks.size === 0) {
       errorHandler.handleQueueError(interaction);
     } else {
       const sameChannel =
@@ -38,20 +36,20 @@ module.exports = {
       if (!sameChannel) {
         errorHandler.handleBusyError(interaction);
       } else {
-        if (!paused) {
-          await pause();
+        if (queue.node.isPlaying()) {
+          await queue.node.pause();
 
           embed
             .setTitle(`⏸ Paused`)
             .setDescription(
               "Use </pause:1047903145071759424> again or click the button below to resume the music."
             )
-            .setColor(0x256fc4)
             .setThumbnail(
               `https://cdn-icons-png.flaticon.com/512/148/148746.png`
             );
         } else {
-          await resume();
+          await queue.node.resume();
+
           if (!queue.node.isPlaying()) await queue.node.play();
 
           embed
@@ -59,7 +57,6 @@ module.exports = {
             .setDescription(
               "Use </pause:1047903145071759424> again or click the button below to pause the music."
             )
-            .setColor(0x256fc4)
             .setThumbnail(
               `https://www.freepnglogos.com/uploads/play-button-png/index-media-cover-art-play-button-overlay-5.png`
             );

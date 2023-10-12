@@ -4,6 +4,11 @@ const currentYear = date.getFullYear();
 const currentMonth = date.getMonth() + 1;
 const currentDate = date.getDate();
 
+let remindBirthdayInterval;
+let checkStreamSInterval;
+let checkStreamHInterval;
+let checkVideoInterval;
+
 module.exports = {
   name: "ready",
   once: true,
@@ -12,10 +17,10 @@ module.exports = {
       `SayehBot is online!\nToday's date: ${currentYear}.${currentMonth}.${currentDate}`
     );
 
-    setInterval(client.remindBirthday, 5 * 60 * 1000);
-    setInterval(client.checkStreamS, 5 * 60 * 1000);
-    setInterval(client.checkStreamH, 5 * 60 * 1000);
-    setInterval(client.checkVideo, 5 * 60 * 1000);
+    remindBirthdayInterval = setInterval(client.remindBirthday, 5 * 60 * 1000);
+    checkStreamSInterval = setInterval(client.checkStreamS, 5 * 60 * 1000);
+    checkStreamHInterval = setInterval(client.checkStreamH, 5 * 60 * 1000);
+    checkVideoInterval = setInterval(client.checkVideo, 5 * 60 * 1000);
 
     client.user.setPresence({
       activities: [
@@ -28,3 +33,14 @@ module.exports = {
     });
   },
 };
+
+process.on("SIGINT", () => {
+  clearInterval(remindBirthdayInterval);
+  clearInterval(checkStreamSInterval);
+  clearInterval(checkStreamHInterval);
+  clearInterval(checkVideoInterval);
+
+  console.log("SayehBot is now offline!");
+
+  process.exit();
+});

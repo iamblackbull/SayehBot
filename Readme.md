@@ -121,5 +121,6 @@
 - ## Basic commands
   > - To copy or cut a directory use `cp [current directory] [destination directory]`
   > - To cut or rename a directory use `mv [current directory] [destination directory]`
+  > - Reboot the server with `sudo reboot`
 
 <p align="center"><a href="https://github.com/iamblackbull/SayehBot"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Up_arrow_white.svg/1024px-Up_arrow_white.svg.png" alt="Back to top" height="35"/></a></p>

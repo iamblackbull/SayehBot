@@ -28,7 +28,7 @@ module.exports = {
       errorHandler.handlePermissionError(interaction);
     } else if (!interaction.member.voice.channel) {
       errorHandler.handleVoiceChannelError(interaction);
-    } else if (!queue || !queue.history) {
+    } else if (!queue || !queue.history || queue.history.length === 0) {
       errorHandler.handleQueueError(interaction);
     } else {
       const sameChannel =
@@ -41,7 +41,11 @@ module.exports = {
         let embed = new EmbedBuilder();
         let nowPlaying = false;
 
-        await queue.history.back();
+        try {
+          await queue.history.back();
+        } catch (error) {
+          errorHandler.handleQueueError(interaction);
+        }
 
         let queueSize = queue.tracks.size;
 

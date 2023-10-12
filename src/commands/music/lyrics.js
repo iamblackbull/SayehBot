@@ -41,7 +41,29 @@ module.exports = {
           .setColor(0x256fc4);
 
         if (lyrics.length > 1200) {
-          const chunks = lyrics.match(/(.|[\r\n]){1,1000}/g);
+          function splitLyrics(lyrics, chunkSize) {
+            const sentences = lyrics.split(/(?<=[.!?])\s+/);
+
+            let currentChunk = "";
+            const chunks = [];
+
+            for (const sentence of sentences) {
+              if ((currentChunk + sentence).length <= chunkSize) {
+                currentChunk += sentence;
+              } else {
+                chunks.push(currentChunk.trim());
+                currentChunk = sentence;
+              }
+            }
+
+            if (currentChunk.trim() !== "") {
+              chunks.push(currentChunk.trim());
+            }
+
+            return chunks;
+          }
+
+          const chunks = splitLyrics(lyrics, 1000);
 
           let totalPages = chunks.length;
           let page = 0;

@@ -101,15 +101,14 @@ module.exports = {
 
           if (user.bot) return;
           if (!interaction.member.voice.channel) return;
+          if (!queue.connection) {
+            await queue.connect(interaction.member.voice.channel);
+          }
           if (
             queue.connection.joinConfig.channelId !==
             interaction.member.voice.channel.id
           )
             return;
-
-          if (!queue.connection) {
-            await queue.connect(interaction.member.voice.channel);
-          }
 
           reaction.users.remove(reaction.users.cache.get(user.id));
 

@@ -22,13 +22,17 @@ module.exports = {
     }),
 
   async execute(interaction, client) {
+    const helpEmbed = await interaction.deferReply({
+      fetchReply: true,
+    });
+
     const lan = interaction.options.get("language").value;
 
     const totalPages = 2;
     let page = 1;
 
     const firstPageEN =
-      "# Available Commands:\n\n## 🖱 User Interaction :\nRight click on a user in users list and select apps:\n`fuch user` , `get apex stats` , `get avatar` , `get rank` , `get wow stats`\n\n## 💿 Music :\n</play:1047903145071759425> , </queue:1047903145071759427> , </skip:1047903145218547864> , </jump:1047903145071759421> , </song:1047903145218547865> , </pause:1047903145071759424> , </search:1047903145071759430> , </seek:1047903145218547862> , </repeat:1047903145071759428> , </filter:1047903144752984073> , </lyrics:1100831574787891240> , </leave:1047903145071759422> , </favorite:1108681222764367962> , </previous:1128669764013797467> , </insert:1115953411985244180> , </autoplay:1142494521683361874> , </replay:1161072793220296766>\n\n## 🖼 GIF & Pictures :\n</avatar:1047903145218547869> , </finger:1047903145407295498> , </fuch:1047903145407295499> , </kish:1047903145407295502> , </kiss:1047903145407295503> , </space:1050160950583513189> , </spank:1142109421795807355>\n\n## ⚔ Moderators-only :\n</simjoin:1047903145218547868> , </clear:1047903145218547871> , </xp:1047903144752984071> , </yell:1047903145625407488>\n\n## 🛠 Tools :\n</birthday:1047903145218547870> , </social:1047903145407295506> , </rank:1051248003723304963> , </leaderboard:1047903144752984069> , </weather:1047903145407295507> , </currency:1100722765587284050> , </movie:1100722765587284051>\n\n## 🎮 Game :\n</apex:1079842730752102551> , </roll:1047903145407295505> , </steam market:1100722765587284048> , </steam store:1100722765587284048> , </wow:1079842730752102553>\n\n## ✉ Message Interaction :\nRight click on a message and go to apps menu:\n`report message`";
+      "# Available Commands:\n\n## 🖱 User Interaction :\nRight click on a user in users list and select apps:\n`get apex stats` , `get avatar` , `get rank` , `get wow stats` , `play favorite`\n\n## 💿 Music :\n</play:1047903145071759425> , </queue:1047903145071759427> , </skip:1047903145218547864> , </jump:1047903145071759421> , </song:1047903145218547865> , </pause:1047903145071759424> , </search:1047903145071759430> , </seek:1047903145218547862> , </repeat:1047903145071759428> , </filter:1047903144752984073> , </lyrics:1100831574787891240> , </leave:1047903145071759422> , </favorite:1108681222764367962> , </previous:1128669764013797467> , </insert:1115953411985244180> , </autoplay:1142494521683361874> , </replay:1161072793220296766>\n\n## 🖼 GIF & Pictures :\n</avatar:1047903145218547869> , </finger:1047903145407295498> , </fuch:1047903145407295499> , </kish:1047903145407295502> , </kiss:1047903145407295503> , </space:1050160950583513189> , </spank:1142109421795807355>\n\n## ⚔ Moderators-only :\n</simjoin:1047903145218547868> , </clear:1047903145218547871> , </xp:1047903144752984071> , </yell:1047903145625407488>\n\n## 🛠 Tools :\n</birthday:1047903145218547870> , </social:1047903145407295506> , </rank:1051248003723304963> , </leaderboard:1047903144752984069> , </weather:1047903145407295507> , </currency:1100722765587284050> , </movie:1100722765587284051>\n\n## 🎮 Game :\n</apex:1079842730752102551> , </roll:1047903145407295505> , </steam market:1100722765587284048> , </steam store:1100722765587284048> , </wow:1079842730752102553>\n\n## ✉ Message Interaction :\nRight click on a message and go to apps menu:\n`report message`";
     const secondPageEN =
       "# Using Guide:\n\n## 🌟 Leveling Guide :\nYou will gain XP by chatting and being active in the server. Use (</rank:1051248003723304963> , </leaderboard:1047903144752984069>) for more information.\n\n## ⏩ Boost :\nYou will be granted XP boost by subscribing to Sayeh's Twitch channel. The amount of this boost depends on the tier of your subscribe:\n- 1️⃣ Sayeh Twitch Sub Tier **1** : XP BOOST **20 %**\n- 2️⃣ Sayeh Twitch Sub Tier **2** : XP BOOST **50 %**\n- 3️⃣ Sayeh Twitch Sub Tier **3** : XP BOOST **100 %**\n\n## 💕 Music Favorite Playlist :\nYou can add or remove a track from your favorite playlist by clicking the (♥) button whenever a track is playling. You can later modify or play your favorite playlist with </favorite:1108681222764367962>.\n\n## 📝 Note :\n- 🏁 Maximum level : **60**\n- 🎲 There is a small chance to win or lose some of your XP by using </roll:1047903145407295505>.\n- 🚀 You will receive XP by boosting the server!";
     const secondPageFA =
@@ -39,7 +43,7 @@ module.exports = {
       .setDescription(firstPageEN)
       .setFooter({ text: `📄 Page ${page} of ${totalPages}` });
 
-    const helpEmbed = await interaction.editReply({
+    await interaction.editReply({
       embeds: [embed],
     });
 

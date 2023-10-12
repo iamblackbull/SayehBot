@@ -89,7 +89,7 @@ module.exports = {
 
       const queue =
         client.player.nodes.get(interaction.guildId) ||
-        await queueCreator.createFavoriteQueue(client, interaction);
+        (await queueCreator.createFavoriteQueue(client, interaction));
 
       let sameChannel = false;
 

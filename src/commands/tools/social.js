@@ -13,17 +13,18 @@ module.exports = {
 
   async execute(interaction, client) {
     let embed = new EmbedBuilder()
-      .setTitle(`Follow & Subscribe now!`)
+      .setTitle(`Sayehgame.com`)
       .setDescription(`Don't forget to follow Sayeh on social media!`)
       .setFields(
         { name: `Twitch`, value: `/Sayeh`, inline: true },
         { name: `Kick`, value: `/Sayeh`, inline: true },
         { name: `YouTube`, value: `@Say3h`, inline: true },
         { name: `Telegram`, value: `@sayeh_game`, inline: true },
-        { name: `Instagram`, value: `@sayeh_game`, inline: true }
+        { name: `Instagram`, value: `@sayeh_game`, inline: true },
+        { name: `Website`, value: `sayehgame.com`, inline: true },
       )
       .setColor(0x25bfc4)
-      .setURL(`https://twitch.tv/Sayeh`)
+      .setURL(`https://sayehgame.com`)
       .setThumbnail(
         `https://cdn.discordapp.com/attachments/760838336205029416/1089626902832107590/934476feaab28c0f586b688264b50041.webp`
       )

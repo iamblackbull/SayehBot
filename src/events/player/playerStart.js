@@ -7,10 +7,6 @@ module.exports = {
   name: "playerStart",
   isPlayerEvent: true,
   async execute(queue, song) {
-    if (!song.url || song.url === undefined || song.url === null) return;
-    if (queue.metadata.track === undefined) return;
-    if (queue.metadata.track.url === song.url) return;
-
     const playerList = await playerDB.findOne({
       guildId: queue.metadata.guild,
     });
@@ -21,6 +17,10 @@ module.exports = {
         { isSkipped: false, isJustAdded: false }
       );
     }
+
+    if (!song.url || song.url === undefined || song.url === null) return;
+    if (queue.metadata.track === undefined) return;
+    if (queue.metadata.track.url === song.url) return;
 
     const channel = queue.metadata.channel;
     if (!channel) return;

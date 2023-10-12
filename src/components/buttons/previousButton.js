@@ -26,7 +26,11 @@ module.exports = {
     const user = interaction.user;
     const avatar = user.displayAvatarURL({ size: 1024, dynamic: true });
 
-    await queue.history.back();
+    try {
+      await queue.history.back();
+    } catch (error) {
+      return;
+    }
 
     const song = queue.currentTrack;
 

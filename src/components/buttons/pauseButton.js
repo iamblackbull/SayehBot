@@ -8,12 +8,10 @@ module.exports = {
   },
   async execute(interaction, client) {
     const queue = client.player.nodes.get(interaction.guildId);
-    const { timestamp, paused, pause, resume } = useTimeline(
-      interaction.guildId
-    );
+    const { timestamp } = useTimeline(interaction.guildId);
 
     if (!queue) return;
-    if (!queue.node.isPlaying()) return;
+    if (queue.tracks.size === 0) return;
     if (!interaction.member.voice.channel) return;
     if (
       queue.connection.joinConfig.channelId !==
@@ -27,24 +25,24 @@ module.exports = {
     const user = interaction.user;
     const avatar = user.displayAvatarURL({ size: 1024, dynamic: true });
 
-    let embed = new EmbedBuilder().setAuthor({
+    let embed = new EmbedBuilder().setColor(0x256fc4).setAuthor({
       name: interaction.member.nickname || user.username,
       iconURL: avatar,
       url: avatar,
     });
 
-    if (!paused) {
-      await pause();
+    if (queue.node.isPlaying()) {
+      await queue.node.pause();
 
       embed
         .setTitle(`⏸ Paused`)
         .setDescription(
           "Use </pause:1047903145071759424> or click the button again to resume the music."
         )
-        .setColor(0x256fc4)
         .setThumbnail(`https://cdn-icons-png.flaticon.com/512/148/148746.png`);
     } else {
-      await resume();
+      await queue.node.resume();
+
       if (!queue.node.isPlaying()) await queue.node.play();
 
       embed
@@ -52,7 +50,6 @@ module.exports = {
         .setDescription(
           "Use </pause:1047903145071759424> or click the button again to pause the music."
         )
-        .setColor(0x256fc4)
         .setThumbnail(`https://cdn-icons-png.flaticon.com/512/148/148746.png`);
     }
 
@@ -74,7 +71,7 @@ module.exports = {
     success ? timer : (timer = 2 * 60);
     if (timer > 10 * 60) timer = 10 * 60;
     if (timer < 1 * 60) timer = 1 * 60;
-    
+
     const timeoutLog = success
       ? `Failed to delete ${interaction.commandName} interaction.`
       : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
