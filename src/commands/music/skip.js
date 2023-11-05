@@ -1,25 +1,31 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const playerDB = require("../../schemas/player-schema");
-const { musicChannelID } = process.env;
+const { SlashCommandBuilder } = require("discord.js");
 const errorHandler = require("../../utils/handleErrors");
-const footerSetter = require("../../utils/setFooter");
-const buttonCreator = require("../../utils/createButtons");
+const embedCreator = require("../../utils/createEmbed");
+const reactHandler = require("../../utils/handleReaction");
+const skipHandler = require("../../utils/handleSkip");
+const deletionHandler = require("../../utils/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("skip")
     .setDescription("Skip the current track.")
+    .addIntegerOption((option) =>
+      option
+        .setName("position")
+        .setDescription("Input a track number to skip to.")
+        .setMinValue(1)
+        .setRequired(false)
+    )
     .setDMPermission(false),
 
   async execute(interaction, client) {
+    ////////////// base variables //////////////
     const queue = client.player.nodes.get(interaction.guildId);
-
     let success = false;
-    let timer;
 
     if (!interaction.member.voice.channel) {
       errorHandler.handleVoiceChannelError(interaction);
-    } else if (!queue || !queue.node.isPlaying()) {
+    } else if (!queue || !queue.currentTrack) {
       errorHandler.handleQueueError(interaction);
     } else {
       const sameChannel =
@@ -29,82 +35,79 @@ module.exports = {
       if (!sameChannel) {
         errorHandler.handleBusyError(interaction);
       } else {
-        await interaction.deferReply({
+        const skipEmbed = await interaction.deferReply({
           fetchReply: true,
         });
 
-        let embed = new EmbedBuilder().setColor(0xc42525);
+        ////////////// vote requirement check //////////////
+        const requiredVotes = Math.ceil(
+          (interaction.member.voice.channel.members.size - 1) / 2
+        );
 
-        const previousSong = queue.currentTrack;
+        const allowed =
+          interaction.member.permissions.has("MANAGE_MESSAGES") ||
+          requiredVotes <= 1;
 
-        await queue.node.skip();
+        success = true;
 
-        const song = queue.tracks.at(0) || null;
-
-        if (song == null || !song) {
-          embed
-            .setTitle("⏭ **Skipped**")
-            .setDescription(
-              `**[${previousSong.title}](${previousSong.url})**\n**${previousSong.author}**`
-            )
-            .setThumbnail(previousSong.thumbnail);
+        if (allowed) {
+          await skipHandler.skip(interaction, queue, false);
+        } else {
+          ////////////// vote phase //////////////
+          let embed = embedCreator.createVoteEmbed(requiredVotes, "start");
 
           await interaction.editReply({
             embeds: [embed],
           });
 
-          success = true;
-          timer = 2 * 60;
-        } else {
-          if (!queue.node.isPlaying()) await queue.node.play();
+          let votes = 0;
+          let skip = false;
+          const timer = requiredVotes * 5 * 1000;
 
-          await playerDB.updateOne(
-            { guildId: interaction.guildId },
-            { isSkipped: true }
+          const collector = reactHandler.voteReact(
+            interaction,
+            skipEmbed,
+            timer
           );
 
-          embed
-            .setTitle("🎵 **Playing Next**")
-            .setDescription(
-              `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`
-            )
-            .setThumbnail(song.thumbnail);
+          collector.on("collect", async (user) => {
+            if (user.bot) return;
 
-          footerSetter.setFooter(embed, song);
+            if (!skip) {
+              votes++;
 
-          if (song.duration.length >= 7) {
-            timer = 10 * 60;
-          } else {
-            const duration = song.duration;
-            const convertor = duration.split(":");
-            timer = +convertor[0] * 60 + +convertor[1];
-          }
+              if (votes >= requiredVotes) {
+                skip = true;
+                collector.stop();
 
-          const button = buttonCreator.createButtons(true);
+                await interaction.reactions.removeAll();
 
-          await interaction.editReply({
-            embeds: [embed],
-            components: [button],
+                embed = embedCreator.createVoteEmbed(requiredVotes, "success");
+
+                await interaction.editReply({
+                  embeds: [embed],
+                });
+
+                await skipHandler.skip(interaction, queue, false);
+              }
+            }
           });
-          success = true;
+
+          collector.on("end", async (reason) => {
+            await interaction.reactions.removeAll();
+
+            if (reason === "time" && !skip) {
+              embed = embedCreator.createVoteEmbed(requiredVotes, "fail");
+
+              await interaction.editReply({
+                embeds: [embed],
+              });
+            }
+          });
         }
       }
     }
-    success ? timer : (timer = 2 * 60);
-    if (timer > 10 * 60) timer = 10 * 60;
-    if (timer < 1 * 60) timer = 1 * 60;
 
-    const timeoutLog = success
-      ? `Failed to delete ${interaction.commandName} interaction.`
-      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
-    setTimeout(() => {
-      if (success && interaction.channel.id === musicChannelID) {
-        interaction.editReply({ components: [] });
-      } else {
-        interaction.deleteReply().catch((e) => {
-          console.log(timeoutLog);
-        });
-      }
-    }, timer * 1000);
+    deletionHandler.handleInteractionDeletion(interaction, success);
   },
 };

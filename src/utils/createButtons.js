@@ -1,76 +1,87 @@
 const { ButtonBuilder, ActionRowBuilder, ButtonStyle } = require("discord.js");
+const { buttons } = require("./musicUtils");
+
+function createButton(customId, emoji, style, disabled) {
+  return new ButtonBuilder()
+    .setCustomId(customId)
+    .setEmoji(emoji)
+    .setStyle(style)
+    .setDisabled(disabled);
+}
 
 function createButtons(nowPlaying) {
-  const skipButton = new ButtonBuilder()
-    .setCustomId(`skip-button`)
-    .setEmoji(`⏭`)
-    .setDisabled(!nowPlaying)
-    .setStyle(ButtonStyle.Secondary);
+  const buttonsConfig = [
+    ["previous-button", buttons.previous, ButtonStyle.Secondary],
+    ["pause-button", buttons.pause, ButtonStyle.Secondary],
+    ["skip-button", buttons.skip, ButtonStyle.Secondary],
+    ["favorite-button", buttons.favorite, ButtonStyle.Danger],
+    ["lyrics-button", buttons.lyrics, ButtonStyle.Primary],
+  ];
 
-  const favoriteButton = new ButtonBuilder()
-    .setCustomId(`favorite-button`)
-    .setEmoji(`🤍`)
-    .setDisabled(!nowPlaying)
-    .setStyle(ButtonStyle.Danger);
+  const components = buttonsConfig.map(([customId, emoji, style]) =>
+    createButton(customId, emoji, style, !nowPlaying)
+  );
 
-  const lyricsButton = new ButtonBuilder()
-    .setCustomId(`lyrics-button`)
-    .setEmoji(`🎤`)
-    .setDisabled(!nowPlaying)
-    .setStyle(ButtonStyle.Primary);
-
-  const replayButton = new ButtonBuilder()
-    .setCustomId(`replay-button`)
-    .setEmoji(`🔄`)
-    .setDisabled(!nowPlaying)
-    .setStyle(ButtonStyle.Secondary);
-
-  const button = new ActionRowBuilder()
-    .addComponents(skipButton)
-    .addComponents(favoriteButton)
-    .addComponents(lyricsButton)
-    .addComponents(replayButton);
+  const button = new ActionRowBuilder().addComponents(...components);
 
   return button;
 }
 
-function createSongButtons() {
-  const previousButton = new ButtonBuilder()
-    .setCustomId(`previous-button`)
-    .setEmoji(`⏮`)
-    .setStyle(ButtonStyle.Secondary);
+function createPauseButtons() {
+  const pauseButton = createButton(
+    "pause-button",
+    buttons.pause,
+    ButtonStyle.Secondary,
+    false
+  );
 
-  const pauseButton = new ButtonBuilder()
-    .setCustomId(`pause-button`)
-    .setEmoji(`⏸`)
-    .setStyle(ButtonStyle.Secondary);
+  const button = new ActionRowBuilder().addComponents(pauseButton);
 
-  const skipButton = new ButtonBuilder()
-    .setCustomId(`skip-button`)
-    .setEmoji(`⏭`)
-    .setStyle(ButtonStyle.Secondary);
+  return button;
+}
 
-  const favoriteButton = new ButtonBuilder()
-    .setCustomId(`favorite-button`)
-    .setEmoji(`🤍`)
+function createFavoriteButtons() {
+  const playButton = createButton(
+    "play-button",
+    buttons.play,
+    ButtonStyle.Secondary,
+    false
+  );
+  const favoriteButton = createButton(
+    "favorite-result-button",
+    buttons.favorite,
+    ButtonStyle.Danger,
+    false
+  );
+
+  const button = new ActionRowBuilder().addComponents(
+    playButton,
+    favoriteButton
+  );
+
+  return button;
+}
+
+function createWarningButtons() {
+  const continueButton = new ButtonBuilder()
+    .setCustomId("continue")
+    .setLabel("Continue")
+    .setStyle(ButtonStyle.Success);
+  const cancelButton = new ButtonBuilder()
+    .setCustomId("cancel")
+    .setLabel("Cancel")
     .setStyle(ButtonStyle.Danger);
 
-  const lyricsButton = new ButtonBuilder()
-    .setCustomId(`lyrics-button`)
-    .setEmoji(`🎤`)
-    .setStyle(ButtonStyle.Primary);
-
   const button = new ActionRowBuilder()
-    .addComponents(previousButton)
-    .addComponents(pauseButton)
-    .addComponents(skipButton)
-    .addComponents(favoriteButton)
-    .addComponents(lyricsButton);
+    .addComponents(cancelButton)
+    .addComponents(continueButton);
 
   return button;
 }
 
 module.exports = {
   createButtons,
-  createSongButtons,
+  createPauseButtons,
+  createFavoriteButtons,
+  createWarningButtons,
 };

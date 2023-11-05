@@ -63,7 +63,11 @@ module.exports = (client) => {
 
         if (result !== undefined && result.type === "live") {
           if (!streamList.IsLive && !notifiedChannels.has("hamiitz")) {
+            notifiedChannels.add("hamiitz");
+
             const { title, viewer_count, game_name, user_name } = data.data[0];
+
+            const image = `https://static-cdn.jtvnw.net/previews-ttv/live_user_${user_name.toLowerCase()}-1920x1080.jpg?NgOqCvLCECvrHGtf=1`;
 
             embed = new EmbedBuilder()
               .setTitle(`**${title}**` || null)
@@ -75,11 +79,9 @@ module.exports = (client) => {
               )
               .setColor(0x8d25c4)
               .setTimestamp(Date.now())
+              .setImage(image)
               .setThumbnail(
                 `https://static-cdn.jtvnw.net/jtv_user_pictures/db6f2412-a9b6-4cfd-9cae-9f7c3819bb15-profile_image-150x150.png`
-              )
-              .setImage(
-                `https://static-cdn.jtvnw.net/previews-ttv/live_user_${user_name.toLowerCase()}-1920x1080.jpg?NgOqCvLCECvrHGtf=1`
               )
               .setAuthor({
                 name: `${user_name}`,
@@ -100,15 +102,18 @@ module.exports = (client) => {
 
             const button = new ActionRowBuilder().addComponents(twitchButton);
 
+            msg = await channel
+              .send({
+                content: Content,
+              })
+              .catch(console.error);
+
             setTimeout(async () => {
-              msg = await channel
-                .send({
-                  embeds: [embed],
-                  content: Content,
-                  components: [button],
-                })
-                .catch(console.error);
-            }, 3 * 1000);
+              await msg?.edit({
+                embeds: [embed],
+                components: [button],
+              });
+            }, 2 * 1000);
 
             category = game_name;
             Title = title;
@@ -137,8 +142,6 @@ module.exports = (client) => {
               },
               { IsLive: true }
             );
-
-            notifiedChannels.add("hamiitz");
           } else {
             const { title, viewer_count, game_name, user_name } = data.data[0];
 

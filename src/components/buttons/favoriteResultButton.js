@@ -1,24 +1,21 @@
 const { mongoose } = require("mongoose");
+const favorite = require("../../commands/music/favorite");
 const embedCreator = require("../../utils/createEmbed");
 const favoriteHandler = require("../../utils/handleFavorite");
 const errorHandler = require("../../utils/handleErrors");
 
 module.exports = {
   data: {
-    name: "favorite-button",
+    name: "favorite-result-button",
   },
 
-  async execute(interaction, client) {
+  async execute(interaction) {
     ////////////// return checks //////////////
     if (mongoose.connection.readyState !== 1) {
       return errorHandler.handleDatabaseError(interaction);
     }
 
-    const queue = client.player.nodes.get(interaction.guildId);
-    if (!queue) return;
-    if (queue.tracks.size === 0) return;
-
-    const song = queue.currentTrack;
+    const { song } = favorite;
     if (!song) return;
 
     ////////////// original response //////////////

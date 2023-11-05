@@ -1,493 +1,326 @@
-const {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  ComponentType,
-} = require("discord.js");
-const favorite = require("../../schemas/favorite-schema");
-const playerDB = require("../../schemas/player-schema");
+const { SlashCommandBuilder } = require("discord.js");
 const { mongoose } = require("mongoose");
-const { useMainPlayer, useMetadata, QueryType } = require("discord-player");
-const { musicChannelID } = process.env;
+const favorite = require("../../schemas/favorite-schema");
 const errorHandler = require("../../utils/handleErrors");
 const queueCreator = require("../../utils/createQueue");
+const searchHandler = require("../../utils/handleSearch");
+const playerDataHandler = require("../../utils/handlePlayerData");
+const embedCreator = require("../../utils/createEmbed");
+const favoriteHandler = require("../../utils/handleFavorite");
 const buttonCreator = require("../../utils/createButtons");
+const reactHandler = require("../../utils/handleReaction");
+const deletionHandler = require("../../utils/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("favorite")
-    .setDescription("Interact with your favortie playlist.")
-    .addStringOption((option) => {
-      return option
-        .setName(`action`)
+    .setDescription("Interact with favortie playlists.")
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName("play")
+        .setDescription("Play a favorite playlist.")
+        .addIntegerOption((option) => {
+          option
+            .setName("position")
+            .setDescription("Input a favorite playlist track position to play.")
+            .setMinValue(1)
+            .setRequired(false);
+        })
+        .addUserOption((option) => {
+          option
+            .setName("user")
+            .setDescription("Pick any member to play their favorite playlist.")
+            .setRequired(false);
+        })
+    )
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName("view")
+        .setDescription("View and interact with a favorite playlist.")
+        .addIntegerOption((option) => {
+          option
+            .setName("position")
+            .setDescription("Input a favorite playlist track position to view.")
+            .setMinValue(1)
+            .setRequired(false);
+        })
+        .addUserOption((option) => {
+          option
+            .setName("user")
+            .setDescription("Pick any member to view their favorite playlist.")
+            .setRequired(false);
+        })
+    )
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName("add")
+        .setDescription("Add a track to your own favorite playlist.")
+        .addStringOption((option) => {
+          option
+            .setName("query")
+            .setDescription("Input a track url.")
+            .setRequired(true);
+        })
+    )
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName("delete")
         .setDescription(
-          `Choose an action to perform on your favorite playlist.`
+          "Delete a track or clear all tracks from your own favorite playlist."
         )
-        .setRequired(true)
-        .addChoices(
-          {
-            name: `Play`,
-            value: `play`,
-          },
-          {
-            name: `List`,
-            value: `list`,
-          },
-          {
-            name: `Remove`,
-            value: `remove`,
-          }
-        );
-    })
-    .addIntegerOption((option) => {
-      return option
-        .setName(`tracknumber`)
-        .setDescription(`Input a track number from your favorite playlist.`)
-        .setMinValue(1)
-        .setRequired(false);
-    })
-    .addUserOption((option) => {
-      return option
-        .setName("user")
-        .setDescription("Pick any member to see their favorite playlist.")
-        .setRequired(false);
-    })
+        .addIntegerOption((option) => {
+          option
+            .setName("position")
+            .setDescription(
+              "Input a favorite playlist track position to delete."
+            )
+            .setMinValue(1)
+            .setRequired(false);
+        })
+    )
     .setDMPermission(false),
 
   async execute(interaction, client) {
+    ////////////// base variables //////////////
     let success = false;
-    let timer = 2 * 60;
+    const { options } = interaction;
+    const sub = options.getSubcommand();
+    const owner = options.getUser("user") || interaction.user;
 
-    const action = interaction.options.get("action").value;
-    const interactor = interaction.user;
-    const owner = interaction.options.getUser("user") || interactor;
-    const user = owner.username;
     let favoriteList = await favorite.findOne({
       User: owner.id,
     });
 
     if (mongoose.connection.readyState !== 1) {
       errorHandler.handleDatabaseError(interaction);
-    } else if (!favoriteList || favoriteList.Playlist.length === 0) {
+    } else if (favoriteList?.Playlist.length === 0) {
       errorHandler.handleEmptyPlaylistError(interaction, owner);
-    } else if (action === "play" && !interaction.member.voice.channel) {
+    } else if (sub === "play" && !interaction.member.voice.channel) {
       errorHandler.handleVoiceChannelError(interaction);
     } else {
       const favoriteEmbed = await interaction.deferReply({
         fetchReply: true,
       });
 
-      let embed = new EmbedBuilder()
-        .setTitle(`🎶 ${user}'s Playlist`)
-        .setColor(0x256fc4)
-        .setFooter({
-          iconURL: `https://sendabuddy.com/cdn/shop/files/newlogo_8_2048x2048.png?v=1661517305`,
-          text: "Favorite",
-        });
-
-      const queue =
-        client.player.nodes.get(interaction.guildId) ||
-        (await queueCreator.createFavoriteQueue(client, interaction));
-
-      let sameChannel = false;
-
-      if (action === "play") {
-        if (!queue.connection) {
-          await queue.connect(interaction.member.voice.channel);
-        }
-
-        sameChannel =
-          queue.connection.joinConfig.channelId ===
-          interaction.member.voice.channel.id;
-      }
-
       const playlist = favoriteList.Playlist.map((song) => song.Url).join("\n");
       const splitPlaylist = playlist.split("\n");
       const playlistLength = splitPlaylist.length;
 
-      const player = useMainPlayer();
-      const [setMetadata] = useMetadata(interaction.guild.id);
+      let target = options.getInteger("position") || false;
+      if (target > playlistLength) target = playlistLength;
 
-      let result;
-      let mappedResultString = {};
-      let mappedArray = [];
-      let song;
+      let queue = client.player.nodes.get(interaction.guildId) || false;
+      let sameChannel = false;
 
-      let target = interaction.options.getInteger("tracknumber");
+      ////////////// first song data //////////////
+      const inputQuery = options.getString("query") || false;
 
-      if (target) {
-        if (target > playlistLength) target = playlistLength;
+      const query = target
+        ? splitPlaylist[target - 1]
+        : inputQuery
+        ? inputQuery
+        : splitPlaylist[0];
 
-        result = await player.search(splitPlaylist[target - 1], {
-          requestedBy: interaction.user,
-          searchEngine: QueryType.AUTO,
-        });
+      const result = await searchHandler.search(query);
 
-        song = result.tracks[0];
+      const song = result.tracks[0];
 
-        mappedResultString[0] = `**${target}.** [${song.title} -- ${song.author}](${song.url})`;
-        mappedArray.push(mappedResultString[0]);
+      module.exports = { song };
 
-        if (action === "play" && sameChannel) {
-          await queue.addTrack(song);
-          setMetadata(song);
-        }
-      } else {
-        for (let i = 0; i < playlistLength; ++i) {
-          result = await player.search(splitPlaylist[i], {
-            requestedBy: interaction.user,
-            searchEngine: QueryType.AUTO,
-          });
-
-          mappedResultString[i] = `**${i + 1}.** [${
-            result.tracks[0].title
-          } -- ${result.tracks[0].author}](${result.tracks[0].url})`;
-          mappedArray.push(mappedResultString[i]);
-
-          if (action === "play" && sameChannel) {
-            if (i === 0) {
-              song = result.tracks[0];
-              setMetadata(song);
-            }
-
-            await queue.addTrack(result.tracks[0]);
+      switch (sub) {
+        ////////////// handling play subcommand //////////////
+        case "play":
+          if (!queue) {
+            queue = await queueCreator.createFavoriteQueue(
+              client,
+              interaction,
+              song
+            );
           }
-        }
-      }
 
-      if (mappedArray.length === 0) {
-        errorHandler.handleNoResultError(interaction);
-      } else {
-        switch (action) {
-          case "play":
-            if (song.duration.length >= 7) {
-              timer = 10 * 60;
+          if (!queue.connection) {
+            await queue.connect(interaction.member.voice.channel);
+          }
+
+          sameChannel =
+            queue.connection.joinConfig.channelId ===
+            interaction.member.voice.channel.id;
+
+          if (!sameChannel) {
+            errorHandler.handleBusyError(interaction);
+          } else {
+            if (!result.hasTracks()) {
+              errorHandler.handleNoResultError(interaction);
             } else {
-              const duration = song.duration;
-              const convertor = duration.split(":");
-              timer = +convertor[0] * 60 + +convertor[1];
-            }
+              ////////////// add first track to queue //////////////
+              await queue.addTrack(song);
 
-            let nowPlaying = false;
+              const length = playlistLength - 1;
 
-            let queueSize = queue.tracks.size;
-
-            if (!queue.node.isPlaying()) {
-              queueSize = 0;
-              await queue.node.play();
-            }
-
-            nowPlaying = queueSize === 0;
-
-            if (!sameChannel) {
-              errorHandler.handleBusyError(interaction);
-            } else if (target) {
-              if (nowPlaying) {
-                embed.setTitle("🎵 Now Playing");
-
-                await playerDB.updateOne(
-                  { guildId: interaction.guildId },
-                  { isJustAdded: true }
+              ////////////// original response //////////////
+              const { embed, nowPlaying } =
+                embedCreator.createPlayFavoriteEmbed(
+                  owner,
+                  queue,
+                  song,
+                  target,
+                  length
                 );
-              } else {
-                embed.setTitle(`🎵 Track #${queueSize}`);
 
-                await playerDB.updateOne(
-                  { guildId: interaction.guildId },
-                  { isJustAdded: false }
-                );
+              await playerDataHandler.handleData(interaction, nowPlaying);
+
+              if (!queue.node.isPlaying() && !queue.node.isPaused())
+                await queue.node.play();
+
+              const button = buttonCreator.createButtons(nowPlaying);
+
+              await interaction.editReply({
+                embeds: [embed],
+                components: [button],
+              });
+
+              success = true;
+
+              ////////////// add rest of tracks to queue //////////////
+              if (!target) {
+                const { mappedArray, resultArray } =
+                  await searchHandler.searchFavorite(splitPlaylist, 1);
+
+                await queue.addTrack(resultArray);
               }
-
-              embed
-                .setThumbnail(song.thumbnail)
-                .setDescription(
-                  `${user}'s Playlist, Track #${target}\n**[${song.title}](${song.url})**\n**${song.author}**`
-                );
-            } else {
-              embed
-                .setThumbnail(song.thumbnail)
-                .setDescription(
-                  `**[${song.title}](${song.url})**\n**And ${
-                    mappedArray.length - 1
-                  } other tracks**`
-                );
             }
+          }
 
-            const button = buttonCreator.createButtons(nowPlaying);
+          break;
+
+        ////////////// handling view subcommand //////////////
+        case "view":
+          const { mappedArray, resultArray } =
+            await searchHandler.searchFavorite(splitPlaylist, 0);
+
+          if (mappedArray.length === 0) {
+            errorHandler.handleNoResultError(interaction);
+          } else {
+            let page = 0;
+            let totalPages =
+              mappedArray.length > 10 ? Math.ceil(mappedArray.length / 10) : 1;
+
+            let embed = embedCreator.createViewFavoriteEmbed(
+              owner,
+              song,
+              target,
+              page,
+              mappedArray
+            );
+
+            const button = buttonCreator.createFavoriteButtons();
 
             await interaction.editReply({
               embeds: [embed],
               components: [button],
             });
 
-            success = true;
-            break;
+            success = "favorite";
 
-          case "list":
-            if (target) {
-              embed
-                .setThumbnail(song.thumbnail)
-                .setDescription(
-                  `**Track #${target}**\n**[${song.title}](${song.url})**\n**${song.author}**`
+            if (totalPages > 1 && !target) {
+              const collector = reactHandler.pageReact(
+                interaction,
+                favoriteEmbed
+              );
+
+              collector.on("collect", async (reaction, user) => {
+                if (user.bot) return;
+
+                await reaction.users.remove(user.id);
+
+                if (reaction.emoji.name === "➡" && page < totalPages - 1) {
+                  page++;
+                } else if (reaction.emoji.name === "⬅" && page !== 0) {
+                  --page;
+                } else return;
+
+                embed = embedCreator.createViewFavoriteEmbed(
+                  owner,
+                  song,
+                  target,
+                  page,
+                  mappedArray
                 );
 
-              await interaction.editReply({
-                embeds: [embed],
-              });
-            } else {
-              let totalPages =
-                mappedArray.length > 10
-                  ? Math.ceil(mappedArray.length / 10)
-                  : 1;
-              let page = 0;
-
-              let joinedPlaylist = mappedArray
-                .slice(page * 10, page * 10 + 10)
-                .join("\n");
-
-              embed.setDescription(`${joinedPlaylist}`);
-
-              await interaction.editReply({
-                embeds: [embed],
-              });
-
-              if (totalPages > 1) {
-                favoriteEmbed.react("⬅");
-                favoriteEmbed.react("➡");
-
-                const filter = (reaction, user) => {
-                  [`⬅`, `➡`].includes(reaction.emoji.name) &&
-                    user.id === interaction.user.id;
-                };
-                const collector = favoriteEmbed.createReactionCollector(filter);
-                collector.on("collect", async (reaction, user) => {
-                  if (user.bot) return;
-                  reaction.users.remove(reaction.users.cache.get(user.id));
-
-                  if (reaction.emoji.name === `➡`) {
-                    if (page < totalPages - 1) {
-                      page++;
-
-                      joinedPlaylist = mappedArray
-                        .slice(page * 10, page * 10 + 10)
-                        .join("\n");
-
-                      embed.setDescription(`${joinedPlaylist}`);
-
-                      await interaction.editReply({
-                        embeds: [embed],
-                      });
-                    }
-                  } else if (page !== 0) {
-                    --page;
-
-                    joinedPlaylist = mappedArray
-                      .slice(page * 10, page * 10 + 10)
-                      .join("\n");
-
-                    embed.setDescription(`${joinedPlaylist}`);
-
-                    await interaction.editReply({
-                      embeds: [embed],
-                    });
-                  }
-                });
-              }
-            }
-            success = true;
-            break;
-
-          case "remove":
-            if (favoriteList.User !== interactor.id) {
-              errorHandler.handleAccessDeniedError(interaction);
-            } else {
-              let warningEmbed = new EmbedBuilder()
-                .setThumbnail(
-                  `https://cdn3.iconfinder.com/data/icons/flat-common-4/32/delete-warning-512.png`
-                )
-                .setColor(0xffea00);
-
-              const continueButton = new ButtonBuilder()
-                .setCustomId(`continue`)
-                .setLabel(`Continue`)
-                .setStyle(ButtonStyle.Success);
-              const cancelButton = new ButtonBuilder()
-                .setCustomId(`cancel`)
-                .setLabel(`Cancel`)
-                .setStyle(ButtonStyle.Danger);
-              if (target) {
-                warningEmbed
-                  .setTitle("**Deletion Warning**")
-                  .setDescription(
-                    `You are about to remove track #${target} from your playlist:\n**[${song.title}](${song.url})**\nAre you sure you want to continue?`
-                  );
                 await interaction.editReply({
-                  embeds: [warningEmbed],
-                  components: [
-                    new ActionRowBuilder()
-                      .addComponents(cancelButton)
-                      .addComponents(continueButton),
-                  ],
+                  embeds: [embed],
                 });
-                favoriteEmbed
-                  .awaitMessageComponent({
-                    componentType: ComponentType.Button,
-                    time: 5 * 60 * 1000,
-                  })
-                  .then(async (messageComponentInteraction) => {
-                    if (
-                      messageComponentInteraction.customId === `continue` &&
-                      messageComponentInteraction.user.id === favoriteList.User
-                    ) {
-                      const favoriteSongs = favoriteList.Playlist;
-                      const songIndex = favoriteSongs.findIndex(
-                        (favSong) => favSong.Url === song.url
-                      );
-                      favoriteSongs.splice(songIndex, 1);
-                      await favoriteList.save().catch(console.error);
-
-                      embed
-                        .setTitle(`**Delete Track**`)
-                        .setThumbnail(
-                          `https://static.wikia.nocookie.net/logopedia/images/f/fe/Recycle_Bin_Windows_11_empty.png/revision/latest/scale-to-width-down/250?cb=20210616182845`
-                        )
-                        .setDescription(
-                          `**${song.title}**\nhas been removed from your favorite playlist.`
-                        );
-
-                      console.log(
-                        `${messageComponentInteraction.user.username} just removed track #${target} from their favorite playlist.`
-                      );
-
-                      await interaction.editReply({
-                        embeds: [embed],
-                        components: [],
-                      });
-                    } else if (
-                      messageComponentInteraction.customId === `cancel` &&
-                      messageComponentInteraction.user.id === favoriteList.User
-                    ) {
-                      embed
-                        .setTitle(`**Deletion Canceled**`)
-                        .setThumbnail(
-                          `https://cdn-icons-png.flaticon.com/512/5268/5268671.png`
-                        )
-                        .setDescription(`Deletion process has been canceled.`);
-                      await interaction.editReply({
-                        embeds: [embed],
-                        components: [],
-                      });
-                    }
-                  })
-                  .catch((error) => {
-                    if (error.code === "InteractionCollectorError") {
-                      console.log(
-                        `Interaction response timed out for command ${interaction.commandName}.`
-                      );
-                    } else {
-                      console.log(
-                        `Something went wrong while awaiting interaction response for command ${interaction.commandName}.`
-                      );
-                    }
-                  });
-              } else {
-                warningEmbed
-                  .setTitle("**Clearation Warning**")
-                  .setDescription(
-                    "You are about to **clear your playlist completely!**\nAre you sure you want to continue?"
-                  );
-                await interaction.editReply({
-                  embeds: [warningEmbed],
-                  components: [
-                    new ActionRowBuilder()
-                      .addComponents(cancelButton)
-                      .addComponents(continueButton),
-                  ],
-                });
-                favoriteEmbed
-                  .awaitMessageComponent({
-                    componentType: ComponentType.Button,
-                    time: 5 * 60 * 1000,
-                  })
-                  .then(async (messageComponentInteraction) => {
-                    if (
-                      messageComponentInteraction.customId === `continue` &&
-                      messageComponentInteraction.user.id === favoriteList.User
-                    ) {
-                      await favorite.findOneAndDelete({
-                        User: messageComponentInteraction.user.id,
-                      });
-
-                      embed
-                        .setTitle(`**Clear Playlist**`)
-                        .setThumbnail(
-                          `https://static.wikia.nocookie.net/logopedia/images/f/fe/Recycle_Bin_Windows_11_empty.png/revision/latest/scale-to-width-down/250?cb=20210616182845`
-                        )
-                        .setDescription(`Your playlist has been cleared.`);
-
-                      console.log(
-                        `${messageComponentInteraction.user.username} just cleared their favorite playlist.`
-                      );
-
-                      await interaction.editReply({
-                        embeds: [embed],
-                        components: [],
-                      });
-                    } else if (
-                      messageComponentInteraction.customId === `cancel` &&
-                      messageComponentInteraction.user.id === favoriteList.User
-                    ) {
-                      embed
-                        .setTitle(`**Clearation Canceled**`)
-                        .setThumbnail(
-                          `https://cdn-icons-png.flaticon.com/512/5268/5268671.png`
-                        )
-                        .setDescription(
-                          `Clearation process has been canceled.`
-                        );
-
-                      await interaction.editReply({
-                        embeds: [embed],
-                        components: [],
-                      });
-                    }
-                  })
-                  .catch((error) => {
-                    if (error.code === "InteractionCollectorError") {
-                      console.log(
-                        `Interaction response timed out for command ${interaction.commandName}.`
-                      );
-                    } else {
-                      console.log(
-                        `Something went wrong while awaiting interaction response for command ${interaction.commandName}.`
-                      );
-                    }
-                  });
-              }
-              success = true;
+              });
             }
-            break;
+          }
+
+          break;
+
+        ////////////// handling add subcommand //////////////
+        case "add":
+          if (!result.hasTracks()) {
+            errorHandler.handleNoResultError(interaction);
+          } else {
+            const favoriteMode = await favoriteHandler.handleResult(
+              interaction,
+              result
+            );
+
+            const embed = embedCreator.createFavoriteEmbed(song, favoriteMode);
+            const button = buttonCreator.createFavoriteButtons();
+
+            await interaction.editReply({
+              embeds: [embed],
+              components: [button],
+            });
+
+            success = "favorite";
+          }
+
+          break;
+
+        ////////////// handling delete subcommand //////////////
+        case "delete":
+          if (favoriteList.User !== interaction.user.id) {
+            errorHandler.handleAccessDeniedError(interaction);
+          } else {
+            const embed = embedCreator.createDeleteWarningFavoriteEmbed(
+              owner,
+              song,
+              target
+            );
+
+            const button = buttonCreator.createWarningButtons();
+
+            await interaction.editReply({
+              embeds: [embed],
+              components: [button],
+            });
+
+            success = "favorite";
+
+            await favoriteHandler.handleDeletion(
+              interaction,
+              favoriteEmbed,
+              embed,
+              favoriteList,
+              favorite,
+              target,
+              song
+            );
+          }
+
+          break;
+
+        ////////////// handling default subcommad just in case //////////////
+        default: {
+          console.log(
+            `Something went wrong while executing ${interaction.commandName} subcommand.`
+          );
         }
       }
     }
 
-    success ? timer : (timer = 2 * 60);
-    if (timer > 10 * 60) timer = 10 * 60;
-    if (timer < 1 * 60) timer = 1 * 60;
-
-    const timeoutLog = success
-      ? `Failed to delete ${interaction.commandName} interaction.`
-      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
-    setTimeout(() => {
-      if (success && interaction.channel.id === musicChannelID) {
-        interaction.editReply({ components: [] });
-      } else {
-        interaction.deleteReply().catch((e) => {
-          console.log(timeoutLog);
-        });
-      }
-    }, timer * 1000);
+    deletionHandler.handleInteractionDeletion(interaction, success);
   },
 };

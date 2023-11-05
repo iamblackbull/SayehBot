@@ -1,25 +1,31 @@
 const { EmbedBuilder } = require("discord.js");
 const Genius = require("genius-lyrics");
 const genius = new Genius.Client();
+const { footers } = require("../../utils/musicUtils");
+const lyricsSplitter = require("../../utils/splitLyrics");
+const reactHandler = require("../../utils/handleReaction");
 const errorHandler = require("../../utils/handleErrors");
+const deletionHandler = require("../../utils/handleDeletion");
 
 module.exports = {
   data: {
-    name: `lyrics-button`,
+    name: "lyrics-button",
   },
-  async execute(interaction, client) {
+
+  async execute(interaction) {
+    ////////////// return checks //////////////
     let queue = client.player.nodes.get(interaction.guildId);
     if (!queue) return;
-    if (!queue.node.isPlaying()) return;
+    if (!queue.currentTrack) return;
 
     const lyricsEmbed = await interaction.deferReply({
       fetchReply: true,
     });
 
     let success = false;
-
     const songTitle = queue.currentTrack.title;
 
+    ////////////// get lyrics //////////////
     await genius.songs
       .search(`${songTitle}`)
       .then(async function (result) {
@@ -35,18 +41,24 @@ module.exports = {
           })
           .setURL(`${song.url}`)
           .setThumbnail(`${song.image}`)
-          .setColor(0x256fc4);
+          .setColor(0x256fc4)
+          .setFooter({
+            iconURL: footers.genius,
+            text: "Genius",
+          });
 
         if (lyrics.length > 1200) {
-          const chunks = lyrics.match(/(.|[\r\n]){1,1000}/g);
+          ////////////// split lyrics //////////////
+          const chunks = lyricsSplitter.splitLyrics(lyrics, 1000);
 
           let totalPages = chunks.length;
           let page = 0;
 
           let res = chunks[page];
 
+          ////////////// original response //////////////
           embed.setDescription(res).setFooter({
-            iconURL: `https://images.genius.com/0ca83e3130e1303a7f78ba351e3091cd.1000x1000x1.png`,
+            iconURL: footers.genius,
             text: `Genius | Page ${page + 1} of ${totalPages}`,
           });
 
@@ -54,74 +66,45 @@ module.exports = {
             embeds: [embed],
           });
 
-          success = true;
-
-          lyricsEmbed.react(`⬅`);
-          lyricsEmbed.react(`➡`);
-
-          const filter = (reaction, user) => {
-            [`⬅`, `➡`].includes(reaction.emoji.name) &&
-              user.id === interaction.user.id;
-          };
-
-          const collector = lyricsEmbed.createReactionCollector(filter);
+          ////////////// page switching collector //////////////
+          const collector = reactHandler.pageReact(interaction, lyricsEmbed);
 
           collector.on("collect", async (reaction, user) => {
             if (user.bot) return;
 
-            reaction.users.remove(
-              reaction.users.cache.get(interaction.user.id)
-            );
+            await reaction.users.remove(user.id);
 
-            if (reaction.emoji.name === `➡` && page < totalPages - 1) {
+            if (reaction.emoji.name === "➡" && page < totalPages - 1) {
               page++;
-              res = chunks[page];
-
-              embed.setDescription(res).setFooter({
-                iconURL: `https://images.genius.com/0ca83e3130e1303a7f78ba351e3091cd.1000x1000x1.png`,
-                text: `Genius | Page ${page + 1} of ${totalPages}`,
-              });
-
-              interaction.editReply({
-                embeds: [embed],
-              });
-            } else if (reaction.emoji.name == `⬅` && page !== 0) {
+            } else if (reaction.emoji.name == "⬅" && page !== 0) {
               --page;
-              res = chunks[page];
-
-              embed.setDescription(res).setFooter({
-                iconURL: `https://images.genius.com/0ca83e3130e1303a7f78ba351e3091cd.1000x1000x1.png`,
-                text: `Genius | Page ${page + 1} of ${totalPages}`,
-              });
-
-              interaction.editReply({
-                embeds: [embed],
-              });
             }
+
+            res = chunks[page];
+
+            embed.setDescription(res).setFooter({
+              iconURL: footers.genius,
+              text: `Genius | Page ${page + 1} of ${totalPages}`,
+            });
+
+            interaction.editReply({
+              embeds: [embed],
+            });
           });
         } else if (lyrics.length <= 1200) {
-          embed.setDescription(lyrics).setFooter({
-            iconURL: `https://images.genius.com/0ca83e3130e1303a7f78ba351e3091cd.1000x1000x1.png`,
-            text: `Genius`,
-          });
+          embed.setDescription(lyrics);
 
           interaction.editReply({
             embeds: [embed],
           });
-
-          success = true;
         }
+        
+        success = true;
       })
       .catch((error) => {
         errorHandler.handleNoResultError(interaction);
       });
 
-    const timeoutDuration = success ? 10 * 60 * 1000 : 2 * 60 * 1000;
-
-    setTimeout(() => {
-      interaction.deleteReply().catch((e) => {
-        console.log(`Failed to delete Lyrics interaction.`);
-      });
-    }, timeoutDuration);
+    deletionHandler.handleInteractionDeletion(interaction, success);
   },
 };

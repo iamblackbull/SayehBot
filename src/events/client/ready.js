@@ -9,6 +9,20 @@ let checkStreamSInterval;
 let checkStreamHInterval;
 let checkVideoInterval;
 
+function setIntervals(client) {
+  remindBirthdayInterval = setInterval(client.remindBirthday, 10 * 60 * 1000);
+  checkStreamSInterval = setInterval(client.checkStreamS, 10 * 60 * 1000);
+  checkStreamHInterval = setInterval(client.checkStreamH, 10 * 60 * 1000);
+  checkVideoInterval = setInterval(client.checkVideo, 10 * 60 * 1000);
+}
+
+function clearIntervals() {
+  clearInterval(remindBirthdayInterval);
+  clearInterval(checkStreamSInterval);
+  clearInterval(checkStreamHInterval);
+  clearInterval(checkVideoInterval);
+}
+
 module.exports = {
   name: "ready",
   once: true,
@@ -17,10 +31,7 @@ module.exports = {
       `SayehBot is online!\nToday's date: ${currentYear}.${currentMonth}.${currentDate}`
     );
 
-    remindBirthdayInterval = setInterval(client.remindBirthday, 5 * 60 * 1000);
-    checkStreamSInterval = setInterval(client.checkStreamS, 5 * 60 * 1000);
-    checkStreamHInterval = setInterval(client.checkStreamH, 5 * 60 * 1000);
-    checkVideoInterval = setInterval(client.checkVideo, 5 * 60 * 1000);
+    setIntervals(client);
 
     client.user.setPresence({
       activities: [
@@ -31,14 +42,23 @@ module.exports = {
       ],
       status: "online",
     });
+
+    client.on("reconnecting", () => {
+      clearIntervals();
+
+      console.log("SayehBot is reconnecting to Discord.");
+
+      client.on("connect", () => {
+        setIntervals(client);
+
+        console.log("SayehBot is reconnected to Discord.");
+      });
+    });
   },
 };
 
 process.on("SIGINT", () => {
-  clearInterval(remindBirthdayInterval);
-  clearInterval(checkStreamSInterval);
-  clearInterval(checkStreamHInterval);
-  clearInterval(checkVideoInterval);
+  clearIntervals();
 
   console.log("SayehBot is now offline!");
 

@@ -1,14 +1,12 @@
-const {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  PermissionsBitField,
-} = require("discord.js");
-const playerDB = require("../../schemas/player-schema");
-const { useMainPlayer, QueryType } = require("discord-player");
-const { musicChannelID } = process.env;
+const { SlashCommandBuilder, PermissionsBitField } = require("discord.js");
+const playerDataHandler = require("../../utils/handlePlayerData");
 const errorHandler = require("../../utils/handleErrors");
+const searchHandler = require("../../utils/handleSearch");
 const queueCreator = require("../../utils/createQueue");
+const embedCreator = require("../../utils/createEmbed");
 const buttonCreator = require("../../utils/createButtons");
+const reactHandler = require("../../utils/handleReaction");
+const deletionHandler = require("../../utils/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -23,8 +21,8 @@ module.exports = {
     .setDMPermission(false),
 
   async execute(interaction, client) {
+    ////////////// base variables //////////////
     let success = false;
-    let timer;
 
     if (
       !interaction.guild.members.me.permissions.has(
@@ -35,169 +33,83 @@ module.exports = {
     } else if (!interaction.member.voice.channel) {
       errorHandler.handleVoiceChannelError(interaction);
     } else {
-      const player = useMainPlayer();
       const query = interaction.options.getString("query", true);
-
-      const result = await player.search(query, {
-        requestedBy: interaction.user,
-        searchEngine: QueryType.YOUTUBE_SEARCH,
-      });
+      const result = await searchHandler.searchYouTube(query);
 
       if (!result.hasTracks()) {
         errorHandler.handleNoResultError(interaction);
       } else {
+        ////////////// original response //////////////
         const searchEmbed = await interaction.deferReply({
           fetchReply: true,
         });
 
-        const isLink = interaction.options
-          .getString("query")
-          .startsWith("https");
+        const isLink = query.startsWith("https");
 
-        const resultLength = isLink ? 1 : 5;
-
-        const resultString = result.tracks
-          .slice(0, resultLength)
-          .map((song, i) => {
-            return `**${i + 1}.** \`[${song.duration}]\` [${song.title} -- ${
-              song.author
-            }](${song.url})`;
-          })
-          .join("\n");
-
-        const embed = new EmbedBuilder()
-          .setTitle(`🔎 Result`)
-          .setDescription(`${resultString}`)
-          .setColor(0xff0000)
-          .setFooter({
-            iconURL: `https://www.iconpacks.net/icons/2/free-youtube-logo-icon-2431-thumb.png`,
-            text: `YouTube`,
-          });
+        const resultEmbed = embedCreator.createSearchEmbed(result, isLink);
 
         await interaction.editReply({
-          embeds: [embed],
+          embeds: [resultEmbed],
         });
+
         success = true;
 
-        const emojis = [`1️⃣`, `2️⃣`, `3️⃣`, `4️⃣`, `5️⃣`];
+        ////////////// add result to queue collector //////////////
+        const collector = reactHandler.searchReact(
+          interaction,
+          searchEmbed,
+          isLink
+        );
 
-        if (isLink) {
-          searchEmbed.react(emojis[0]);
-        } else {
-          emojis.forEach((emoji) => {
-            searchEmbed.react(emoji);
-          });
-        }
-
-        const filter = (reaction, user) => {
-          emojis.includes(reaction.emoji.name) &&
-            user.id === interaction.user.id;
-        };
-        const collector = searchEmbed.createReactionCollector(filter);
         collector.on("collect", async (reaction, user) => {
           const queue =
             client.player.nodes.get(interaction.guildId) ||
-            await queueCreator.createQueue(client, interaction, result);
+            (await queueCreator.createQueue(client, interaction, result));
 
           if (user.bot) return;
           if (!interaction.member.voice.channel) return;
+
           if (!queue.connection) {
             await queue.connect(interaction.member.voice.channel);
           }
+
           if (
             queue.connection.joinConfig.channelId !==
             interaction.member.voice.channel.id
           )
             return;
 
-          reaction.users.remove(reaction.users.cache.get(user.id));
+          await reaction.users.remove(user.id);
 
-          let song;
-          switch (reaction.emoji.name) {
-            case `1️⃣`:
-              song = result.tracks[0];
-              break;
-            case `2️⃣`:
-              song = result.tracks[1];
-              break;
-            case `3️⃣`:
-              song = result.tracks[2];
-              break;
-            case `4️⃣`:
-              song = result.tracks[3];
-              break;
-            case `5️⃣`:
-              song = result.tracks[4];
-              break;
-          }
+          ////////////// set target song //////////////
+          const index = parseInt(reaction.emoji.name.charAt(0)) - 1;
+          const song = result.tracks[index];
 
           try {
+            ////////////// add track to queue //////////////
             await queue.addTrack(song);
 
-            let queueSize = queue.tracks.size;
+            ////////////// follow-up response //////////////
+            const { embed, nowPlaying } = embedCreator.createTrackEmbed(
+              interaction,
+              queue,
+              result,
+              song
+            );
 
-            if (!queue.node.isPlaying()) {
-              queueSize = 0;
+            await playerDataHandler.handleData(interaction, nowPlaying);
+
+            if (!queue.node.isPlaying() && !queue.node.isPaused())
               await queue.node.play();
-            }
-
-            const nowPlaying = queueSize === 0;
-
-            if (nowPlaying) {
-              embed.setTitle("🎵 Now Playing");
-
-              await playerDB.updateOne(
-                { guildId: interaction.guildId },
-                { isJustAdded: true }
-              );
-            } else {
-              embed.setTitle(`🎵 Track #${queueSize}`);
-
-              await playerDB.updateOne(
-                { guildId: interaction.guildId },
-                { isJustAdded: false }
-              );
-            }
-
-            embed
-              .setDescription(
-                `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`
-              )
-              .setThumbnail(song.thumbnail);
-
-            if (song.duration.length >= 7) {
-              timer = 10 * 60;
-            } else {
-              const duration = song.duration;
-              const convertor = duration.split(":");
-              timer = +convertor[0] * 60 + +convertor[1];
-            }
-
-            if (timer > 10 * 60) timer = 10 * 60;
-            if (timer < 1 * 60) timer = 1 * 60;
 
             const button = buttonCreator.createButtons(nowPlaying);
 
-            await interaction
-              .followUp({ embeds: [embed], components: [button] })
-              .then((message) => {
-                const timeoutLog = success
-                  ? "Failed to delete Search interaction follow-up message."
-                  : "Failed to delete unsuccessfull Search interaction follow-up message.";
-                setTimeout(() => {
-                  if (
-                    success === true &&
-                    interaction.channel.id === musicChannelID
-                  )
-                    message.edit({ components: [] });
-                  else {
-                    message.delete().catch((e) => {
-                      console.log(timeoutLog);
-                    });
-                  }
-                }, timer * 1000);
-              });
-            success = true;
+            const msg = await interaction.followUp({
+              embeds: [embed],
+              components: [button],
+            });
+
+            deletionHandler.handleFollowUpDeletion(interaction, msg, success);
           } catch (error) {
             if (
               error.message.includes("Sign in to confirm your age.") ||
@@ -220,20 +132,7 @@ module.exports = {
         });
       }
     }
-    const timeoutDuration = success ? 10 * 60 * 1000 : 2 * 60 * 1000;
-    const timeoutLog = success
-      ? `Failed to delete ${interaction.commandName} interaction.`
-      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
-    setTimeout(() => {
-      if (success === true && interaction.channel.id === musicChannelID) {
-        searchEmbed.reactions.removeAll().catch((e) => {
-          return;
-        });
-      } else {
-        interaction.deleteReply().catch((e) => {
-          console.log(timeoutLog);
-        });
-      }
-    }, timeoutDuration);
+
+    deletionHandler.handleInteractionDeletion(interaction, success);
   },
 };

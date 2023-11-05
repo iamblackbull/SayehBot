@@ -17,6 +17,7 @@ const notifiedChannels = new Set();
 module.exports = (client) => {
   client.checkVideo = async () => {
     if (mongoose.connection.readyState !== 1) return;
+
     try {
       const data = await parser
         .parseURL(
@@ -29,6 +30,7 @@ module.exports = (client) => {
       let videoList = await video.findOne({
         guild: guild.id,
       });
+
       if (!videoList) {
         videoList = new video({
           guild: guild.id,
@@ -37,67 +39,75 @@ module.exports = (client) => {
         await videoList.save().catch(console.error);
       }
 
-      if (videoList.VideoId !== data.items[0].id) {
-        if (notifiedChannels.has("sayeh")) return;
-        notifiedChannels.add("sayeh");
+      if (videoList.VideoId === data.items[0].id) return;
+      if (notifiedChannels.has("sayeh")) return;
 
-        videoList = await video.updateOne(
-          { guild: guild.id },
-          {
-            VideoId: data.items[0].id,
-          }
-        );
+      notifiedChannels.add("sayeh");
 
-        const channel = await guild.channels
-          .fetch(youtubeChannelID)
-          .catch(console.error);
+      videoList = await video.updateOne(
+        { guild: guild.id },
+        {
+          VideoId: data.items[0].id,
+        }
+      );
 
-        const { title, link, id, author } = data.items[0];
+      const channel = await guild.channels
+        .fetch(youtubeChannelID)
+        .catch(console.error);
 
-        const embed = new EmbedBuilder({
-          title: `**${title}**`,
-          url: link,
-          description: `Sayeh published a video on YouTube!`,
-          color: 0xff0000,
-          timestamp: Date.now(),
-          thumbnail: {
-            url: `https://cdn.discordapp.com/attachments/760838336205029416/1089626902832107590/934476feaab28c0f586b688264b50041.webp`,
-          },
-          image: {
-            url: `https://img.youtube.com/vi/${id.slice(9)}/maxresdefault.jpg`,
-          },
-          author: {
-            name: author,
-            iconURL: `https://cdn.discordapp.com/attachments/760838336205029416/1089626902832107590/934476feaab28c0f586b688264b50041.webp`,
-            url: "https://youtube.com/c/Sayehh/?sub_confirmation=1",
-          },
-          footer: {
-            iconURL: `https://www.iconpacks.net/icons/2/free-youtube-logo-icon-2431-thumb.png`,
-            text: `YouTube`,
-          },
+      const { title, link, id, author } = data.items[0];
+
+      const thumbnailId = id.slice(9);
+      const image = `https://img.youtube.com/vi/${thumbnailId}/maxresdefault.jpg`;
+
+      const embed = new EmbedBuilder()
+        .setTitle(`**${title}**`)
+        .setURL(link)
+        .setAuthor({
+          name: author,
+          iconURL:
+            "https://cdn.discordapp.com/attachments/760838336205029416/1089626902832107590/934476feaab28c0f586b688264b50041.webp",
+          url: "https://youtube.com/c/Sayehh/?sub_confirmation=1",
+        })
+        .setDescription(`Sayeh published a video on YouTube!`)
+        .setColor(0xff0000)
+        .setTimestamp(Date.now())
+        .setImage(image)
+        .setThumbnail(
+          "https://cdn.discordapp.com/attachments/760838336205029416/1089626902832107590/934476feaab28c0f586b688264b50041.webp"
+        )
+        .setFooter({
+          iconURL: `https://cdn4.iconfinder.com/data/icons/logos-and-brands/512/395_Youtube_logo-256.png`,
+          text: "YouTube",
         });
 
-        const youtubeButton = new ButtonBuilder()
-          .setLabel(`Watch Video`)
-          .setURL(`${link}`)
-          .setStyle(ButtonStyle.Link);
+      const Content = `Hey @everyone\n**Sayeh** just published a new video! 😍🔔\n\n## ${title}\n\n${link}`;
 
-        console.log(`Sayeh just published a new video on YouTube!`);
+      const youtubeButton = new ButtonBuilder()
+        .setLabel(`Watch Video`)
+        .setURL(`${link}`)
+        .setStyle(ButtonStyle.Link);
 
-        setTimeout(async () => {
-          await channel
-            .send({
-              embeds: [embed],
-              content: `Hey @everyone\n**Sayeh** just published a new video! 😍🔔\n\n## ${title}\n\n${link}`,
-              components: [new ActionRowBuilder().addComponents(youtubeButton)],
-            })
-            .catch(console.error);
+      const button = new ActionRowBuilder().addComponents(youtubeButton);
 
-          setTimeout(() => {
-            notifiedChannels.delete("sayeh");
-          }, 10 * 60 * 1000);
-        }, 3 * 1000);
-      }
+      console.log(`Sayeh just published a new video on YouTube!`);
+
+      const msg = await channel
+        .send({
+          content: Content,
+        })
+        .catch(console.error);
+
+      setTimeout(async () => {
+        await msg?.edit({
+          embeds: [embed],
+          components: [button],
+        });
+      }, 2 * 1000);
+
+      setTimeout(() => {
+        notifiedChannels.delete("sayeh");
+      }, 10 * 60 * 1000);
     } catch (error) {
       console.log(chalk.red(`Connection to YouTube API failed...`));
     }

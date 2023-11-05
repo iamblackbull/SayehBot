@@ -1,12 +1,26 @@
-async function createQueue(client, interaction, result) {
-  const queue = await client.player.nodes.create(interaction.guild, {
-    metadata: {
-      guild: interaction.guildId,
-      channel: interaction.member.voice.channel,
-      client: interaction.guild.members.me,
-      requestedBy: interaction.user,
-      track: result.tracks[0],
-    },
+async function createMainQueue(client, type, mode, song) {
+  let Metadata = {};
+
+  if (mode === "interaction") {
+    Metadata = {
+      guild: type.guildId,
+      channel: type.member.voice.channel,
+      client: type.guild.members.me,
+      requestedBy: type.user,
+      track: song,
+    };
+  } else {
+    Metadata = {
+      guild: type.guild.id,
+      channel: type.member.voice.channel,
+      client: type.guild.members.me,
+      requestedBy: type.author,
+      track: song,
+    };
+  }
+
+  const queue = await client.player.nodes.create(type.guild, {
+    metadata: Metadata,
     useLegacyFFmpeg: false,
     leaveOnEnd: true,
     leaveOnEmpty: true,
@@ -25,57 +39,24 @@ async function createQueue(client, interaction, result) {
   return queue;
 }
 
-async function createFavoriteQueue(client, interaction) {
-  const queue = await client.player.nodes.create(interaction.guild, {
-    metadata: {
-      guild: interaction.guildId,
-      channel: interaction.member.voice.channel,
-      client: interaction.guild.members.me,
-      requestedBy: interaction.user,
-      track: undefined,
-    },
-    useLegacyFFmpeg: false,
-    leaveOnEnd: true,
-    leaveOnEmpty: true,
-    leaveOnStop: true,
-    leaveOnStopCooldown: 5 * 60 * 1000,
-    leaveOnEndCooldown: 5 * 60 * 1000,
-    leaveOnEmptyCooldown: 5 * 1000,
-    smoothVolume: true,
-    ytdlOptions: {
-      filter: "audioonly",
-      quality: "highestaudio",
-      highWaterMark: 1 << 25,
-    },
-  });
+async function createQueue(client, interaction, result) {
+  const mode = "interaction";
+  const song = result.tracks[0];
 
-  return queue;
+  return createMainQueue(client, interaction, mode, song);
+}
+
+async function createFavoriteQueue(client, interaction, song) {
+  const mode = "interaction";
+
+  return createMainQueue(client, interaction, mode, song);
 }
 
 async function createMessageQueue(client, message, result) {
-  const queue = await client.player.nodes.create(message.guild, {
-    metadata: {
-      guild: message.guild.id,
-      channel: message.member.voice.channel,
-      client: message.guild.members.me,
-      requestedBy: message.author,
-      track: result.tracks[0],
-    },
-    leaveOnEnd: true,
-    leaveOnEmpty: true,
-    leaveOnStop: true,
-    leaveOnStopCooldown: 5 * 60 * 1000,
-    leaveOnEndCooldown: 5 * 60 * 1000,
-    leaveOnEmptyCooldown: 5 * 1000,
-    smoothVolume: true,
-    ytdlOptions: {
-      filter: "audioonly",
-      quality: "highestaudio",
-      highWaterMark: 1 << 25,
-    },
-  });
+  const mode = "message";
+  const song = result.tracks[0];
 
-  return queue;
+  return createMainQueue(client, message, mode, song);
 }
 
 module.exports = {

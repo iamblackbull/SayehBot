@@ -1,15 +1,15 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { useTimeline } = require("discord-player");
-const { musicChannelID } = process.env;
-let repeatMode = false;
+const { titles } = require("../../utils/musicUtils");
+const reactHandler = require("../../utils/handleReaction");
 const errorHandler = require("../../utils/handleErrors");
+const deletionHandler = require("../../utils/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("repeat")
     .setDescription("Toggle repeat mode of the current queue.")
     .addStringOption((option) => {
-      return option
+      option
         .setName(`mode`)
         .setDescription(
           `Select a mode to repeat the current track or repeat the current queue.`
@@ -17,26 +17,33 @@ module.exports = {
         .setRequired(true)
         .addChoices(
           {
-            name: `Track`,
-            value: `track`,
+            name: "Off",
+            value: 0,
           },
           {
-            name: `Queue`,
-            value: `queue`,
+            name: "Repeat track",
+            value: 1,
+          },
+          {
+            name: "Repeat queue",
+            value: 2,
+          },
+          {
+            name: "Autoplay",
+            value: 3,
           }
         );
     })
     .setDMPermission(false),
 
   async execute(interaction, client) {
+    ////////////// base variables //////////////
     const queue = client.player.nodes.get(interaction.guildId);
-
     let success = false;
-    let timer;
 
     if (!interaction.member.voice.channel) {
       errorHandler.handleVoiceChannelError(interaction);
-    } else if (!queue || !queue.node.isPlaying()) {
+    } else if (!queue || !queue.currentTrack) {
       errorHandler.handleQueueError(interaction);
     } else {
       const sameChannel =
@@ -50,91 +57,70 @@ module.exports = {
           fetchReply: true,
         });
 
-        let embed = new EmbedBuilder().setColor(0x25bfc4).setTitle(`🔁 Repeat`);
-        const mode = interaction.options.get("mode").value;
+        ////////////// set repeat mode //////////////
+        const mode = interaction.options.get("mode");
+        const number = mode.value;
 
-        if (!repeatMode || repeatMode !== mode) {
-          repeatMode = mode;
-          switch (mode) {
-            case "track":
-              queue.setRepeatMode(1);
-              break;
-            case "queue":
-              queue.setRepeatMode(2);
-              break;
-          }
+        await queue.setRepeatMode(number);
 
-          embed.setDescription(
-            `Repeat mode for ${mode} is **ON**.\nUse </repeat:1047903145071759428> again or react below to turn it off.`
-          );
-        } else if (repeatMode === mode) {
-          repeatMode = false;
-          queue.setRepeatMode(0);
+        ////////////// original response //////////////
+        const sentence =
+          number == 0
+            ? "Repeat mode is now **OFF**."
+            : `${mode} mode is now **ON**.`;
 
-          embed.setDescription(
-            `Repeat mode for ${mode} **OFF**.\nUse </repeat:1047903145071759428> again to turn it on.`
-          );
-        }
+        const description = `${sentence}\nUse </repeat:1047903145071759428> again or react below to toggle.`;
+
+        const embed = new EmbedBuilder()
+          .setDescription(description)
+          .setColor(0x25bfc4)
+          .setTitle(titles.repeat);
+
         await interaction.editReply({
           embeds: [embed],
         });
+
         success = true;
 
-        if (repeatMode) {
-          repeatEmbed.react(`❌`);
-        }
+        if (queue.repeatMode !== 0) {
+          ////////////// toggle repeat mode collector //////////////
+          const collector = reactHandler.repeatReact(interaction, repeatEmbed);
 
-        const filter = (reaction, user) => {
-          [`❌`].includes(reaction.emoji.name) &&
-            user.id === interaction.user.id;
-        };
-        const collector = repeatEmbed.createReactionCollector(filter);
-        collector.on("collect", async (reaction, user) => {
-          if (user.bot) return;
+          collector.on("collect", async (user) => {
+            if (user.bot) return;
 
-          repeatEmbed.reactions.removeAll();
+            await reaction.users.remove(user.id);
 
-          repeatMode = false;
-          queue.setRepeatMode(0);
+            const toggleNumber =
+              queue.repeatMode == 3 ? 0 : queue.repeatMode + 1;
 
-          embed.setDescription(
-            `Repeat mode is **OFF**.\nUse </repeat:1047903145071759428> again to turn it on.`
-          );
-          await interaction.editReply({
-            embeds: [embed],
+            await queue.setRepeatMode(toggleNumber);
+
+            const repeatModes = [
+              "None",
+              "Repeat Track",
+              "Repeat Queue",
+              "Autoplay",
+            ];
+            const repeatMode = repeatModes[toggleNumber];
+
+            const toggleSentence =
+              toggleNumber == 0
+                ? "Repeat mode is now **OFF**."
+                : `${repeatMode} mode is now **ON**.`;
+
+            const toggleDescription = `${toggleSentence}\nUse </repeat:1047903145071759428> or react again to toggle.`;
+
+            embed.setDescription(toggleDescription);
+
+            await interaction.editReply({
+              embeds: [embed],
+            });
           });
-          success = true;
-        });
-
-        const { timestamp } = useTimeline(interaction.guildId);
-        const duration = timestamp.total.label;
-        const convertor = duration.split(":");
-        const totalTimer = +convertor[0] * 60 + +convertor[1];
-
-        const currentDuration = timestamp.current.label;
-        const currentConvertor = currentDuration.split(":");
-        const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
-
-        timer = totalTimer - currentTimer;
+        }
       }
     }
-    if (timer > 10 * 60) timer = 10 * 60;
-    if (timer < 1 * 60) timer = 1 * 60;
 
-    const timeoutDuration = success ? timer * 1000 : 2 * 60 * 1000;
-    const timeoutLog = success
-      ? `Failed to delete ${interaction.commandName} interaction.`
-      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
-    setTimeout(() => {
-      if (success && interaction.channel.id === musicChannelID) {
-        repeatEmbed.reactions.removeAll().catch((e) => {
-          return;
-        });
-      } else {
-        interaction.deleteReply().catch((e) => {
-          console.log(timeoutLog);
-        });
-      }
-    }, timeoutDuration);
+    deletionHandler.handleInteractionDeletion(interaction, success);
   },
 };

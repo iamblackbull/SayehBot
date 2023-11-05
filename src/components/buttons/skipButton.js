@@ -1,104 +1,93 @@
-const { EmbedBuilder } = require("discord.js");
-const playerDB = require("../../schemas/player-schema");
-const { musicChannelID } = process.env;
-const footerSetter = require("../../utils/setFooter");
-const buttonCreator = require("../../utils/createButtons");
+const embedCreator = require("../../utils/createEmbed");
+const reactHandler = require("../../utils/handleReaction");
+const skipHandler = require("../../utils/handleSkip");
+const deletionHandler = require("../../utils/handleDeletion");
 
 module.exports = {
   data: {
-    name: `skip-button`,
+    name: "skip-button",
   },
+
   async execute(interaction, client) {
+    ////////////// return checks //////////////
     const queue = client.player.nodes.get(interaction.guildId);
+    let success = false;
+
     if (!queue) return;
-    if (!queue.node.isPlaying()) return;
-    if (!interaction.member.voice.channel) return;
+    if (!queue.currentTrack) return;
     if (
       queue.connection.joinConfig.channelId !==
-      interaction.member.voice.channel.id
+      interaction.member.voice?.channel?.id
     )
       return;
 
-    const previousSong = queue.currentTrack;
-
-    await queue.node.skip();
-
-    const song = queue.tracks.at(0) || null;
-
-    await playerDB.updateOne(
-      { guildId: interaction.guildId },
-      { isSkipped: true }
-    );
-
-    const user = interaction.user;
-    const avatar = user.displayAvatarURL({ size: 1024, dynamic: true });
-
-    let embed = new EmbedBuilder().setColor(0xc42525).setAuthor({
-      name: interaction.member.nickname || user.username,
-      iconURL: avatar,
-      url: avatar,
+    const skipEmbed = await interaction.deferReply({
+      fetchReply: true,
     });
 
-    let success = false;
-    let timer;
+    ////////////// vote requirement check //////////////
+    const requiredVotes = Math.ceil(
+      (interaction.member.voice.channel.members.size - 1) / 2
+    );
 
-    if (song == null || !song) {
-      embed
-        .setTitle("⏭ **Skipped**")
-        .setDescription(
-          `**[${previousSong.title}](${previousSong.url})**\n**${previousSong.author}**`
-        )
-        .setThumbnail(previousSong.thumbnail);
+    const allowed =
+      interaction.member.permissions.has("MANAGE_MESSAGES") ||
+      requiredVotes <= 1;
 
-      success = true;
-      timer = 2 * 60;
+    success = true;
 
-      await interaction.reply({
-        embeds: [embed],
-      });
+    if (allowed) {
+      await skipHandler.skip(interaction, queue, true);
     } else {
-      embed
-        .setTitle(`🎵 **Playing Next**`)
-        .setDescription(
-          `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`
-        )
-        .setThumbnail(song.thumbnail);
+      ////////////// vote phase //////////////
+      let embed = embedCreator.createVoteEmbed(requiredVotes, "start");
 
-      footerSetter.setFooter(embed, song);
-
-      if (!queue.node.isPlaying()) await queue.node.play();
-
-      if (song.duration.length >= 7) {
-        timer = 10 * 60;
-      } else {
-        const duration = song.duration;
-        const convertor = duration.split(":");
-        timer = +convertor[0] * 60 + +convertor[1];
-      }
-
-      const button = buttonCreator.createButtons(true);
-
-      await interaction.reply({
+      await interaction.editReply({
         embeds: [embed],
-        components: [button],
       });
-      success = true;
-    }
-    success ? timer : (timer = 2 * 60);
-    if (timer > 10 * 60) timer = 10 * 60;
-    if (timer < 1 * 60) timer = 1 * 60;
 
-    const timeoutLog = success
-      ? `Failed to delete ${interaction.commandName} interaction.`
-      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
-    setTimeout(() => {
-      if (success && interaction.channel.id === musicChannelID) {
-        interaction.editReply({ components: [] });
-      } else {
-        interaction.deleteReply().catch((e) => {
-          console.log(timeoutLog);
-        });
-      }
-    }, timer * 1000);
+      let votes = 0;
+      let skip = false;
+      const timer = requiredVotes * 5 * 1000;
+
+      const collector = reactHandler.voteReact(interaction, skipEmbed, timer);
+
+      collector.on("collect", async (user) => {
+        if (user.bot) return;
+
+        if (!skip) {
+          votes++;
+
+          if (votes >= requiredVotes) {
+            skip = true;
+            collector.stop();
+
+            await interaction.reactions.removeAll();
+
+            embed = embedCreator.createVoteEmbed(requiredVotes, "success");
+
+            await interaction.editReply({
+              embeds: [embed],
+            });
+
+            await skipHandler.skip(interaction, queue, true);
+          }
+        }
+      });
+
+      collector.on("end", async (reason) => {
+        await interaction.reactions.removeAll();
+
+        if (reason === "time" && !skip) {
+          embed = embedCreator.createVoteEmbed(requiredVotes, "fail");
+
+          await interaction.editReply({
+            embeds: [embed],
+          });
+        }
+      });
+    }
+
+    deletionHandler.handleInteractionDeletion(interaction, success);
   },
 };

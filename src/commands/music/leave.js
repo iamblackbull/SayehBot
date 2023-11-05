@@ -1,14 +1,21 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { musicChannelID } = process.env;
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  PermissionFlagsBits,
+} = require("discord.js");
+const { titles } = require("../../utils/musicUtils");
 const errorHandler = require("../../utils/handleErrors");
+const deletionHandler = require("../../utils/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("leave")
     .setDescription("Disconnect the bot and delete the current queue.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .setDMPermission(false),
 
   async execute(interaction, client) {
+    ////////////// base variables //////////////
     let queue = client.player.nodes.get(interaction.guildId);
     let success = false;
 
@@ -24,11 +31,12 @@ module.exports = {
       if (!sameChannel) {
         errorHandler.handleBusyError(interaction);
       } else {
-        queue.delete();
+        ////////////// delete queue and leave //////////////
+        await queue.delete();
 
         const embed = new EmbedBuilder()
-          .setTitle(`❎ Leave`)
-          .setDescription(`Queue has been reset.`)
+          .setTitle(titles.leave)
+          .setDescription(`Queue has been destroyed.`)
           .setColor(0x256fc4)
           .setThumbnail(
             `https://icons.veryicon.com/png/o/miscellaneous/programming-software-icons/reset-28.png`
@@ -38,17 +46,7 @@ module.exports = {
         success = true;
       }
     }
-    const timeoutDuration = success ? 5 * 60 * 1000 : 2 * 60 * 1000;
-    const timeoutLog = success
-      ? `Failed to delete ${interaction.commandName} interaction.`
-      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
-    setTimeout(() => {
-      if (success && interaction.channel.id === musicChannelID) return;
-      else {
-        interaction.deleteReply().catch((e) => {
-          console.log(timeoutLog);
-        });
-      }
-    }, timeoutDuration);
+
+    deletionHandler.handleInteractionDeletion(interaction, success);
   },
 };

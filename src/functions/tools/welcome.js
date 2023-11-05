@@ -111,16 +111,22 @@ module.exports = (client) => {
     if (welcomeMessageSent.has(member.id)) return;
     welcomeMessageSent.add(member.id);
 
+    let msg;
     setTimeout(async () => {
-      await channel.send({
+      msg = await channel.send({
         content: content,
-        files: [attachment],
       });
 
       setTimeout(() => {
         welcomeMessageSent.delete(member.id);
       }, 10 * 60 * 1000);
     }, 2 * 1000);
+
+    setTimeout(async () => {
+      await msg.edit({
+        files: [attachment],
+      });
+    }, 1 * 1000);
   });
 
   client.on("guildMemberRemove", async (member) => {

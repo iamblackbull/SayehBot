@@ -1,50 +1,5 @@
 const { EmbedBuilder } = require("discord.js");
 
-let actionFailedError = new EmbedBuilder()
-  .setTitle(`**Action Failed**`)
-  .setColor(0xffea00)
-  .setThumbnail(
-    `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-  );
-
-const noResultError = new EmbedBuilder()
-  .setTitle(`**No Result**`)
-  .setDescription(`Make sure you input a valid query.`)
-  .setColor(0xffea00)
-  .setThumbnail(`https://cdn-icons-png.flaticon.com/512/6134/6134065.png`);
-
-const busyError = new EmbedBuilder()
-  .setTitle(`**Busy**`)
-  .setDescription(`Bot is busy in another voice channel.`)
-  .setColor(0x256fc4)
-  .setThumbnail(`https://cdn-icons-png.flaticon.com/512/1830/1830857.png`);
-
-const restriceError = new EmbedBuilder()
-  .setTitle(`**Age / Sensitive restriction**`)
-  .setDescription(
-    `Track found but unable to play it due to age limitation or sensitive content restriction.`
-  )
-  .setColor(0xffea00)
-  .setThumbnail(`https://cdn-icons-png.flaticon.com/512/6711/6711603.png`);
-
-const thirdPartyError = new EmbedBuilder()
-  .setTitle(`**Third-Party Error**`)
-  .setDescription(
-    `Track found but unable to retrieve audio data due to third-party package failure.`
-  )
-  .setColor(0xffea00)
-  .setThumbnail(`https://cdn-icons-png.flaticon.com/512/7508/7508992.png`);
-
-const unknownError = new EmbedBuilder()
-  .setTitle(`**Unkown Error**`)
-  .setDescription(
-    `Track found but unable to stream audio. Unkown error occurred.`
-  )
-  .setColor(0xe01010)
-  .setThumbnail(
-    `https://cdn.pixabay.com/photo/2015/06/09/16/12/error-803716_1280.png`
-  );
-
 async function handleDatabaseError(interaction) {
   const databaseError = new EmbedBuilder()
     .setTitle(`**Connection Timed out!**`)
@@ -61,9 +16,17 @@ async function handleDatabaseError(interaction) {
   } else {
     await interaction.reply({
       embeds: [databaseError],
+      ephemeral: interaction.customId?.includes("favorite-button"),
     });
   }
 }
+
+let actionFailedError = new EmbedBuilder()
+  .setTitle(`**Action Failed**`)
+  .setColor(0xffea00)
+  .setThumbnail(
+    `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
+  );
 
 async function handlePermissionError(interaction) {
   actionFailedError.setDescription(`Bot doesn't have the required permission!`);
@@ -119,7 +82,7 @@ async function handleVoiceChannelErrorMessage(message) {
 
 async function handleQueueError(interaction) {
   actionFailedError.setDescription(
-    `There is no queue or queue history is not available.`
+    `There is no queue, queue is empty or queue history is not available.`
   );
 
   if (interaction.deferred || interaction.replied) {
@@ -132,6 +95,12 @@ async function handleQueueError(interaction) {
     });
   }
 }
+
+const noResultError = new EmbedBuilder()
+  .setTitle(`**No Result**`)
+  .setDescription(`Make sure you input a valid query.`)
+  .setColor(0xffea00)
+  .setThumbnail(`https://cdn-icons-png.flaticon.com/512/6134/6134065.png`);
 
 async function handleNoResultError(interaction) {
   if (interaction.deferred || interaction.replied) {
@@ -153,6 +122,12 @@ async function handleNoResultErrorMessage(message) {
   return msg;
 }
 
+const busyError = new EmbedBuilder()
+  .setTitle(`**Busy**`)
+  .setDescription(`Bot is busy in another voice channel.`)
+  .setColor(0x256fc4)
+  .setThumbnail(`https://cdn-icons-png.flaticon.com/512/1830/1830857.png`);
+
 async function handleBusyError(interaction) {
   if (interaction.deferred || interaction.replied) {
     await interaction.editReply({
@@ -172,6 +147,14 @@ async function handleBusyErrorMessage(message) {
 
   return msg;
 }
+
+const restriceError = new EmbedBuilder()
+  .setTitle(`**Age / Sensitive restriction**`)
+  .setDescription(
+    `Track found but unable to play it due to age limitation or sensitive content restriction.`
+  )
+  .setColor(0xffea00)
+  .setThumbnail(`https://cdn-icons-png.flaticon.com/512/6711/6711603.png`);
 
 async function handleRestriceError(interaction) {
   if (interaction.deferred || interaction.replied) {
@@ -193,6 +176,14 @@ async function handleRestriceErrorMessage(message) {
   return msg;
 }
 
+const thirdPartyError = new EmbedBuilder()
+  .setTitle(`**Third-Party Error**`)
+  .setDescription(
+    `Track found but unable to retrieve audio data due to third-party package failure.`
+  )
+  .setColor(0xffea00)
+  .setThumbnail(`https://cdn-icons-png.flaticon.com/512/7508/7508992.png`);
+
 async function handleThirdPartyError(interaction) {
   if (interaction.deferred || interaction.replied) {
     await interaction.editReply({
@@ -213,6 +204,16 @@ async function handleThirdPartyErrorMessage(message) {
   return msg;
 }
 
+const unknownError = new EmbedBuilder()
+  .setTitle(`**Unknown Error**`)
+  .setDescription(
+    `An Unknown error occurred.`
+  )
+  .setColor(0xe01010)
+  .setThumbnail(
+    `https://cdn.pixabay.com/photo/2015/06/09/16/12/error-803716_1280.png`
+  );
+
 async function handleUnknownError(interaction) {
   if (interaction.deferred || interaction.replied) {
     await interaction.editReply({
@@ -221,6 +222,7 @@ async function handleUnknownError(interaction) {
   } else {
     await interaction.reply({
       embeds: [unknownError],
+      ephemeral: interaction.customId?.includes("favorite-button"),
     });
   }
 }

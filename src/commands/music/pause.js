@@ -1,32 +1,23 @@
-const {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-} = require("discord.js");
-const { useTimeline } = require("discord-player");
-const { musicChannelID } = process.env;
+const { SlashCommandBuilder } = require("discord.js");
+const embedCreator = require("../../utils/createEmbed");
+const buttonCreator = require("../../utils/createButtons");
 const errorHandler = require("../../utils/handleErrors");
+const deletionHandler = require("../../utils/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("pause")
-    .setDescription("Pause / Resume the current track")
+    .setDescription("Toggle pause mode the current track.")
     .setDMPermission(false),
 
   async execute(interaction, client) {
+    ////////////// base variables //////////////
     const queue = client.player.nodes.get(interaction.guildId);
-
-    const { timestamp } = useTimeline(interaction.guildId);
-
-    let embed = new EmbedBuilder().setColor(0x256fc4);
     let success = false;
-    let timer;
 
     if (!interaction.member.voice.channel) {
       errorHandler.handleVoiceChannelError(interaction);
-    } else if (!queue || queue.tracks.size === 0) {
+    } else if (!queue || !queue.currentTrack) {
       errorHandler.handleQueueError(interaction);
     } else {
       const sameChannel =
@@ -36,48 +27,9 @@ module.exports = {
       if (!sameChannel) {
         errorHandler.handleBusyError(interaction);
       } else {
-        if (queue.node.isPlaying()) {
-          await queue.node.pause();
-
-          embed
-            .setTitle(`⏸ Paused`)
-            .setDescription(
-              "Use </pause:1047903145071759424> again or click the button below to resume the music."
-            )
-            .setThumbnail(
-              `https://cdn-icons-png.flaticon.com/512/148/148746.png`
-            );
-        } else {
-          await queue.node.resume();
-
-          if (!queue.node.isPlaying()) await queue.node.play();
-
-          embed
-            .setTitle(`▶ Resumed`)
-            .setDescription(
-              "Use </pause:1047903145071759424> again or click the button below to pause the music."
-            )
-            .setThumbnail(
-              `https://www.freepnglogos.com/uploads/play-button-png/index-media-cover-art-play-button-overlay-5.png`
-            );
-        }
-
-        const duration = timestamp.total.label;
-        const convertor = duration.split(":");
-        const totalTimer = +convertor[0] * 60 + +convertor[1];
-
-        const currentDuration = timestamp.current.label;
-        const currentConvertor = currentDuration.split(":");
-        const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
-
-        timer = totalTimer - currentTimer;
-
-        const pauseButton = new ButtonBuilder()
-          .setCustomId(`pause-button`)
-          .setEmoji(`⏸`)
-          .setStyle(ButtonStyle.Secondary);
-
-        const button = new ActionRowBuilder().addComponents(pauseButton);
+        ////////////// toggle pause mode of queue //////////////
+        const embed = embedCreator.createPauseEmbed(interaction);
+        const button = buttonCreator.createPauseButtons();
 
         await interaction.reply({
           embeds: [embed],
@@ -87,21 +39,6 @@ module.exports = {
       }
     }
 
-    if (timer > 10 * 60) timer = 10 * 60;
-    if (timer < 1 * 60) timer = 1 * 60;
-
-    const timeoutDuration = success ? timer * 1000 : 2 * 60 * 1000;
-    const timeoutLog = success
-      ? `Failed to delete ${interaction.commandName} interaction.`
-      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
-    setTimeout(() => {
-      if (success && interaction.channel.id === musicChannelID) {
-        pauseEmbed.reactions.removeAll();
-      } else {
-        interaction.deleteReply().catch((e) => {
-          console.log(timeoutLog);
-        });
-      }
-    }, timeoutDuration);
+    deletionHandler.handleInteractionDeletion(interaction, success);
   },
 };
