@@ -19,48 +19,48 @@ module.exports = {
       subcommand
         .setName("play")
         .setDescription("Play a favorite playlist.")
-        .addIntegerOption((option) => {
+        .addIntegerOption((option) =>
           option
             .setName("position")
             .setDescription("Input a favorite playlist track position to play.")
             .setMinValue(1)
-            .setRequired(false);
-        })
-        .addUserOption((option) => {
+            .setRequired(false)
+        )
+        .addUserOption((option) =>
           option
             .setName("user")
             .setDescription("Pick any member to play their favorite playlist.")
-            .setRequired(false);
-        })
+            .setRequired(false)
+        )
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName("view")
         .setDescription("View and interact with a favorite playlist.")
-        .addIntegerOption((option) => {
+        .addIntegerOption((option) =>
           option
             .setName("position")
             .setDescription("Input a favorite playlist track position to view.")
             .setMinValue(1)
-            .setRequired(false);
-        })
-        .addUserOption((option) => {
+            .setRequired(false)
+        )
+        .addUserOption((option) =>
           option
             .setName("user")
             .setDescription("Pick any member to view their favorite playlist.")
-            .setRequired(false);
-        })
+            .setRequired(false)
+        )
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName("add")
         .setDescription("Add a track to your own favorite playlist.")
-        .addStringOption((option) => {
+        .addStringOption((option) =>
           option
             .setName("query")
             .setDescription("Input a track url.")
-            .setRequired(true);
-        })
+            .setRequired(true)
+        )
     )
     .addSubcommand((subcommand) =>
       subcommand
@@ -68,15 +68,15 @@ module.exports = {
         .setDescription(
           "Delete a track or clear all tracks from your own favorite playlist."
         )
-        .addIntegerOption((option) => {
+        .addIntegerOption((option) =>
           option
             .setName("position")
             .setDescription(
               "Input a favorite playlist track position to delete."
             )
             .setMinValue(1)
-            .setRequired(false);
-        })
+            .setRequired(false)
+        )
     )
     .setDMPermission(false),
 
@@ -213,12 +213,18 @@ module.exports = {
               mappedArray
             );
 
-            const button = buttonCreator.createFavoriteButtons();
+            if (target) {
+              const button = buttonCreator.createFavoriteButtons();
 
-            await interaction.editReply({
-              embeds: [embed],
-              components: [button],
-            });
+              await interaction.editReply({
+                embeds: [embed],
+                components: [button],
+              });
+            } else {
+              await interaction.editReply({
+                embeds: [embed],
+              });
+            }
 
             success = "favorite";
 

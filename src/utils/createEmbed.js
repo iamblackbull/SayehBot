@@ -22,7 +22,11 @@ function createEmbed({ title, description, color, author, thumbnail, footer }) {
 
 function determineSourceAndColor(url) {
   const sources = {
-    music: { iconURL: footers.music, text: "Music", color: colors.music },
+    music: {
+      iconURL: footers.music,
+      text: "Music",
+      color: colors.music,
+    },
     youtube: {
       iconURL: footers.youtube,
       text: "YouTube",
@@ -61,21 +65,18 @@ function determineSourceAndColor(url) {
 
 function createTrackEmbed(interaction, queue, result, song) {
   const playlist = result?.playlist;
-  const length = result?.tracks.length - 1;
+  const length = result?.tracks?.length - 1;
 
   let queueSize = queue.tracks.size;
 
-  if (queueSize === 0 && queue.currentTrack?.url !== song.url) {
-    queueSize = 1;
+  if (queueSize === 1 && queue.currentTrack?.url === song.url) {
+    queueSize = 0;
   }
 
   let nowPlaying = queueSize === 0;
 
   let title;
-  if (interaction?.commandName === "jump") {
-    title = titles.jump;
-    nowPlaying = true;
-  } else if (interaction?.commandName === "previous") {
+  if (interaction?.commandName === "previous") {
     title = titles.previous;
     nowPlaying = true;
   } else if (interaction?.commandName === "replay") {
@@ -175,7 +176,7 @@ function createSearchEmbed(result, isLink) {
   return embed;
 }
 
-async function createPauseEmbed(interaction) {
+async function createPauseEmbed(interaction, client) {
   const queue = client.player.nodes.get(interaction.guildId);
 
   const user = interaction.user;
@@ -252,7 +253,6 @@ async function createButtonEmbed(song, interaction, nowPlaying) {
     author: {
       name,
       avatar,
-      avatar,
     },
     thumbnail,
     footer: {
@@ -285,41 +285,30 @@ function createQueueEmbed(page, totalPages, queue) {
     length: 14,
   });
 
-  const repeatModes = ["None", "Track", "Queue", "Autoplay"];
+  const repeatModes = ["None", "Repeat track", "Repeat queue", "Autoplay"];
   const repeatDescription =
     queue.repeatMode > 0
-      ? `**${titles.repeat} mode :** ${repeatModes[queue.repeatMode]}\n`
+      ? `**🔁 ${repeatModes[queue.repeatMode]}** mode is enabled.\n`
       : "";
 
   const filtersDescription =
     queue.filters.ffmpeg.filters.length > 0
-      ? `**✨ ${
-          queue.filters.ffmpeg.filters.length
-        } filters are enabled :** ${queue.filters.ffmpeg.filters
-          .join(", ")
-          .slice(1, -1)}\n`
+      ? `**✨ ${queue.filters.ffmpeg.filters.length} filters are enabled :** ${queue.filters.ffmpeg.filters}\n`
       : "";
-
-  const totalDuration = queue.tracks
-    .slice(1)
-    .reduce((acc, track) => acc + track.duration, 0);
-
-  const hours = Math.floor(totalDuration / 3600);
-  const minutes = Math.floor((totalDuration % 3600) / 60);
-
-  const queueDuration = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 
   const description =
     `${repeatDescription}${filtersDescription}\n${queueTitle}\n` +
     `**[${song.title}](${song.url})**\n**${song.author}**` +
     `\n\n` +
     bar +
-    `\n\n### ${titles.upcoming} (${queueDuration})\n` +
+    `\n\n### ${titles.upcoming}\n` +
     (queueStringLength > 0 ? `${queueString}` : "None");
 
   const color = colors.music;
   const iconURL = footers.page;
-  const text = `Page ${page} of ${totalPages} (${queueStringLength} Tracks)`;
+  const text = `Page ${
+    page + 1
+  } of ${totalPages} (${queueStringLength} Tracks)`;
 
   const embed = createEmbed({
     title,
@@ -447,7 +436,6 @@ function createPlayFavoriteEmbed(owner, queue, song, target, length) {
     author: {
       name,
       avatar,
-      avatar,
     },
     thumbnail,
     footer: {
@@ -490,7 +478,6 @@ function createViewFavoriteEmbed(owner, song, target, page, mappedArray) {
     author: {
       name,
       avatar,
-      avatar,
     },
     thumbnail,
     footer: {
@@ -530,8 +517,84 @@ function createDeleteWarningFavoriteEmbed(owner, song, target) {
     author: {
       name,
       avatar,
-      avatar,
     },
+    thumbnail,
+    footer: {
+      iconURL,
+      text,
+    },
+  });
+
+  return embed;
+}
+
+function createFilterEmbed(description) {
+  const title = titles.filter;
+  const thumbnail = thumbnails.filter;
+  const { iconURL, text, color } = determineSourceAndColor("music");
+
+  const embed = createEmbed({
+    title,
+    description,
+    color,
+    thumbnail,
+    footer: {
+      iconURL,
+      text,
+    },
+  });
+
+  return embed;
+}
+
+function createRepeatEmbed(description) {
+  const title = titles.repeat;
+  const thumbnail = thumbnails.repeat;
+  const { iconURL, text, color } = determineSourceAndColor("music");
+
+  const embed = createEmbed({
+    title,
+    description,
+    color,
+    thumbnail,
+    footer: {
+      iconURL,
+      text,
+    },
+  });
+
+  return embed;
+}
+
+function createShuffleEmbed(description) {
+  const title = titles.shuffle;
+  const thumbnail = thumbnails.shuffle;
+  const { iconURL, text, color } = determineSourceAndColor("music");
+
+  const embed = createEmbed({
+    title,
+    description,
+    color,
+    thumbnail,
+    footer: {
+      iconURL,
+      text,
+    },
+  });
+
+  return embed;
+}
+
+function createLeaveEmbed() {
+  const title = titles.leave;
+  const description = "Queue has been destroyed.";
+  const thumbnail = thumbnails.leave;
+  const { iconURL, text, color } = determineSourceAndColor("music");
+
+  const embed = createEmbed({
+    title,
+    description,
+    color,
     thumbnail,
     footer: {
       iconURL,
@@ -554,4 +617,8 @@ module.exports = {
   createPlayFavoriteEmbed,
   createViewFavoriteEmbed,
   createDeleteWarningFavoriteEmbed,
+  createFilterEmbed,
+  createRepeatEmbed,
+  createShuffleEmbed,
+  createLeaveEmbed,
 };

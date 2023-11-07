@@ -7,7 +7,7 @@ function calculateTimer(id, success) {
   if (success) {
     const { timestamp } = useTimeline(id);
 
-    if (!timestamp || !timestamp.total.label || !timestamp.current.label)
+    if (!timestamp || !timestamp.total || !timestamp.current)
       timer = 2 * 60;
 
     const duration = timestamp.total.label;
@@ -67,7 +67,7 @@ function handleInteractionDeletion(interaction, success) {
   }, timer * 1000);
 }
 
-async function handleMessageDelection(firstMsg, msg, success) {
+async function handleMessageDelection(client, firstMsg, msg, success) {
   const timer = calculateTimer(msg.guild.id, success);
 
   const un = success ? "" : "un";
@@ -90,7 +90,7 @@ async function handleMessageDelection(firstMsg, msg, success) {
 }
 
 function handleEventDelection(msg) {
-  const timer = calculateTimer(msg.guild.id, success);
+  const timer = calculateTimer(msg.guild.id, true);
 
   setTimeout(async () => {
     await msg?.delete().catch((e) => {

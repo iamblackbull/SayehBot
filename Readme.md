@@ -45,7 +45,7 @@
 - ## Install these primary packages
   > - sudo npm i discord.js @discordjs/opus@0.8.0 @discordjs/rest @discordjs/voice@0.11.0 axios canvas@2.11.2 chalk@4.1.2 discord-api-types discord-giveaways@6.0.1 discord-xp@1.1.16 dotenv ffmpeg-static libsodium-wrappers@0.7.10 moment-timezone@0.5.37 mongoose ms@2.1.3 nasa-apod@0.2.0 node-fetch@3.2.10 node-twitch@0.4.7 rss-parser@3.12.0 weather-js@2.0.0 node-pre-gyp node-opus opusscript@0.0.8 noderiowrapper@1.1.1 tracker.gg@1.1.2 steam-market-pricing@2.0.0 oxr@1.1.4 movier@3.0.1 genius-lyrics@4.4.3 steam-searcher@1.0.4 node-os-utils
 - ## Install discord-player packages
-  > - sudo npm i discord-player @discord-player/downloader @discord-player/extractor
+  > - sudo npm i discord-player
 - ## Install ytdl-core
   > - sudo npm i @distube/ytdl-core
 
@@ -77,7 +77,7 @@
 
 # **FIX COMMON ISSUES**
 
-- **NOTE**: After performing any changes or edites, you should restart the bot to apply the changes.
+- **NOTE**: After performing any changes or edites, you should restart the bot to apply them.
 - ## Duplicated messages or spamming
   > - Reboot the server with `sudo reboot`
   > - If the problem is still there, reset pm2 with `rm -rf ~/.pm2`
@@ -98,7 +98,7 @@
   >> - Restart the bot.
 - ## Music features related issues
   > - If the logged error was something like this: **Invalid or unexpected token**, then it's a **ytdl-core** related issue. In that case, do as follows:
-  >> - Check ytdl-core github repository [here](https://github.com/fent/node-ytdl-core) and make sure you have the latest version installed.
+  >> - Check **ytdl-core** github repository [here](https://github.com/fent/node-ytdl-core) and make sure you have the latest version installed.
   >> - Try downgrading to older versions. **4.10.0** usually works.  
   > - Check **discord-player** repository [here](https://github.com/Androz2091/discord-player) and make sure you have the latest version installed.
   > - Check **ffmpeg-static** repository [here](https://github.com/eugeneware/ffmpeg-static) and make sure you have the latest version installed.

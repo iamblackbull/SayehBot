@@ -1,14 +1,16 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { titles } = require("../../utils/musicUtils");
+const { SlashCommandBuilder } = require("discord.js");
+const embedCreator = require("../../utils/createEmbed");
 const reactHandler = require("../../utils/handleReaction");
 const errorHandler = require("../../utils/handleErrors");
 const deletionHandler = require("../../utils/handleDeletion");
+
+const repeatModes = ["None", "Repeat track", "Repeat queue", "Autoplay"];
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("repeat")
     .setDescription("Toggle repeat mode of the current queue.")
-    .addStringOption((option) => {
+    .addStringOption((option) =>
       option
         .setName(`mode`)
         .setDescription(
@@ -18,22 +20,22 @@ module.exports = {
         .addChoices(
           {
             name: "Off",
-            value: 0,
+            value: "0",
           },
           {
-            name: "Repeat track",
-            value: 1,
+            name: "Repeat Track",
+            value: "1",
           },
           {
-            name: "Repeat queue",
-            value: 2,
+            name: "Repeat Queue",
+            value: "2",
           },
           {
             name: "Autoplay",
-            value: 3,
+            value: "3",
           }
-        );
-    })
+        )
+    )
     .setDMPermission(false),
 
   async execute(interaction, client) {
@@ -59,7 +61,8 @@ module.exports = {
 
         ////////////// set repeat mode //////////////
         const mode = interaction.options.get("mode");
-        const number = mode.value;
+        const number = parseInt(mode.value, 10);
+        const modeName = repeatModes[number];
 
         await queue.setRepeatMode(number);
 
@@ -67,14 +70,14 @@ module.exports = {
         const sentence =
           number == 0
             ? "Repeat mode is now **OFF**."
-            : `${mode} mode is now **ON**.`;
+            : `${modeName} mode is now **ON**.`;
 
-        const description = `${sentence}\nUse </repeat:1047903145071759428> again or react below to toggle.`;
+        const reminder =
+          "Use </repeat:1047903145071759428> again or react below to toggle.";
 
-        const embed = new EmbedBuilder()
-          .setDescription(description)
-          .setColor(0x25bfc4)
-          .setTitle(titles.repeat);
+        const description = `${sentence}\n${reminder}`;
+
+        let embed = embedCreator.createRepeatEmbed(description);
 
         await interaction.editReply({
           embeds: [embed],
@@ -82,42 +85,34 @@ module.exports = {
 
         success = true;
 
-        if (queue.repeatMode !== 0) {
-          ////////////// toggle repeat mode collector //////////////
-          const collector = reactHandler.repeatReact(interaction, repeatEmbed);
+        ////////////// toggle repeat mode collector //////////////
+        const collector = reactHandler.repeatReact(interaction, repeatEmbed);
 
-          collector.on("collect", async (user) => {
-            if (user.bot) return;
+        collector.on("collect", async (reaction, user) => {
+          if (user.bot) return;
 
-            await reaction.users.remove(user.id);
+          await reaction.users.remove(user.id);
 
-            const toggleNumber =
-              queue.repeatMode == 3 ? 0 : queue.repeatMode + 1;
+          const toggleNumber =
+            queue.repeatMode === 3 ? 0 : queue.repeatMode + 1;
 
-            await queue.setRepeatMode(toggleNumber);
+          await queue.setRepeatMode(toggleNumber);
 
-            const repeatModes = [
-              "None",
-              "Repeat Track",
-              "Repeat Queue",
-              "Autoplay",
-            ];
-            const repeatMode = repeatModes[toggleNumber];
+          const secondModeName = repeatModes[toggleNumber];
 
-            const toggleSentence =
-              toggleNumber == 0
-                ? "Repeat mode is now **OFF**."
-                : `${repeatMode} mode is now **ON**.`;
+          const toggleSentence =
+            toggleNumber == 0
+              ? "Repeat mode is now **OFF**."
+              : `${secondModeName} mode is now **ON**.`;
 
-            const toggleDescription = `${toggleSentence}\nUse </repeat:1047903145071759428> or react again to toggle.`;
+          const toggleDescription = `${toggleSentence}\n${reminder}`;
 
-            embed.setDescription(toggleDescription);
+          embed = embedCreator.createRepeatEmbed(toggleDescription);
 
-            await interaction.editReply({
-              embeds: [embed],
-            });
+          await interaction.editReply({
+            embeds: [embed],
           });
-        }
+        });
       }
     }
 

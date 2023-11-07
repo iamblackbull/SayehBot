@@ -55,43 +55,41 @@ module.exports = {
 
         success = true;
 
-        if (totalPages > 1) {
-          ////////////// page switching collector //////////////
-          const collector = reactHandler.queueReact(interaction, queueEmbed);
+        ////////////// page switching collector //////////////
+        const collector = reactHandler.queueReact(interaction, queueEmbed);
 
-          collector.on("collect", async (reaction, user) => {
-            if (user.bot) return;
+        collector.on("collect", async (reaction, user) => {
+          if (user.bot) return;
 
-            await reaction.users.remove(user.id);
+          await reaction.users.remove(user.id);
 
-            if (!queue || !queue.currentTrack) return;
+          if (!queue || !queue.currentTrack) return;
 
-            if (reaction.emoji.name == "➡" && page < totalPages - 1) {
-              page++;
-            } else if (reaction.emoji.name == "⬅" && page !== 0) {
-              --page;
-            } else if (reaction.emoji.name == "🔀") {
-              await queue.tracks.shuffle();
-            } else if (reaction.emoji.name == "🔁") {
-              const toggleNumber =
-                queue.repeatMode == 3 ? 0 : queue.repeatMode + 1;
+          if (reaction.emoji.name == "➡" && page < totalPages - 1) {
+            page++;
+          } else if (reaction.emoji.name == "⬅" && page !== 0) {
+            --page;
+          } else if (reaction.emoji.name == "🔀" && queue?.tracks.size !== 0) {
+            await queue.tracks.shuffle();
+          } else if (reaction.emoji.name == "🔁") {
+            const toggleNumber =
+              queue.repeatMode == 3 ? 0 : queue.repeatMode + 1;
 
-              await queue.setRepeatMode(toggleNumber);
-            } else return;
+            await queue.setRepeatMode(toggleNumber);
+          } else return;
 
-            totalPages = Math.ceil(queue.tracks.data.length / 10) || 1;
+          totalPages = Math.ceil(queue.tracks.data.length / 10) || 1;
 
-            const updatedEmbed = embedCreator.createQueueEmbed(
-              page,
-              totalPages,
-              queue
-            );
+          const updatedEmbed = embedCreator.createQueueEmbed(
+            page,
+            totalPages,
+            queue
+          );
 
-            interaction.editReply({
-              embeds: [updatedEmbed],
-            });
+          interaction.editReply({
+            embeds: [updatedEmbed],
           });
-        }
+        });
       }
     }
 

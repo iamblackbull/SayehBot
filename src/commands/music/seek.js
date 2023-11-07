@@ -7,21 +7,21 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("seek")
     .setDescription("Seek to a specific duration in the current track.")
-    .addIntegerOption((options) => {
+    .addIntegerOption((options) =>
       options
         .setName("minutes")
         .setDescription("Input a amount of minutes to seek.")
         .setMinValue(1)
-        .setRequired(true);
-    })
-    .addIntegerOption((options) => {
+        .setRequired(true)
+    )
+    .addIntegerOption((options) =>
       options
         .setName("seconds")
         .setDescription("Input a amount of seconds to seek.")
         .setMinValue(1)
         .setMaxValue(59)
-        .setRequired(false);
-    })
+        .setRequired(false)
+    )
     .setDMPermission(false),
 
   async execute(interaction, client) {

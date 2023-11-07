@@ -1,5 +1,5 @@
 const { ComponentType } = require("discord.js");
-const favorite = require("../../schemas/favorite-schema");
+const favorite = require("../schemas/favorite-schema");
 const { titles } = require("./musicUtils");
 
 async function updateFavoriteList(user, song) {

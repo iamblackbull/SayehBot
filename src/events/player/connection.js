@@ -4,7 +4,7 @@ module.exports = {
   name: "connection",
   isPlayerEvent: true,
   async execute(queue) {
-    if (queue.metadata.channel.id !== queue.connection.joinConfig.channelId)
+    if (queue.metadata.channel?.id !== queue.connection.joinConfig.channelId)
       return queue.delete();
     queue.connection.on("stateChange", function (oldState, newState) {
       var oldNetworking = Reflect.get(oldState, "networking");

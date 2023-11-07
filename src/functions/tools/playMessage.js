@@ -109,6 +109,6 @@ module.exports = (client) => {
       }
     }
 
-    deletionHandler.handleMessageDelection(firstMsg, msg, success);
+    deletionHandler.handleMessageDelection(client, firstMsg, msg, success);
   });
 };

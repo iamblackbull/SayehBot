@@ -1,12 +1,12 @@
 const {
   SlashCommandBuilder,
-  EmbedBuilder,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
   ActionRowBuilder,
 } = require("discord.js");
 const { AudioFilters, useTimeline } = require("discord-player");
-const { titles, thumbnails, filters } = require("../../utils/musicUtils");
+const { filters } = require("../../utils/musicUtils");
+const embedCreator = require("../../utils/createEmbed");
 const errorHandler = require("../../utils/handleErrors");
 const deletionHandler = require("../../utils/handleDeletion");
 
@@ -48,11 +48,6 @@ module.exports = {
         errorHandler.handleBusyError(interaction);
       } else {
         ////////////// creating original response //////////////
-        const embed = new EmbedBuilder()
-          .setColor(0xc42577)
-          .setTitle(titles.filter)
-          .setThumbnail(thumbnails.filter);
-
         const filtersOptions = filters.map((filter) => {
           const isEnabled = queue.filters.ffmpeg.filters.includes(filter.value);
 
@@ -64,13 +59,15 @@ module.exports = {
             .setDefault(isEnabled);
         });
 
+        let description;
+
         if (queue.filters.ffmpeg.filters.length > 0) {
-          embed.setDescription(
-            `**${queue.filters.ffmpeg.filters.length}** filters are enabled.`
-          );
+          description = `**${queue.filters.ffmpeg.filters.length}** filters are enabled.`;
         } else {
-          embed.setDescription(`Filters are disabled.`);
+          description = "Filters are disabled.";
         }
+
+        let embed = embedCreator.createFilterEmbed(description);
 
         const filterMenu = new StringSelectMenuBuilder()
           .setCustomId(`filters`)
@@ -105,9 +102,7 @@ module.exports = {
 
         try {
           const collector = await filterEmbed.createMessageComponentCollector({
-            filter: (input) =>
-              input.user.voice?.channel?.id ===
-              interaction.member.voice.channel.id,
+            filter: (input) => input.user.id === interaction.user.id,
             time: timer * 1000,
           });
 
@@ -119,7 +114,7 @@ module.exports = {
               queue.filters.ffmpeg.setFilters(false);
             }
             if (input.values.length === 0) {
-              embed.setDescription("Filters are disabled.");
+              description = "Filters are disabled.";
             } else {
               if (
                 input.values.includes("bassboost_low") &&
@@ -131,7 +126,7 @@ module.exports = {
               queue.filters.ffmpeg.toggle(input.values);
 
               ////////////// updating embed //////////////
-              embed.setDescription(`**${
+              description = `**${
                 queue.filters.ffmpeg.filters.length
               }** filters are enabled.\n
               ${input.values
@@ -142,8 +137,10 @@ module.exports = {
 
                   return `- **${filter.emoji} ${filter.label}**`;
                 })
-                .join("\n")}`);
+                .join("\n")}`;
             }
+
+            embed = embedCreator.createFilterEmbed(description);
 
             ////////////// updating menu //////////////
             const updatedOptions = filters.map((filter) => {

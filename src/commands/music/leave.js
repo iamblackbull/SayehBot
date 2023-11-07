@@ -1,9 +1,5 @@
-const {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  PermissionFlagsBits,
-} = require("discord.js");
-const { titles } = require("../../utils/musicUtils");
+const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
+const embedCreator = require("../../utils/createEmbed");
 const errorHandler = require("../../utils/handleErrors");
 const deletionHandler = require("../../utils/handleDeletion");
 
@@ -34,13 +30,7 @@ module.exports = {
         ////////////// delete queue and leave //////////////
         await queue.delete();
 
-        const embed = new EmbedBuilder()
-          .setTitle(titles.leave)
-          .setDescription(`Queue has been destroyed.`)
-          .setColor(0x256fc4)
-          .setThumbnail(
-            `https://icons.veryicon.com/png/o/miscellaneous/programming-software-icons/reset-28.png`
-          );
+        const embed = embedCreator.createLeaveEmbed();
 
         await interaction.reply({ embeds: [embed] });
         success = true;

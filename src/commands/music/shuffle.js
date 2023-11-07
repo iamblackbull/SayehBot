@@ -1,5 +1,5 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { titles } = require("../../utils/musicUtils");
+const { SlashCommandBuilder } = require("discord.js");
+const embedCreator = require("../../utils/createEmbed");
 const reactHandler = require("../../utils/handleReaction");
 const errorHandler = require("../../utils/handleErrors");
 const deletionHandler = require("../../utils/handleDeletion");
@@ -32,15 +32,12 @@ module.exports = {
           fetchReply: true,
         });
 
-        let embed = new EmbedBuilder()
-          .setTitle(titles.shuffle)
-          .setDescription(
-            `Queue of **${queue.tracks.data.length} tracks** has been shuffled!`
-          )
-          .setColor(0x25bfc4)
-          .setThumbnail(
-            `https://png.pngtree.com/png-vector/20230228/ourmid/pngtree-shuffle-vector-png-image_6622846.png`
-          );
+        const reminder =
+          "Use </shuffle:1047903145218547863> again or react below to reshuffle.";
+
+        let description = `Queue of **${queue.tracks.data.length} tracks** has been shuffled!\n${reminder}`;
+
+        let embed = embedCreator.createShuffleEmbed(description);
 
         ////////////// shuffle queue //////////////
         await queue.tracks.shuffle();
@@ -61,9 +58,9 @@ module.exports = {
 
           await queue.tracks.shuffle();
 
-          embed.setDescription(
-            `Queue of **${queue.tracks.data.length} tracks** has been shuffled again!`
-          );
+          description = `Queue of **${queue.tracks.data.length} tracks** has been reshuffled!\n${reminder}`;
+
+          embed = embedCreator.createShuffleEmbed(description);
 
           await interaction.editReply({
             embeds: [embed],
