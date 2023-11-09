@@ -7,21 +7,21 @@ function calculateTimer(id, success) {
   if (success) {
     const { timestamp } = useTimeline(id);
 
-    if (!timestamp || !timestamp.total || !timestamp.current)
-      timer = 2 * 60;
+    if (!timestamp || !timestamp.total || !timestamp.current) timer = 2 * 60;
+    else {
+      const duration = timestamp.total.label;
+      const convertor = duration.split(":");
+      const totalTimer = +convertor[0] * 60 + +convertor[1];
 
-    const duration = timestamp.total.label;
-    const convertor = duration.split(":");
-    const totalTimer = +convertor[0] * 60 + +convertor[1];
+      const currentDuration = timestamp.current.label;
+      const currentConvertor = currentDuration.split(":");
+      const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
 
-    const currentDuration = timestamp.current.label;
-    const currentConvertor = currentDuration.split(":");
-    const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
+      timer = totalTimer - currentTimer;
 
-    timer = totalTimer - currentTimer;
-
-    if (timer > 10 * 60) timer = 10 * 60;
-    if (timer < 1 * 60) timer = 1 * 60;
+      if (timer > 10 * 60) timer = 10 * 60;
+      if (timer < 1 * 60) timer = 1 * 60;
+    }
   } else {
     timer = 2 * 60;
   }

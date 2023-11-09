@@ -3,7 +3,7 @@ const embedCreator = require("./createEmbed");
 const buttonCreator = require("./createButtons");
 const errorHandler = require("./handleErrors");
 
-async function skip(interaction, queue, isButton) {
+async function skip(interaction, queue) {
   let trackNumber = interaction.options?.getInteger("position") || false;
 
   if (trackNumber && trackNumber > queue.tracks.size) {
@@ -23,39 +23,33 @@ async function skip(interaction, queue, isButton) {
     song = queue.currentTrack;
   }
 
-  await queue.node.skipTo(trackNumber - 1);
+  const { embed, nowPlaying } = embedCreator.createTrackEmbed(
+    interaction,
+    queue,
+    false,
+    song
+  );
 
-  let Embed;
-  if (isButton) {
-    Embed = embedCreator.handleButtonEmbed(song, interaction, NowPlaying);
+  NowPlaying = nowPlaying;
+
+  const button = buttonCreator.createButtons(NowPlaying);
+
+  if (trackNumber === 1) {
+    await queue.node.skip();
   } else {
-    const { embed, nowPlaying } = embedCreator.createTrackEmbed(
-      interaction,
-      queue,
-      false,
-      song
-    );
-
-    Embed = embed;
-    NowPlaying = nowPlaying;
+    await queue.node.skipTo(trackNumber - 1);
   }
 
   if (NowPlaying) {
     if (!queue.node.isPlaying()) await queue.node.play();
 
     await playerDataHandler.handleSkipData(interaction);
-
-    const button = buttonCreator.createButtons(true);
-
-    await interaction.editReply({
-      embeds: [Embed],
-      components: [button],
-    });
-  } else {
-    await interaction.editReply({
-      embeds: [Embed],
-    });
   }
+
+  await interaction.editReply({
+    embeds: [embed],
+    components: [button],
+  });
 }
 
 async function previous(interaction, queue, previous) {

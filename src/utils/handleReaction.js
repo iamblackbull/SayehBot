@@ -5,62 +5,39 @@ const voteReaction = "⏭";
 function createCollector(interaction, reply, emojis, timer) {
   emojis.forEach((emoji) => reply.react(emoji));
 
-  const filter = (reaction, user) => {
-    return (
-      emojis.includes(reaction.emoji.name) && user.id === interaction.user.id
-    );
-  };
+  const filter = (reaction, user) =>
+    emojis.includes(reaction.emoji.name) &&
+    (!timer || user.id === interaction.user.id);
 
-  let collectorFilter = { filter };
-  if (timer) {
-    collectorFilter = { filter, time: timer };
-  }
+  const collectorOptions = timer ? { filter, time: timer } : { filter };
 
-  const collector = reply.createReactionCollector(collectorFilter);
+  const collector = reply.createReactionCollector(collectorOptions);
 
   return collector;
 }
 
-const queueReact = (interaction, reply) => {
-  const collector = createCollector(interaction, reply, reactions, false);
-  return collector;
-};
+const queueReact = (interaction, reply) =>
+  createCollector(interaction, reply, reactions, false);
 
-const searchReact = (interaction, reply, isLink) => {
-  let collector;
-  if (isLink) {
-    collector = createCollector(interaction, reply, numberReactions[0], false);
-  } else {
-    collector = createCollector(interaction, reply, numberReactions, false);
-  }
-
-  return collector;
-};
-
-const pageReact = (interaction, reply) => {
-  const collector = createCollector(
+const searchReact = (interaction, reply, isLink) =>
+  createCollector(
     interaction,
     reply,
-    [reactions[0], reactions[1]],
+    isLink ? [numberReactions[0]] : numberReactions,
     false
   );
-  return collector;
-};
 
-const shuffleReact = (interaction, reply) => {
-  const collector = createCollector(interaction, reply, [reactions[2]], false);
-  return collector;
-};
+const pageReact = (interaction, reply) =>
+  createCollector(interaction, reply, [reactions[0], reactions[1]], false);
 
-const repeatReact = (interaction, reply) => {
-  const collector = createCollector(interaction, reply, [reactions[3]], false);
-  return collector;
-};
+const shuffleReact = (interaction, reply) =>
+  createCollector(interaction, reply, [reactions[2]], false);
 
-const voteReact = (interaction, reply, timer) => {
-  const collector = createCollector(interaction, reply, [voteReaction], timer);
-  return collector;
-};
+const repeatReact = (interaction, reply) =>
+  createCollector(interaction, reply, [reactions[3]], false);
+
+const voteReact = (interaction, reply, timer) =>
+  createCollector(interaction, reply, [voteReaction], timer);
 
 module.exports = {
   queueReact,

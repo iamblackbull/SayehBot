@@ -69,29 +69,43 @@ function createTrackEmbed(interaction, queue, result, song) {
 
   let queueSize = queue.tracks.size;
 
-  if (queueSize === 1 && queue.currentTrack?.url === song.url) {
+  if (queueSize === 0 && queue.node.isPlaying) {
+    queueSize = 1;
+  }
+
+  if (queueSize === 1 && !queue.node.isPlaying() && !queue.node.isPaused()) {
     queueSize = 0;
   }
 
   let nowPlaying = queueSize === 0;
 
   let title;
-  if (interaction?.commandName === "previous") {
-    title = titles.previous;
-    nowPlaying = true;
-  } else if (interaction?.commandName === "replay") {
-    title = titles.replay;
-    nowPlaying = true;
-  } else if (interaction?.commandName === "skip" && !nowPlaying)
-    title = titles.skip;
-  else {
-    title = playlist
-      ? playlist.url.toLowerCase().includes("album")
-        ? titles.album
-        : titles.playlist
-      : nowPlaying
-      ? titles.nowplaying
-      : `🎵 Track ${queueSize}`;
+
+  if (interaction.commandName) {
+    if (interaction.commandName === "previous") {
+      title = titles.previous;
+      nowPlaying = true;
+    } else if (interaction.commandName === "replay") {
+      title = titles.replay;
+      nowPlaying = true;
+    } else if (interaction.commandName === "skip" && !nowPlaying)
+      title = titles.skip;
+    else {
+      title = playlist
+        ? playlist.url.toLowerCase().includes("album")
+          ? titles.album
+          : titles.playlist
+        : nowPlaying
+        ? titles.nowplaying
+        : `🎵 Track ${queueSize}`;
+    }
+  } else if (interaction.customId) {
+    if (interaction.customId === "previous-button") {
+      if (nowPlaying) title = titles.previous;
+      else title = titles.replay;
+    } else if (interaction.customId === "replay-button") title = titles.replay;
+    else if (interaction.customId === "skip-button" && !nowPlaying)
+      title = titles.skip;
   }
 
   const description = playlist
@@ -176,21 +190,7 @@ function createSearchEmbed(result, isLink) {
   return embed;
 }
 
-async function createPauseEmbed(interaction, client) {
-  const queue = client.player.nodes.get(interaction.guildId);
-
-  const user = interaction.user;
-  const name = interaction.member.nickname || user.username;
-  const avatar = user.displayAvatarURL({ size: 1024, dynamic: true });
-
-  const author = interaction.customId?.includes("button")
-    ? {
-        name,
-        avatar,
-        avatar,
-      }
-    : false;
-
+async function createPauseEmbed(queue) {
   let title;
   let thumbnail;
 
@@ -215,7 +215,6 @@ async function createPauseEmbed(interaction, client) {
     title,
     description,
     color,
-    author,
     thumbnail,
     footer: {
       iconURL,
@@ -226,11 +225,7 @@ async function createPauseEmbed(interaction, client) {
   return embed;
 }
 
-async function createButtonEmbed(song, interaction, nowPlaying) {
-  const user = interaction.user;
-  const name = interaction.member.nickname || user.username;
-  const avatar = user.displayAvatarURL({ size: 1024, dynamic: true });
-
+function createButtonEmbed(song, interaction, nowPlaying) {
   let title = titles.nowplaying;
   if (interaction.customId === "previous-button") {
     if (nowPlaying) title = titles.previous;
@@ -250,10 +245,6 @@ async function createButtonEmbed(song, interaction, nowPlaying) {
     title,
     description,
     color,
-    author: {
-      name,
-      avatar,
-    },
     thumbnail,
     footer: {
       iconURL,
@@ -379,7 +370,7 @@ function createFavoriteEmbed(song, favoriteMode) {
       break;
   }
 
-  const description = `${descriptionMode}\nUse </favorite:1108681222764367962> to interact with your playlist.`;
+  const description = `${descriptionMode}\nUse </favorite play:1108681222764367962> to play your playlist.`;
 
   const { iconURL, text, color } = determineSourceAndColor("favorite");
 
@@ -406,7 +397,7 @@ function createPlayFavoriteEmbed(owner, queue, song, target, length) {
 
   let queueSize = queue.tracks.size;
 
-  if (queueSize === 0 && queue.currentTrack?.url !== song.url) {
+  if (queueSize === 1 && !queue.node.isPlaying() && !queue.node.isPaused()) {
     queueSize = 1;
   }
 
@@ -435,7 +426,7 @@ function createPlayFavoriteEmbed(owner, queue, song, target, length) {
     color,
     author: {
       name,
-      avatar,
+      iconURL: avatar,
     },
     thumbnail,
     footer: {
@@ -447,7 +438,7 @@ function createPlayFavoriteEmbed(owner, queue, song, target, length) {
   return { embed, nowPlaying };
 }
 
-function createViewFavoriteEmbed(owner, song, target, page, mappedArray) {
+function createViewFavoriteEmbed(owner, object, target, page) {
   const user = owner.username;
   const name = target
     ? `${user}'s Favorites (Track ${target})`
@@ -457,17 +448,17 @@ function createViewFavoriteEmbed(owner, song, target, page, mappedArray) {
   const title = titles.viewfavorite;
 
   let description;
+  let thumbnail;
+
   if (target) {
-    description = `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`;
+    description = `**[${object.title}](${object.url})**\n**${object.author}**\n${object.duration}`;
+    thumbnail = object.thumbnail;
   } else {
-    const joinedPlaylist = mappedArray
-      .slice(page * 10, page * 10 + 10)
-      .join("\n");
+    const joinedPlaylist = object.slice(page * 10, page * 10 + 10).join("\n");
 
     description = joinedPlaylist;
+    thumbnail = undefined;
   }
-
-  const thumbnail = song.thumbnail;
 
   const { iconURL, text, color } = determineSourceAndColor("favorite");
 
@@ -477,7 +468,7 @@ function createViewFavoriteEmbed(owner, song, target, page, mappedArray) {
     color,
     author: {
       name,
-      avatar,
+      iconURL: avatar,
     },
     thumbnail,
     footer: {
@@ -498,13 +489,8 @@ function createDeleteWarningFavoriteEmbed(owner, song, target) {
 
   const title = titles.viewfavorite;
 
-  let description;
-  if (target) {
-    description = `You are about to delete this track from your playlist:\n**[${song.title}](${song.url})**\nAre you sure you want to continue?`;
-  } else {
-    description =
-      "**You are about to clear your favorite playlist completely!**\nAre you sure you want to continue?";
-  }
+  const mode = target ? `**[${song.title}](${song.url})**` : "**all tracks**";
+  const description = `You are about to delete ${mode} from your playlist.\nAre you sure you want to continue?`;
 
   const thumbnail = thumbnails.deletewarning;
 
@@ -516,7 +502,7 @@ function createDeleteWarningFavoriteEmbed(owner, song, target) {
     color,
     author: {
       name,
-      avatar,
+      iconURL: avatar,
     },
     thumbnail,
     footer: {

@@ -27,7 +27,7 @@ module.exports = {
       ephemeral: true,
     });
 
-    const favoriteMode = await favoriteHandler.handleTrack(interaction);
+    const favoriteMode = await favoriteHandler.handleTrack(interaction, client);
     const embed = embedCreator.createFavoriteEmbed(song, favoriteMode);
 
     await interaction.editReply({

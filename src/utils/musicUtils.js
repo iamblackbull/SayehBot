@@ -16,8 +16,8 @@ const titles = {
   filter: "**✨ Audio Filters**",
   search: "**🔎 Search Result**",
   leave: "**❎ Leave**",
-  addfavorite: "**➕ Add Track**",
-  removefavorite: "**➖ Remove Track**",
+  addfavorite: "**Add Track**",
+  removefavorite: "**Remove Track**",
   fullfavorite: "**Full Playlist**",
   viewfavorite: "**👁 View Playlist**",
   clearfavorite: "**🚮 Clear Playlist**",
@@ -43,7 +43,7 @@ const buttons = {
 
 const footers = {
   youtube: "https://i.imgur.com/lP3PjwD.png",
-  spotify: "https://i.imgur.com/EmKH0Qd.png",
+  spotify: "https://i.imgur.com/nMOYQ9T.png",
   soundcloud: "https://i.imgur.com/HCydoIE.png",
   applemusic: "https://i.imgur.com/1lJOb6i.png",
   genius: "https://i.imgur.com/qJJpRQ4.png",

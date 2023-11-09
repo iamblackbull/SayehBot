@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 const errorHandler = require("../../utils/handleErrors");
 const embedCreator = require("../../utils/createEmbed");
 const reactHandler = require("../../utils/handleReaction");
@@ -45,13 +45,14 @@ module.exports = {
         );
 
         const allowed =
-          interaction.member.permissions.has("MANAGE_MESSAGES") ||
-          requiredVotes <= 1;
+          interaction.member.permissions.has(
+            PermissionFlagsBits.ManageMessages
+          ) || requiredVotes <= 1;
 
         success = true;
 
         if (allowed) {
-          await skipHandler.skip(interaction, queue, false);
+          await skipHandler.skip(interaction, queue);
         } else {
           ////////////// vote phase //////////////
           let embed = embedCreator.createVoteEmbed(requiredVotes, "start");
@@ -88,7 +89,7 @@ module.exports = {
                   embeds: [embed],
                 });
 
-                await skipHandler.skip(interaction, queue, false);
+                await skipHandler.skip(interaction, queue);
               }
             }
           });

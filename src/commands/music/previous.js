@@ -1,4 +1,8 @@
-const { SlashCommandBuilder, PermissionsBitField } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  PermissionsBitField,
+  PermissionFlagsBits,
+} = require("discord.js");
 const errorHandler = require("../../utils/handleErrors");
 const embedCreator = require("../../utils/createEmbed");
 const reactHandler = require("../../utils/handleReaction");
@@ -43,8 +47,9 @@ module.exports = {
         );
 
         const allowed =
-          interaction.member.permissions.has("MANAGE_MESSAGES") ||
-          requiredVotes <= 1;
+          interaction.member.permissions.has(
+            PermissionFlagsBits.ManageMessages
+          ) || requiredVotes <= 1;
 
         success = true;
 

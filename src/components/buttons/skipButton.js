@@ -1,3 +1,4 @@
+const { PermissionFlagsBits } = require("discord.js");
 const embedCreator = require("../../utils/createEmbed");
 const reactHandler = require("../../utils/handleReaction");
 const skipHandler = require("../../utils/handleSkip");
@@ -31,13 +32,13 @@ module.exports = {
     );
 
     const allowed =
-      interaction.member.permissions.has("MANAGE_MESSAGES") ||
+      interaction.member.permissions.has(PermissionFlagsBits.ManageMessages) ||
       requiredVotes <= 1;
 
     success = true;
 
     if (allowed) {
-      await skipHandler.skip(interaction, queue, true);
+      await skipHandler.skip(interaction, queue);
     } else {
       ////////////// vote phase //////////////
       let embed = embedCreator.createVoteEmbed(requiredVotes, "start");
@@ -52,7 +53,7 @@ module.exports = {
 
       const collector = reactHandler.voteReact(interaction, skipEmbed, timer);
 
-      collector.on("collect", async (user) => {
+      collector.on("collect", async (reaction, user) => {
         if (user.bot) return;
 
         if (!skip) {
@@ -62,7 +63,7 @@ module.exports = {
             skip = true;
             collector.stop();
 
-            await interaction.reactions.removeAll();
+            await reaction?.users?.remove(user.id);
 
             embed = embedCreator.createVoteEmbed(requiredVotes, "success");
 
@@ -70,14 +71,12 @@ module.exports = {
               embeds: [embed],
             });
 
-            await skipHandler.skip(interaction, queue, true);
+            await skipHandler.skip(interaction, queue);
           }
         }
       });
 
       collector.on("end", async (reason) => {
-        await interaction.reactions.removeAll();
-
         if (reason === "time" && !skip) {
           embed = embedCreator.createVoteEmbed(requiredVotes, "fail");
 

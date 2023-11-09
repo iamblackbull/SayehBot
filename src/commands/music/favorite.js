@@ -18,7 +18,7 @@ module.exports = {
     .addSubcommand((subcommand) =>
       subcommand
         .setName("play")
-        .setDescription("Play a favorite playlist.")
+        .setDescription("Play from a favorite playlist.")
         .addIntegerOption((option) =>
           option
             .setName("position")
@@ -125,8 +125,6 @@ module.exports = {
 
       const song = result.tracks[0];
 
-      module.exports = { song };
-
       switch (sub) {
         ////////////// handling play subcommand //////////////
         case "play":
@@ -195,68 +193,82 @@ module.exports = {
 
         ////////////// handling view subcommand //////////////
         case "view":
-          const { mappedArray, resultArray } =
-            await searchHandler.searchFavorite(splitPlaylist, 0);
-
-          if (mappedArray.length === 0) {
-            errorHandler.handleNoResultError(interaction);
-          } else {
-            let page = 0;
-            let totalPages =
-              mappedArray.length > 10 ? Math.ceil(mappedArray.length / 10) : 1;
-
-            let embed = embedCreator.createViewFavoriteEmbed(
+          if (target) {
+            const embed = embedCreator.createViewFavoriteEmbed(
               owner,
               song,
               target,
-              page,
-              mappedArray
+              0
             );
 
-            if (target) {
-              const button = buttonCreator.createFavoriteButtons();
+            const button = buttonCreator.createFavoriteButtons();
 
-              await interaction.editReply({
-                embeds: [embed],
-                components: [button],
-              });
+            await interaction.editReply({
+              embeds: [embed],
+              components: [button],
+            });
+
+            await favoriteHandler.handleButtons(
+              favoriteEmbed,
+              client,
+              interaction,
+              song
+            );
+          } else {
+            const { mappedArray, resultArray } =
+              await searchHandler.searchFavorite(splitPlaylist, 0);
+
+            if (mappedArray.length === 0) {
+              errorHandler.handleNoResultError(interaction);
             } else {
-              await interaction.editReply({
-                embeds: [embed],
-              });
-            }
+              let page = 0;
+              let totalPages =
+                mappedArray.length > 10
+                  ? Math.ceil(mappedArray.length / 10)
+                  : 1;
 
-            success = "favorite";
-
-            if (totalPages > 1 && !target) {
-              const collector = reactHandler.pageReact(
-                interaction,
-                favoriteEmbed
+              let embed = embedCreator.createViewFavoriteEmbed(
+                owner,
+                mappedArray,
+                target,
+                page
               );
 
-              collector.on("collect", async (reaction, user) => {
-                if (user.bot) return;
+              await interaction.editReply({
+                embeds: [embed],
+              });
 
-                await reaction.users.remove(user.id);
+              success = "favorite";
 
-                if (reaction.emoji.name === "➡" && page < totalPages - 1) {
-                  page++;
-                } else if (reaction.emoji.name === "⬅" && page !== 0) {
-                  --page;
-                } else return;
-
-                embed = embedCreator.createViewFavoriteEmbed(
-                  owner,
-                  song,
-                  target,
-                  page,
-                  mappedArray
+              if (totalPages > 1 && !target) {
+                const collector = reactHandler.pageReact(
+                  interaction,
+                  favoriteEmbed
                 );
 
-                await interaction.editReply({
-                  embeds: [embed],
+                collector.on("collect", async (reaction, user) => {
+                  if (user.bot) return;
+
+                  await reaction.users.remove(user.id);
+
+                  if (reaction.emoji.name === "➡" && page < totalPages - 1) {
+                    page++;
+                  } else if (reaction.emoji.name === "⬅" && page !== 0) {
+                    --page;
+                  } else return;
+
+                  embed = embedCreator.createViewFavoriteEmbed(
+                    owner,
+                    mappedArray,
+                    target,
+                    page
+                  );
+
+                  await interaction.editReply({
+                    embeds: [embed],
+                  });
                 });
-              });
+              }
             }
           }
 
@@ -281,6 +293,13 @@ module.exports = {
             });
 
             success = "favorite";
+
+            await favoriteHandler.handleButtons(
+              favoriteEmbed,
+              client,
+              interaction,
+              song
+            );
           }
 
           break;

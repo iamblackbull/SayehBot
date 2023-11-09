@@ -12,7 +12,7 @@ module.exports = {
     name: "lyrics-button",
   },
 
-  async execute(interaction) {
+  async execute(interaction, client) {
     ////////////// return checks //////////////
     let queue = client.player.nodes.get(interaction.guildId);
     if (!queue) return;

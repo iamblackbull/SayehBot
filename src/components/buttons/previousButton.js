@@ -1,3 +1,4 @@
+const { PermissionFlagsBits } = require("discord.js");
 const { useTimeline } = require("discord-player");
 const embedCreator = require("../../utils/createEmbed");
 const reactHandler = require("../../utils/handleReaction");
@@ -47,7 +48,7 @@ module.exports = {
     );
 
     const allowed =
-      interaction.member.permissions.has("MANAGE_MESSAGES") ||
+      interaction.member.permissions.has(PermissionFlagsBits.ManageMessages) ||
       requiredVotes <= 1;
 
     success = true;
