@@ -111,16 +111,13 @@ module.exports = (client) => {
     if (welcomeMessageSent.has(member.id)) return;
     welcomeMessageSent.add(member.id);
 
-    let msg;
-    setTimeout(async () => {
-      msg = await channel.send({
-        content: content,
-      });
+    let msg = await channel.send({
+      content: content,
+    });
 
-      setTimeout(() => {
-        welcomeMessageSent.delete(member.id);
-      }, 10 * 60 * 1000);
-    }, 2 * 1000);
+    setTimeout(() => {
+      welcomeMessageSent.delete(member.id);
+    }, 10 * 60 * 1000);
 
     setTimeout(async () => {
       await msg.edit({

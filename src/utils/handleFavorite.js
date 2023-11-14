@@ -236,6 +236,10 @@ async function handleButtons(favoriteEmbed, client, interaction, song) {
           ephemeral: true,
         });
       }
+
+      await interaction.editReply({
+        components: [],
+      });
     })
     .catch((error) => {
       if (error.code === "InteractionCollectorError") {
