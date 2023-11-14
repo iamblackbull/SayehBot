@@ -21,7 +21,7 @@ module.exports = {
       return;
 
     ////////////// toggle pause mode of queue //////////////
-    const embed = await embedCreator.createPauseEmbed(queue);
+    const embed = await embedCreator.createPauseEmbed(interaction, queue);
     const button = buttonCreator.createPauseButtons();
 
     await interaction.reply({

@@ -32,24 +32,20 @@ async function searchFavorite(playlist, slice) {
   let mappedResult = {};
   let mappedArray = [];
   let resultArray = [];
-  let song;
 
   for (let i = 0; i < playlistLength; ++i) {
     const result = await player.search(slicedPlaylist[i], {
       searchEngine: QueryType.AUTO,
     });
 
-    const newSong = result.tracks[0];
+    const song = result.tracks[0];
     resultArray.push(song);
 
-    mappedResult[i] = `**${i + 1}.** [${newSong.title} -- ${newSong.author}](${
-      newSong.url
+    mappedResult[i] = `**${i + 1}.** ["${song.title}" by "${song.author}"](${
+      song.url
     })`;
-    mappedArray.push(mappedResult[i]);
 
-    if (i === 0) {
-      song = result.tracks[0];
-    }
+    mappedArray.push(mappedResult[i]);
   }
 
   return { mappedArray, resultArray };

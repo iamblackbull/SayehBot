@@ -120,6 +120,8 @@ module.exports = {
               errorHandler.handleThirdPartyError(interaction);
             } else {
               errorHandler.handleUnknownError(interaction);
+
+              console.log(error);
             }
           }
         }

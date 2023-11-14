@@ -31,7 +31,7 @@ async function updateFavoriteList(user, song) {
   } else if (favoriteList.Playlist.length > 100) {
     favoriteMode = "full";
   } else {
-    let favoriteSongs = favoriteList.Playlist;
+    const favoriteSongs = favoriteList.Playlist;
 
     const songIndex = favoriteSongs.findIndex(
       (favSong) => favSong.Url === song.url
@@ -69,7 +69,9 @@ async function updateFavoriteList(user, song) {
       break;
   }
 
-  return favoriteMode;
+  const favoriteLength = favoriteList.Playlist.length;
+
+  return { favoriteMode, favoriteLength };
 }
 
 async function handleTrack(interaction, client) {
@@ -207,21 +209,29 @@ async function handleButtons(favoriteEmbed, client, interaction, song) {
 
         const button = buttonCreator.createButtons(nowPlaying);
 
-        await interaction.followUp({
+        const reply = await messageComponentInteraction.reply({
           embeds: [embed],
           components: [button],
         });
 
         success = true;
 
-        deletionHandler.handleInteractionDeletion(interaction, success);
+        deletionHandler.handleInteractionDeletion(reply, success);
       } else {
         if (mongoose.connection.readyState !== 1) return;
 
-        const favoriteMode = await updateFavoriteList(interaction.user, song);
-        const embed = embedCreator.createFavoriteEmbed(song, favoriteMode);
+        const { favoriteMode, favoriteLength } = await updateFavoriteList(
+          interaction.user,
+          song
+        );
 
-        await interaction.followUp({
+        const embed = embedCreator.createFavoriteEmbed(
+          song,
+          favoriteMode,
+          favoriteLength
+        );
+
+        await messageComponentInteraction.reply({
           embeds: [embed],
           ephemeral: true,
         });

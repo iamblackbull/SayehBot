@@ -30,7 +30,7 @@ module.exports = {
 
     ////////////// original response //////////////
     const { embed, nowPlaying } = embedCreator.createTrackEmbed(
-      false,
+      "playerStart",
       queue,
       false,
       song

@@ -103,6 +103,8 @@ module.exports = (client) => {
               msg = await errorHandler.handleThirdPartyErrorMessage(message);
             } else {
               msg = await errorHandler.handleUnknownErrorMessage(message);
+
+              console.log(error);
             }
           }
         }

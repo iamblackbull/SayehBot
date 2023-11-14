@@ -32,8 +32,8 @@ module.exports = {
         });
 
         ////////////// original response //////////////
-        const embed = embedCreator.createSongEmbed(queue);
-        const button = buttonCreator.createButtons();
+        const embed = embedCreator.createSongEmbed(queue, interaction);
+        const button = buttonCreator.createButtons(true);
 
         await interaction.editReply({
           embeds: [embed],

@@ -65,54 +65,93 @@ function determineSourceAndColor(url) {
 
 function createTrackEmbed(interaction, queue, result, song) {
   const playlist = result?.playlist;
-  const length = result?.tracks?.length - 1;
+  const length = result?.tracks?.length;
+
+  let author = false;
+  if (playlist) {
+    author = {
+      name: playlist.title,
+      iconURL: playlist.thumbnail,
+      url: playlist.url,
+    };
+  }
 
   let queueSize = queue.tracks.size;
 
-  if (queueSize === 0 && queue.node.isPlaying) {
+  if (
+    queueSize === 0 &&
+    queue.currentTrack &&
+    queue.currentTrack.url !== song.url
+  ) {
     queueSize = 1;
-  }
-
-  if (queueSize === 1 && !queue.node.isPlaying() && !queue.node.isPaused()) {
+  } else if (
+    queueSize >= 1 &&
+    !queue.node.isPlaying() &&
+    !queue.node.isPaused()
+  ) {
     queueSize = 0;
   }
 
   let nowPlaying = queueSize === 0;
 
-  let title;
+  let title = playlist
+    ? playlist.url.toLowerCase().includes("album")
+      ? `${titles.album} (${length} Tracks)`
+      : `${titles.playlist} (${length} Tracks)`
+    : nowPlaying
+    ? titles.nowplaying
+    : `**${titles.track} ${queueSize}**`;
 
-  if (interaction.commandName) {
+  if (interaction === "playerStart") {
+    nowPlaying = true;
+
+    title = titles.nowplaying;
+  } else if (interaction?.commandName) {
     if (interaction.commandName === "previous") {
+      nowPlaying = true;
+
       title = titles.previous;
-      nowPlaying = true;
     } else if (interaction.commandName === "replay") {
-      title = titles.replay;
       nowPlaying = true;
-    } else if (interaction.commandName === "skip" && !nowPlaying)
-      title = titles.skip;
-    else {
-      title = playlist
-        ? playlist.url.toLowerCase().includes("album")
-          ? titles.album
-          : titles.playlist
-        : nowPlaying
-        ? titles.nowplaying
-        : `🎵 Track ${queueSize}`;
+
+      title = titles.replay;
+    } else if (interaction.commandName === "skip") {
+      if (queueSize >= 1 && queue.currentTrack) {
+        nowPlaying = true;
+
+        title = titles.nowplaying;
+      } else {
+        nowPlaying = false;
+
+        title = titles.skip;
+      }
     }
-  } else if (interaction.customId) {
+  } else if (interaction?.customId) {
+    author = {
+      name: interaction.user.username,
+      iconURL: interaction.user.displayAvatarURL({ size: 1024, dynamic: true }),
+    };
+
     if (interaction.customId === "previous-button") {
-      if (nowPlaying) title = titles.previous;
-      else title = titles.replay;
-    } else if (interaction.customId === "replay-button") title = titles.replay;
-    else if (interaction.customId === "skip-button" && !nowPlaying)
-      title = titles.skip;
+      nowPlaying = true;
+
+      title = titles.previous;
+    } else if (interaction.customId === "skip-button") {
+      if (queueSize >= 1 && queue.currentTrack) {
+        nowPlaying = true;
+
+        title = titles.nowplaying;
+      } else {
+        nowPlaying = false;
+
+        title = titles.skip;
+      }
+    }
   }
 
-  const description = playlist
-    ? `**[${playlist.title}](${playlist.url})**,\n**[${song.title}](${song.url})**\nand **${length}** other tracks`
-    : `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`;
+  const description = `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`;
 
-  const thumbnail = playlist ? playlist.thumbnail : song.thumbnail;
+  const thumbnail = song.thumbnail;
 
   const { iconURL, text, color } = determineSourceAndColor(song.url);
 
@@ -120,6 +159,7 @@ function createTrackEmbed(interaction, queue, result, song) {
     title,
     description,
     color,
+    author,
     thumbnail,
     footer: {
       iconURL,
@@ -190,9 +230,17 @@ function createSearchEmbed(result, isLink) {
   return embed;
 }
 
-async function createPauseEmbed(queue) {
+async function createPauseEmbed(interaction, queue) {
   let title;
   let thumbnail;
+
+  let author = undefined;
+  if (interaction.customId) {
+    author = {
+      name: interaction.user.username,
+      iconURL: interaction.user.displayAvatarURL({ size: 1024, dynamic: true }),
+    };
+  }
 
   await queue.node.setPaused(!queue.node.isPaused());
 
@@ -215,36 +263,7 @@ async function createPauseEmbed(queue) {
     title,
     description,
     color,
-    thumbnail,
-    footer: {
-      iconURL,
-      text,
-    },
-  });
-
-  return embed;
-}
-
-function createButtonEmbed(song, interaction, nowPlaying) {
-  let title = titles.nowplaying;
-  if (interaction.customId === "previous-button") {
-    if (nowPlaying) title = titles.previous;
-    else title = titles.replay;
-  }
-  if (interaction.customId === "replay-button") title = titles.replay;
-  if (interaction.customId === "skip-button" && !nowPlaying)
-    title = titles.skip;
-
-  const description = `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`;
-
-  const thumbnail = song.thumbnail;
-
-  const { iconURL, text, color } = determineSourceAndColor(song.url);
-
-  const embed = createEmbed({
-    title,
-    description,
-    color,
+    author,
     thumbnail,
     footer: {
       iconURL,
@@ -262,9 +281,9 @@ function createQueueEmbed(page, totalPages, queue) {
   const queueString = queue.tracks.data
     .slice(page * 10, page * 10 + 10)
     .map((song, i) => {
-      return `**${page * 10 + i + 1}.** \`[${song.duration}]\` [${
+      return `**${page * 10 + i + 1}.** \`[${song.duration}]\` ["${
         song.title
-      } -- ${song.author}](${song.url})`;
+      }" by "${song.author}"](${song.url})`;
     })
     .join("\n");
 
@@ -316,22 +335,25 @@ function createQueueEmbed(page, totalPages, queue) {
 
 function createVoteEmbed(requiredVotes, phase) {
   const title = titles.voteskip;
-  const timer = requiredVotes * 5;
+  const timer = requiredVotes * 10;
 
   let description;
+  let thumbnail;
+
   switch (phase) {
     case "start":
       description = `**${requiredVotes}** votes to skip.\n${timer} seconds left.`;
+      thumbnail = thumbnails.voteskip;
       break;
     case "success":
       description = `Required votes have been collected. Skipping...`;
+      thumbnail = thumbnails.successvote;
       break;
     case "fail":
       description = `Voting phase ended. Not enough votes were collected.`;
+      thumbnail = thumbnails.failvote;
       break;
   }
-
-  const thumbnail = thumbnails.voteskip;
 
   const { iconURL, text, color } = determineSourceAndColor("music");
 
@@ -349,26 +371,28 @@ function createVoteEmbed(requiredVotes, phase) {
   return embed;
 }
 
-function createFavoriteEmbed(song, favoriteMode) {
-  let title;
+function createFavoriteEmbed(song, favoriteMode, favoriteLength) {
+  let mode;
   let descriptionMode;
   let thumbnail = song.thumbnail;
 
   switch (favoriteMode) {
     case "add":
-      title = titles.addfavorite;
+      mode = titles.addfavorite;
       descriptionMode = `**[${song.title}](${song.url})**\nhas been added to your favorite playlist.`;
       break;
     case "remove":
-      title = titles.removefavorite;
+      mode = titles.removefavorite;
       descriptionMode = `**[${song.title}](${song.url})**\nhas been removed from your favorite playlist.`;
       break;
     case "full":
-      title = titles.fullfavorite;
+      mode = titles.fullfavorite;
       descriptionMode = `Your favorite playlist is full.`;
       thumbnail = thumbnails.fullfavorite;
       break;
   }
+
+  const title = `${mode} (${favoriteLength} Tracks)`;
 
   const description = `${descriptionMode}\nUse </favorite play:1108681222764367962> to play your playlist.`;
 
@@ -397,8 +421,18 @@ function createPlayFavoriteEmbed(owner, queue, song, target, length) {
 
   let queueSize = queue.tracks.size;
 
-  if (queueSize === 1 && !queue.node.isPlaying() && !queue.node.isPaused()) {
+  if (
+    queueSize === 0 &&
+    queue.currentTrack &&
+    queue.currentTrack.url !== song.url
+  ) {
     queueSize = 1;
+  } else if (
+    queueSize >= 1 &&
+    !queue.node.isPlaying() &&
+    !queue.node.isPaused()
+  ) {
+    queueSize = 0;
   }
 
   const nowPlaying = queueSize === 0;
@@ -406,15 +440,10 @@ function createPlayFavoriteEmbed(owner, queue, song, target, length) {
   const title = target
     ? nowPlaying
       ? titles.nowplaying
-      : `🎵 Track ${queueSize}`
-    : titles.playlist;
+      : `**${titles.track} ${queueSize}**`
+    : `${titles.playlist} (${length} Tracks)`;
 
-  let description;
-  if (target) {
-    description = `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`;
-  } else {
-    description = `**[${song.title}](${song.url})**\n**${song.author}**\nand **${length}** other tracks`;
-  }
+  const description = `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`;
 
   const thumbnail = song.thumbnail;
 
@@ -596,7 +625,6 @@ module.exports = {
   createSongEmbed,
   createSearchEmbed,
   createPauseEmbed,
-  createButtonEmbed,
   createQueueEmbed,
   createVoteEmbed,
   createFavoriteEmbed,

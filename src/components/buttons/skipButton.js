@@ -49,11 +49,11 @@ module.exports = {
 
       let votes = 0;
       let skip = false;
-      const timer = requiredVotes * 5 * 1000;
+      const timer = requiredVotes * 10 * 1000;
 
       const collector = reactHandler.voteReact(interaction, skipEmbed, timer);
 
-      collector.on("collect", async (reaction, user) => {
+      collector.on("collect", async (user) => {
         if (user.bot) return;
 
         if (!skip) {
@@ -62,8 +62,6 @@ module.exports = {
           if (votes >= requiredVotes) {
             skip = true;
             collector.stop();
-
-            await reaction?.users?.remove(user.id);
 
             embed = embedCreator.createVoteEmbed(requiredVotes, "success");
 
@@ -76,8 +74,8 @@ module.exports = {
         }
       });
 
-      collector.on("end", async (reason) => {
-        if (reason === "time" && !skip) {
+      collector.on("end", async () => {
+        if (!skip) {
           embed = embedCreator.createVoteEmbed(requiredVotes, "fail");
 
           await interaction.editReply({

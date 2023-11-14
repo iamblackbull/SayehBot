@@ -1,3 +1,5 @@
+const { booleans, cooldowns, ytdlOptions } = require("./queueUtils");
+
 async function createMainQueue(client, type, mode, song) {
   let Metadata = {};
 
@@ -21,19 +23,9 @@ async function createMainQueue(client, type, mode, song) {
 
   const queue = await client.player.nodes.create(type.guild, {
     metadata: Metadata,
-    useLegacyFFmpeg: false,
-    leaveOnEnd: true,
-    leaveOnEmpty: true,
-    leaveOnStop: true,
-    leaveOnStopCooldown: 5 * 60 * 1000,
-    leaveOnEndCooldown: 5 * 60 * 1000,
-    leaveOnEmptyCooldown: 5 * 1000,
-    smoothVolume: true,
-    ytdlOptions: {
-      filter: "audioonly",
-      quality: "highestaudio",
-      highWaterMark: 1 << 25,
-    },
+    ...booleans,
+    ...cooldowns,
+    ...ytdlOptions,
   });
 
   return queue;

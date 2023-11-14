@@ -153,7 +153,7 @@ module.exports = {
               ////////////// add first track to queue //////////////
               await queue.addTrack(song);
 
-              const length = playlistLength - 1;
+              const length = playlistLength;
 
               ////////////// original response //////////////
               const { embed, nowPlaying } =
@@ -279,12 +279,14 @@ module.exports = {
           if (!result.hasTracks()) {
             errorHandler.handleNoResultError(interaction);
           } else {
-            const favoriteMode = await favoriteHandler.handleResult(
-              interaction,
-              result
-            );
+            const { favoriteMode, favoriteLength } =
+              await favoriteHandler.handleResult(interaction, result);
 
-            const embed = embedCreator.createFavoriteEmbed(song, favoriteMode);
+            const embed = embedCreator.createFavoriteEmbed(
+              song,
+              favoriteMode,
+              favoriteLength
+            );
             const button = buttonCreator.createFavoriteButtons();
 
             await interaction.editReply({

@@ -16,7 +16,6 @@ module.exports = {
 
     const queue = client.player.nodes.get(interaction.guildId);
     if (!queue) return;
-    if (queue.tracks.size === 0) return;
 
     const song = queue.currentTrack;
     if (!song) return;
@@ -27,8 +26,16 @@ module.exports = {
       ephemeral: true,
     });
 
-    const favoriteMode = await favoriteHandler.handleTrack(interaction, client);
-    const embed = embedCreator.createFavoriteEmbed(song, favoriteMode);
+    const { favoriteMode, favoriteLength } = await favoriteHandler.handleTrack(
+      interaction,
+      client
+    );
+
+    const embed = embedCreator.createFavoriteEmbed(
+      song,
+      favoriteMode,
+      favoriteLength
+    );
 
     await interaction.editReply({
       embeds: [embed],

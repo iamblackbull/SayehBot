@@ -10,6 +10,7 @@ const {
 const fs = require("fs");
 const { Player } = require("discord-player");
 const executing = require("node:process");
+const { booleans, cooldowns, ytdlOptions } = require("./utils/queueUtils");
 
 const client = new Client({
   intents: [
@@ -42,19 +43,9 @@ const client = new Client({
 });
 
 client.player = new Player(client, {
-  useLegacyFFmpeg: false,
-  leaveOnEnd: true,
-  leaveOnEmpty: true,
-  leaveOnStop: true,
-  leaveOnStopCooldown: 5 * 60 * 1000,
-  leaveOnEndCooldown: 5 * 60 * 1000,
-  leaveOnEmptyCooldown: 5 * 1000,
-  smoothVolume: true,
-  ytdlOptions: {
-    filter: "audioonly",
-    quality: "highestaudio",
-    highWaterMark: 1 << 25,
-  },
+  ...booleans,
+  ...cooldowns,
+  ...ytdlOptions,
 });
 client.player.extractors.loadDefault();
 

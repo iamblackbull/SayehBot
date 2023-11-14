@@ -2,23 +2,19 @@ const playerDataHandler = require("./handlePlayerData");
 const embedCreator = require("./createEmbed");
 const buttonCreator = require("./createButtons");
 const errorHandler = require("./handleErrors");
+const { titles } = require("./musicUtils");
 
 async function skip(interaction, queue) {
   let trackNumber = interaction.options?.getInteger("position") || false;
-
   if (trackNumber && trackNumber > queue.tracks.size) {
     trackNumber = queue.tracks.size;
   }
 
-  if (!trackNumber) trackNumber = 1;
-
-  let NowPlaying = false;
   let song;
-
   if (queue.tracks.size > 0) {
-    song = queue.tracks.at(trackNumber - 1);
+    const target = trackNumber ? trackNumber - 1 : 0;
 
-    NowPlaying = true;
+    song = queue.tracks.at(target);
   } else {
     song = queue.currentTrack;
   }
@@ -30,17 +26,15 @@ async function skip(interaction, queue) {
     song
   );
 
-  NowPlaying = nowPlaying;
+  const button = buttonCreator.createButtons(nowPlaying);
 
-  const button = buttonCreator.createButtons(NowPlaying);
-
-  if (trackNumber === 1) {
+  if (!trackNumber) {
     await queue.node.skip();
   } else {
     await queue.node.skipTo(trackNumber - 1);
   }
 
-  if (NowPlaying) {
+  if (nowPlaying) {
     if (!queue.node.isPlaying()) await queue.node.play();
 
     await playerDataHandler.handleSkipData(interaction);
@@ -70,6 +64,10 @@ async function previous(interaction, queue, previous) {
       false,
       song
     );
+
+    if (!previous) {
+      embed.setTitle(titles.replay);
+    }
 
     const button = buttonCreator.createButtons(nowPlaying);
 

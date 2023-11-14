@@ -1,5 +1,6 @@
 const titles = {
   nowplaying: "**🎵 Now Playing**",
+  track: "🎵 Track",
   album: "**🎶 Album**",
   playlist: "**🎶 Playlist**",
   voteskip: "**⏭ Vote Skip**",
@@ -60,6 +61,8 @@ const thumbnails = {
   filter: "https://i.imgur.com/LlJYfy0.png",
   leave: "https://i.imgur.com/zkXbpHy.png",
   voteskip: "https://i.imgur.com/MgFIhIN.png",
+  successvote: "https://i.imgur.com/BjvYAao.png",
+  failvote: "https://i.imgur.com/8ef49od.png",
   fullfavorite: "https://i.imgur.com/EpGilgs.png",
   deletewarning: "https://i.imgur.com/WQFdlMq.png",
 };

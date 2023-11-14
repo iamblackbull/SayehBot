@@ -7,6 +7,7 @@ const embedCreator = require("../../utils/createEmbed");
 const buttonCreator = require("../../utils/createButtons");
 const searchHandler = require("../../utils/handleSearch");
 const deletionHandler = require("../../utils/handleDeletion");
+const { titles } = require("../../utils/musicUtils");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -82,15 +83,16 @@ module.exports = {
           await interaction.deferReply({
             fetchReply: true,
           });
-          let trackNum = interaction.options.getInteger("position");
-          if (trackNum > queue.tracks.data.size) {
-            trackNum = queue.tracks.data.size + 1;
+
+          let target = interaction.options.getInteger("position");
+          if (target > queue.tracks.data.size) {
+            target = queue.tracks.data.size + 1;
           }
 
           const song = result.tracks[0];
 
           try {
-            await queue.insertTrack(song, trackNum - 1);
+            await queue.insertTrack(song, target - 1);
 
             const { embed, nowPlaying } = embedCreator.createTrackEmbed(
               interaction,
@@ -98,6 +100,10 @@ module.exports = {
               result,
               song
             );
+
+            if (!nowPlaying) {
+              embed.setTitle(`**${titles.track} ${target}**`);
+            }
 
             await playerDataHandler.handleData(interaction, nowPlaying);
 
@@ -129,6 +135,8 @@ module.exports = {
               errorHandler.handleThirdPartyError(interaction);
             } else {
               errorHandler.handleUnknownError(interaction);
+
+              console.log(error);
             }
           }
         }
