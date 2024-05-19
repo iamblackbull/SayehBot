@@ -46,7 +46,7 @@ module.exports = {
         )
     ),
 
-  async execute(interaction) {
+  async execute(interaction, client) {
     const helpEmbed = await interaction.deferReply({
       fetchReply: true,
     });

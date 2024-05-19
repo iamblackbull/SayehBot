@@ -5,10 +5,10 @@ const {
   ActionRowBuilder,
 } = require("discord.js");
 const { AudioFilters, useTimeline } = require("discord-player");
-const { filters } = require("../../utils/musicUtils");
-const embedCreator = require("../../utils/createEmbed");
-const errorHandler = require("../../utils/handleErrors");
-const deletionHandler = require("../../utils/handleDeletion");
+const { filters } = require("../../utils/player/musicUtils");
+const embedCreator = require("../../utils/player/createMusicEmbed");
+const errorHandler = require("../../utils/main/handleErrors");
+const deletionHandler = require("../../utils/main/handleDeletion");
 
 AudioFilters.define(
   "8D",

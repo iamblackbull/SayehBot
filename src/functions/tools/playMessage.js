@@ -1,28 +1,25 @@
 const { PermissionsBitField } = require("discord.js");
-const playerDataHandler = require("../../utils/handlePlayerData");
-const errorHandler = require("../../utils/handleErrors");
-const queueCreator = require("../../utils/createQueue");
-const embedCreator = require("../../utils/createEmbed");
-const buttonCreator = require("../../utils/createButtons");
-const searchHandler = require("../../utils/handleSearch");
-const deletionHandler = require("../../utils/handleDeletion");
-const { musicChannelID } = process.env;
+const playerDataHandler = require("../../utils/player/handlePlayerData");
+const queueCreator = require("../../utils/player/createQueue");
+const embedCreator = require("../../utils/player/createMusicEmbed");
+const searchHandler = require("../../utils/player/handleSearch");
+const errorHandler = require("../../utils/main/handleErrors");
+const buttonCreator = require("../../utils/main/createButtons");
+const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = (client) => {
   client.on("messageCreate", async (message) => {
     ////////////// return checks //////////////
     if (message.author.bot) return;
+    if (message.webhookId) return;
     if (!message.guild) return;
 
     ////////////// prefix pattern //////////////
     const commandPattern =
       /^\/(p|pl|pla|play|plays|played|playing|playlist)\s+/i;
-    const match = message.content.match(commandPattern);
 
-    let prefix;
-    if (!match && message.channel.id !== musicChannelID) return;
-    if (!match && message.channel.id === musicChannelID) prefix = false;
-    if (match) prefix = true;
+    const match = message.content.match(commandPattern);
+    if (!match) return;
 
     const firstMsg = message;
     let success = false;
@@ -35,9 +32,7 @@ module.exports = (client) => {
     } else if (!message.member.voice.channel) {
       msg = await errorHandler.handleVoiceChannelErrorMessage(message);
     } else {
-      const query = prefix
-        ? message.content.slice(match[0].length).trim()
-        : message.content;
+      const query = message.content.slice(match[0].length).trim();
 
       const result = await searchHandler.search(query);
 

@@ -1,7 +1,7 @@
 const { mongoose } = require("mongoose");
-const embedCreator = require("../../utils/createEmbed");
-const favoriteHandler = require("../../utils/handleFavorite");
-const errorHandler = require("../../utils/handleErrors");
+const embedCreator = require("../../utils/player/createMusicEmbed");
+const favoriteHandler = require("../../utils/player/handleFavorite");
+const errorHandler = require("../../utils/main/handleErrors");
 
 module.exports = {
   data: {

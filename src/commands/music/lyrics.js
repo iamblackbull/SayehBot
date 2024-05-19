@@ -1,11 +1,12 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { footers } = require("../../utils/player/musicUtils");
+const lyricsSplitter = require("../../utils/player/splitLyrics");
+const reactHandler = require("../../utils/main/handleReaction");
+const errorHandler = require("../../utils/main/handleErrors");
+const deletionHandler = require("../../utils/main/handleDeletion");
 const Genius = require("genius-lyrics");
+
 const genius = new Genius.Client();
-const { footers } = require("../../utils/musicUtils");
-const lyricsSplitter = require("../../utils/splitLyrics");
-const reactHandler = require("../../utils/handleReaction");
-const errorHandler = require("../../utils/handleErrors");
-const deletionHandler = require("../../utils/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -18,7 +19,7 @@ module.exports = {
         .setRequired(true)
     ),
 
-  async execute(interaction) {
+  async execute(interaction, client) {
     ////////////// base variables //////////////
     const lyricsEmbed = await interaction.deferReply({
       fetchReply: true,

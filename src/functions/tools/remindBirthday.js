@@ -1,6 +1,5 @@
-require("dotenv").config();
-const { ActivityType } = require("discord.js");
 const { birthdayChannelID, guildID } = process.env;
+const { ActivityType } = require("discord.js");
 const birthday = require("../../schemas/birthday-schema");
 const checkBirthday = require("../../schemas/checkBirthday-schema");
 
@@ -19,12 +18,14 @@ module.exports = (client) => {
     let checkBirthdayProfile = await checkBirthday.findOne({
       guildId: guildID,
     });
+
     if (!checkBirthdayProfile) {
       checkBirthdayProfile = new checkBirthday({
         guildId: guildID,
         Date: reminder,
         IsTodayChecked: false,
       });
+
       await checkBirthdayProfile.save().catch(console.error);
     } else {
       checkBirthdayProfile = await checkBirthday.findOne({
@@ -32,12 +33,15 @@ module.exports = (client) => {
         Date: reminder,
         IsTodayChecked: true,
       });
+
       if (!checkBirthdayProfile) {
         checkBirthdayProfile = await checkBirthday.updateOne(
           { guildId: guildID },
           { Date: reminder, IsTodayChecked: true }
         );
+
         const birthdayProfile = await birthday.findOne({ Birthday: reminder });
+
         if (!birthdayProfile) return;
         else {
           const user = birthdayProfile.User;
@@ -46,6 +50,7 @@ module.exports = (client) => {
           await birthday.updateOne({ User: user }, { Age: `${age}` });
 
           let content;
+
           if (user === "481094367407374348") {
             content = `🎈 🎂 👑 Today is **Our Queen**'s birthday! Happy birthday **<@${birthdayProfile.User}>**! (Age **${age}**) 👑 🥳 🎉`;
 
@@ -72,7 +77,7 @@ module.exports = (client) => {
             `Today is ${birthdayProfile.User}'s birthday! (Age ${age}).`
           );
         }
-      } else return;
+      }
     }
   };
 };

@@ -8,25 +8,28 @@ const {
 const { gameChannelID } = process.env;
 const market = require("steam-market-pricing");
 const game = require("steam-searcher");
+const hltb = require("howlongtobeat");
+
+const hltbService = new hltb.HowLongToBeatService();
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("steam")
-    .setDescription("Search for a game / item in Steam")
+    .setDescription("Search in Steam.")
     .addSubcommand((subcommand) =>
       subcommand
         .setName("market")
-        .setDescription("Search for price of an item in Steam market")
+        .setDescription("Search for a price of an item in Steam market.")
         .addStringOption((option) =>
           option
             .setName("item")
-            .setDescription("Input item name (Suggestion: key / ticket)")
+            .setDescription("Input the item name. (Suggestion: key / ticket)")
             .setRequired(true)
         )
         .addStringOption((option) =>
           option
             .setName("game")
-            .setDescription("Select Item's game name")
+            .setDescription("Select the item's game.")
             .setRequired(true)
             .addChoices(
               {
@@ -46,7 +49,7 @@ module.exports = {
         .addStringOption((option) =>
           option
             .setName("currency")
-            .setDescription("Select your currency")
+            .setDescription("Select your currency.")
             .setRequired(true)
             .addChoices(
               {
@@ -58,10 +61,6 @@ module.exports = {
                 value: "3",
               },
               {
-                name: "ARS $",
-                value: "34",
-              },
-              {
                 name: "RUB ₽",
                 value: "5",
               },
@@ -70,8 +69,8 @@ module.exports = {
                 value: "18",
               },
               {
-                name: "TL ₺",
-                value: "17",
+                name: "INR ₹",
+                value: "24",
               }
             )
         )
@@ -79,11 +78,11 @@ module.exports = {
     .addSubcommand((subcommand) =>
       subcommand
         .setName("store")
-        .setDescription("Search for a game in Steam store")
+        .setDescription("Search for a game in Steam store.")
         .addStringOption((option) =>
           option
             .setName("input")
-            .setDescription("Input game name")
+            .setDescription("Input the game name.")
             .setRequired(true)
         )
     ),
@@ -132,6 +131,16 @@ module.exports = {
                   break;
               }
 
+              const numericPriceMatch = item.lowest_price.match(/[0-9,.]+/);
+
+              const numericPrice = numericPriceMatch
+                ? parseFloat(numericPriceMatch[0].replace(",", "."))
+                : NaN;
+
+              const revenue = !isNaN(numericPrice)
+                ? (numericPrice * 0.85).toFixed(2)
+                : undefined;
+
               let embed = new EmbedBuilder()
                 .setTitle(`${item.market_hash_name}`)
                 .setColor(0x0e0e57)
@@ -142,8 +151,8 @@ module.exports = {
                 })
                 .addFields(
                   {
-                    name: `Lowest Price`,
-                    value: `${item.lowest_price}` || `-`,
+                    name: `Lowest Price (Revenue)`,
+                    value: `${item.lowest_price} (${revenue})` || `-`,
                     inline: true,
                   },
                   {
@@ -180,6 +189,7 @@ module.exports = {
             });
         }
         break;
+
       case "store":
         {
           const name = options.getString("input");
@@ -236,6 +246,10 @@ module.exports = {
 
               const resultName = result.name.replace(/\s+/g, "");
 
+              const hltb = await hltbService
+                .search(result.name)
+                .then((response) => response[0]);
+
               const embed = new EmbedBuilder()
                 .setTitle(`**${result.name}**`)
                 .setURL(
@@ -278,6 +292,11 @@ module.exports = {
                     name: `Release Date`,
                     value: `${releaseDate}`,
                     inline: true,
+                  },
+                  {
+                    name: `Main Story`,
+                    value: `${hltb.gameplayMain} h`,
+                    inline: true,
                   }
                 )
                 .setImage(`${result.screenshots[0].path_full}`)
@@ -303,9 +322,15 @@ module.exports = {
                 )
                 .setStyle(ButtonStyle.Link);
 
+              const hltbButton = new ButtonBuilder()
+                .setLabel(`How long to beat`)
+                .setURL(`https://howlongtobeat.com/game/${hltb.id}`)
+                .setStyle(ButtonStyle.Link);
+
               const button = new ActionRowBuilder()
                 .addComponents(storeButton)
-                .addComponents(crackButton);
+                .addComponents(crackButton)
+                .addComponents(hltbButton);
 
               await interaction.editReply({
                 embeds: [embed],
@@ -321,11 +346,11 @@ module.exports = {
         console.log("Something went wrong while executing steam command...");
       }
     }
-    
+
     const timeoutDuration = success ? 5 * 60 * 1000 : 2 * 60 * 1000;
     const timeoutLog = success
-    ? `Failed to delete ${interaction.commandName} interaction.`
-    : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
+      ? `Failed to delete ${interaction.commandName} interaction.`
+      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
     setTimeout(() => {
       if (success && interaction.channel.id === gameChannelID) return;
       else {

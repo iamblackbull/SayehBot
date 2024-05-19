@@ -1,6 +1,6 @@
-const embedCreator = require("../../utils/createEmbed");
-const buttonCreator = require("../../utils/createButtons");
-const deletionHandler = require("../../utils/handleDeletion");
+const embedCreator = require("../../utils/player/createMusicEmbed");
+const buttonCreator = require("../../utils/main/createButtons");
+const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: {

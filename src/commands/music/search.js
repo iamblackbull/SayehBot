@@ -1,12 +1,12 @@
 const { SlashCommandBuilder, PermissionsBitField } = require("discord.js");
-const playerDataHandler = require("../../utils/handlePlayerData");
-const errorHandler = require("../../utils/handleErrors");
-const searchHandler = require("../../utils/handleSearch");
-const queueCreator = require("../../utils/createQueue");
-const embedCreator = require("../../utils/createEmbed");
-const buttonCreator = require("../../utils/createButtons");
-const reactHandler = require("../../utils/handleReaction");
-const deletionHandler = require("../../utils/handleDeletion");
+const playerDataHandler = require("../../utils/player/handlePlayerData");
+const searchHandler = require("../../utils/player/handleSearch");
+const queueCreator = require("../../utils/player/createQueue");
+const embedCreator = require("../../utils/player/createMusicEmbed");
+const errorHandler = require("../../utils/main/handleErrors");
+const buttonCreator = require("../../utils/main/createButtons");
+const reactHandler = require("../../utils/main/handleReaction");
+const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()

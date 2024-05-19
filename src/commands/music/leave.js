@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
-const embedCreator = require("../../utils/createEmbed");
-const errorHandler = require("../../utils/handleErrors");
-const deletionHandler = require("../../utils/handleDeletion");
+const embedCreator = require("../../utils/player/createMusicEmbed");
+const errorHandler = require("../../utils/main/handleErrors");
+const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -12,7 +12,7 @@ module.exports = {
 
   async execute(interaction, client) {
     ////////////// base variables //////////////
-    let queue = client.player.nodes.get(interaction.guildId);
+    const queue = client.player.nodes.get(interaction.guildId);
     let success = false;
 
     if (!interaction.member.voice.channel) {

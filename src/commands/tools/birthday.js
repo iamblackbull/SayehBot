@@ -1,6 +1,6 @@
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { mongoose } = require("mongoose");
 const birthday = require("../../schemas/birthday-schema");
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 
 module.exports = {
   data: new SlashCommandBuilder()

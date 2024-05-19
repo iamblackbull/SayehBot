@@ -1,9 +1,9 @@
 const { PermissionFlagsBits } = require("discord.js");
 const { useTimeline } = require("discord-player");
-const embedCreator = require("../../utils/createEmbed");
-const reactHandler = require("../../utils/handleReaction");
-const skipHandler = require("../../utils/handleSkip");
-const deletionHandler = require("../../utils/handleDeletion");
+const embedCreator = require("../../utils/player/createMusicEmbed");
+const skipHandler = require("../../utils/player/handleSkip");
+const reactHandler = require("../../utils/main/handleReaction");
+const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: {

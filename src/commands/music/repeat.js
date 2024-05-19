@@ -1,8 +1,8 @@
 const { SlashCommandBuilder } = require("discord.js");
-const embedCreator = require("../../utils/createEmbed");
-const reactHandler = require("../../utils/handleReaction");
-const errorHandler = require("../../utils/handleErrors");
-const deletionHandler = require("../../utils/handleDeletion");
+const embedCreator = require("../../utils/player/createMusicEmbed");
+const reactHandler = require("../../utils/main/handleReaction");
+const errorHandler = require("../../utils/main/handleErrors");
+const deletionHandler = require("../../utils/main/handleDeletion");
 
 const repeatModes = ["None", "Repeat track", "Repeat queue", "Autoplay"];
 

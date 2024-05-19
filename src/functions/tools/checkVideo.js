@@ -1,16 +1,11 @@
-require("dotenv").config();
-const {
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-} = require("discord.js");
-const { youtubeChannelID, guildID } = process.env;
-const chalk = require("chalk");
-const Parser = require("rss-parser");
-const parser = new Parser();
+const { EmbedBuilder, ActionRowBuilder } = require("discord.js");
 const { mongoose } = require("mongoose");
 const video = require("../../schemas/video-schema");
+const { createUrlButton } = require("../../utils/main/createButtons");
+const { footers, colors, texts } = require("../../utils/player/musicUtils");
+const { tag, thumbnails, urls, labels } = require("../../utils/main/mainUtils");
+const Parser = require("rss-parser");
+const parser = new Parser();
 
 const notifiedChannels = new Set();
 
@@ -18,79 +13,104 @@ module.exports = (client) => {
   client.checkVideo = async () => {
     if (mongoose.connection.readyState !== 1) return;
 
+    const guild = await client.guilds.fetch(process.env.guildID);
+    const channel = await guild.channels.fetch(process.env.youtubeChannelID);
+    if (!guild || !channel) return;
+
     try {
-      const data = await parser
+      const dataSayeh = await parser
         .parseURL(
-          "https://youtube.com/feeds/videos.xml?channel_id=UCRyvm_KWqZxQio5EOES5NQw"
+          `https://youtube.com/feeds/videos.xml?channel_id=${process.env.YOUTUBE_SAYEH_CHANNEL_ID}`
         )
         .catch(console.error);
 
-      const guild = await client.guilds.fetch(guildID).catch(console.error);
+      const dataHamid = await parser
+        .parseURL(
+          `https://youtube.com/feeds/videos.xml?channel_id=${process.env.YOUTUBE_HAMID_CHANNEL_ID}`
+        )
+        .catch(console.error);
 
-      let videoList = await video.findOne({
+      let videoListSayeh = await video.findOne({
         guild: guild.id,
+        Channel: "Sayeh",
       });
 
-      if (!videoList) {
-        videoList = new video({
+      let videoListHamid = await video.findOne({
+        guild: guild.id,
+        Channel: "Hamid",
+      });
+
+      if (!videoListSayeh) {
+        videoListSayeh = new video({
           guild: guild.id,
-          VideoId: data.items[0].id,
+          Channel: "Sayeh",
+          VideoId: dataSayeh.items[0].id,
         });
-        await videoList.save().catch(console.error);
+
+        return await videoListSayeh.save().catch(console.error);
       }
 
-      if (videoList.VideoId === data.items[0].id) return;
-      if (notifiedChannels.has("sayeh")) return;
+      if (!videoListHamid) {
+        videoListHamid = new video({
+          guild: guild.id,
+          Channel: "Hamid",
+          VideoId: dataHamid.items[0].id,
+        });
 
-      notifiedChannels.add("sayeh");
+        return await videoListHamid.save().catch(console.error);
+      }
 
-      videoList = await video.updateOne(
-        { guild: guild.id },
+      let page;
+
+      if (videoListSayeh.VideoId !== dataSayeh.items[0].id) page = "Sayeh";
+      else if (videoListHamid.VideoId !== dataHamid.items[0].id) page = "Hamid";
+      else return;
+
+      if (notifiedChannels.has(page)) return;
+
+      notifiedChannels.add(page);
+
+      const data = page === "Sayeh" ? dataSayeh : dataHamid;
+
+      videoListSayeh = await video.updateOne(
+        { guild: guild.id, Channel: page },
         {
           VideoId: data.items[0].id,
         }
       );
-
-      const channel = await guild.channels
-        .fetch(youtubeChannelID)
-        .catch(console.error);
 
       const { title, link, id, author } = data.items[0];
 
       const thumbnailId = id.slice(9);
       const image = `https://img.youtube.com/vi/${thumbnailId}/maxresdefault.jpg`;
 
+      const iconURL =
+        page === "Sayeh" ? thumbnails.twitch_sayeh : thumbnails.twitch_hamid;
+
+      const url = page === "Sayeh" ? urls.youtube_sayeh : urls.youtube_hamid;
+
       const embed = new EmbedBuilder()
         .setTitle(`**${title}**`)
         .setURL(link)
         .setAuthor({
           name: author,
-          iconURL:
-            "https://cdn.discordapp.com/attachments/760838336205029416/1089626902832107590/934476feaab28c0f586b688264b50041.webp",
-          url: "https://youtube.com/c/Sayehh/?sub_confirmation=1",
+          iconURL,
+          url,
         })
-        .setDescription(`Sayeh published a video on YouTube!`)
-        .setColor(0xff0000)
+        .setDescription(`${page} published a video on YouTube!`)
+        .setColor(colors.youtube)
         .setTimestamp(Date.now())
         .setImage(image)
-        .setThumbnail(
-          "https://cdn.discordapp.com/attachments/760838336205029416/1089626902832107590/934476feaab28c0f586b688264b50041.webp"
-        )
+        .setThumbnail(iconURL)
         .setFooter({
-          iconURL: `https://cdn4.iconfinder.com/data/icons/logos-and-brands/512/395_Youtube_logo-256.png`,
-          text: "YouTube",
+          iconURL: footers.youtube,
+          text: texts.youtube,
         });
 
-      const Content = `Hey @everyone\n**Sayeh** just published a new video! 😍🔔\n\n## ${title}\n\n${link}`;
+      const Content = `Hey ${tag}\n**${page}** just published a new video! 😍🔔\n\n## ${title}\n\n${link}`;
 
-      const youtubeButton = new ButtonBuilder()
-        .setLabel(`Watch Video`)
-        .setURL(`${link}`)
-        .setStyle(ButtonStyle.Link);
-
-      const button = new ActionRowBuilder().addComponents(youtubeButton);
-
-      console.log(`Sayeh just published a new video on YouTube!`);
+      const { urlButton } = createUrlButton(labels.video, link);
+      const button = new ActionRowBuilder().addComponents(urlButton);
 
       const msg = await channel
         .send({
@@ -105,11 +125,13 @@ module.exports = (client) => {
         });
       }, 2 * 1000);
 
+      console.log(`${page} just published a new video on YouTube!`);
+
       setTimeout(() => {
-        notifiedChannels.delete("sayeh");
+        notifiedChannels.delete(page);
       }, 10 * 60 * 1000);
     } catch (error) {
-      console.log(chalk.red(`Connection to YouTube API failed...`));
+      console.log("Connection to YouTube API failed...");
     }
   };
 };

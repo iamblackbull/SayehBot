@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const videoSchema = new mongoose.Schema({
   guild: String,
+  Channel: String,
   VideoId: String,
 });
 

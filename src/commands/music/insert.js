@@ -1,13 +1,13 @@
 const { SlashCommandBuilder } = require("discord.js");
-const playerDataHandler = require("../../utils/handlePlayerData");
-const responseCreator = require("../../utils/createResponse");
-const errorHandler = require("../../utils/handleErrors");
-const queueCreator = require("../../utils/createQueue");
-const embedCreator = require("../../utils/createEmbed");
-const buttonCreator = require("../../utils/createButtons");
-const searchHandler = require("../../utils/handleSearch");
-const deletionHandler = require("../../utils/handleDeletion");
-const { titles } = require("../../utils/musicUtils");
+const { titles } = require("../../utils/player/musicUtils");
+const playerDataHandler = require("../../utils/player/handlePlayerData");
+const responseCreator = require("../../utils/player/createResponse");
+const queueCreator = require("../../utils/player/createQueue");
+const embedCreator = require("../../utils/player/createMusicEmbed");
+const searchHandler = require("../../utils/player/handleSearch");
+const errorHandler = require("../../utils/main/handleErrors");
+const buttonCreator = require("../../utils/main/createButtons");
+const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -33,7 +33,7 @@ module.exports = {
     )
     .setDMPermission(false),
 
-  async autocompleteRun(interaction) {
+  async autocompleteRun(interaction, client) {
     ////////////// autocomplete response //////////////
     const query = interaction.options.getString("query", true);
     if (!query) return;
@@ -85,8 +85,8 @@ module.exports = {
           });
 
           let target = interaction.options.getInteger("position");
-          if (target > queue.tracks.data.size) {
-            target = queue.tracks.data.size + 1;
+          if (target > queue.tracks.size) {
+            target = queue.tracks.size + 1;
           }
 
           const song = result.tracks[0];

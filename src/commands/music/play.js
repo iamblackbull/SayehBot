@@ -1,12 +1,12 @@
 const { SlashCommandBuilder, PermissionsBitField } = require("discord.js");
-const responseCreator = require("../../utils/createResponse");
-const playerDataHandler = require("../../utils/handlePlayerData");
-const errorHandler = require("../../utils/handleErrors");
-const queueCreator = require("../../utils/createQueue");
-const embedCreator = require("../../utils/createEmbed");
-const buttonCreator = require("../../utils/createButtons");
-const searchHandler = require("../../utils/handleSearch");
-const deletionHandler = require("../../utils/handleDeletion");
+const responseCreator = require("../../utils/player/createResponse");
+const playerDataHandler = require("../../utils/player/handlePlayerData");
+const errorHandler = require("../../utils/main/handleErrors");
+const queueCreator = require("../../utils/player/createQueue");
+const embedCreator = require("../../utils/player/createMusicEmbed");
+const searchHandler = require("../../utils/player/handleSearch");
+const buttonCreator = require("../../utils/main/createButtons");
+const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -21,7 +21,7 @@ module.exports = {
     )
     .setDMPermission(false),
 
-  async autocompleteRun(interaction) {
+  async autocompleteRun(interaction, client) {
     ////////////// autocomplete response //////////////
     const query = interaction.options.getString("query", true);
     if (!query) return;

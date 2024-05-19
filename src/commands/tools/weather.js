@@ -1,123 +1,153 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const weather = require(`weather-js`);
+const { WEATHER_API_KEY } = process.env;
+const { colors, footers } = require("../../utils/main/mainUtils");
+const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
+const errorHandler = require("../../utils/main/handleErrors");
+const axios = require("axios");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("weather")
-    .setDescription("Get current weather data of a specific location.")
-    .addStringOption((option) => {
-      return option
+    .setDescription("Get info about current weather conditions.")
+    .addStringOption((option) =>
+      option
         .setName("location")
         .setDescription("Input a location name.")
-        .setRequired(false);
-    }),
+        .setRequired(true)
+    )
+    .addStringOption((option) =>
+      option
+        .setName("unit")
+        .setDescription("Select degree unit. (default: °C)")
+        .setRequired(false)
+        .addChoices(
+          {
+            name: "°C",
+            value: "m",
+          },
+          {
+            name: "°F",
+            value: "f",
+          },
+          {
+            name: "°K",
+            value: "s",
+          }
+        )
+    ),
 
   async execute(interaction, client) {
     await interaction.deferReply({
       fetchReply: true,
     });
 
-    let failedEmbed = new EmbedBuilder();
+    let success = false;
+    const city = interaction.options.getString("location");
+    const unit = interaction.options.getString("unit") || "m";
+    const apiKey = WEATHER_API_KEY;
 
-    const location = interaction.options.getString("location") || "Tehran";
-    weather.find({ search: `${location}`, degreeType: "C" }, function (result) {
-      if (!result) {
-        failedEmbed
-          .setTitle(`**No Result**`)
-          .setDescription(
-            `There is no data for **${location}** at this moment.\nTry again later with </weather:1047903145407295507>.`
-          )
-          .setColor(0xffea00)
-          .setThumbnail(
-            `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
-          );
+    const url = `http://api.weatherstack.com/current?access_key=${apiKey}&query=${location}&units=${unit}`;
 
-        interaction.editReply({
-          embeds: [failedEmbed],
-        });
-      } else {
-        try {
-          let embed = new EmbedBuilder()
-            .setTitle(`📍 ${result[0].location.name}`)
-            .setThumbnail(result[0].current.imageUrl)
-            .setColor(0x256fc4)
-            .setDescription(
-              `# ${result[0].current.temperature} ℃\n## ${result[0].current.skytext}\n### H:${result[0].forecast[0].high} L:${result[0].forecast[0].low}`
-            )
-            .addFields(
-              {
-                name: `Feels Like`,
-                value: `${result[0].current.feelslike} ℃` || `--`,
-                inline: true,
-              },
-              {
-                name: `Wind`,
-                value: `${result[0].current.windspeed}` || `--`,
-                inline: true,
-              },
-              {
-                name:
-                  `Tomorrow (${result[0].forecast[1].shortday})` || `Tomorrow`,
-                value:
-                  `${result[0].forecast[1].skytextday} (H:${result[0].forecast[1].high} L:${result[0].forecast[1].low})` ||
-                  `--`,
-                inline: true,
-              }
-            )
-            .setFooter({
-              iconURL: `https://cdn-icons-png.flaticon.com/512/552/552448.png`,
-              text: `MSN Weather `,
-            });
+    const response = await axios.get(url).catch(async (error) => {
+      console.error("Error while fetching Weather data: ", error);
 
-          let color;
-          switch (result[0].current.skytext.toLowerCase()) {
-            case "sunny":
-              color = 0xf0b81f;
-              break;
-            case "rainy":
-              color = 0x75abe0;
-              break;
-            case "windy":
-              color = 0x7576e0;
-              break;
-            case "stormy":
-              color = 0x212c40;
-              break;
-            case "cloudy":
-              color = 0xffffff;
-              break;
-          }
-
-          embed.setColor(color);
-
-          interaction.editReply({
-            embeds: [embed],
-          });
-
-        } catch (err) {
-          console.log(err);
-
-          failedEmbed
-            .setTitle(`**No Response**`)
-            .setDescription(
-              `MSN Weather API did not respond.\nTry again later with </weather:1047903145407295507>.`
-            )
-            .setColor(0xffea00)
-            .setThumbnail(
-              `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-            );
-
-          interaction.editReply({
-            embeds: [failedEmbed],
-          });
-        }
-      }
-      
-      setTimeout(() => {
-        interaction.deleteReply().catch((e) => {
-          console.log(`Failed to delete ${interaction.commandName} interaction.`);
-        });
-      }, 10 * 60 * 1000);
+      await errorHandler.handleAPIError(interaction);
     });
+
+    const result = response.data;
+    const { location, current } = result;
+
+    if (!location) await errorHandler.handleNoResultError(interaction);
+    else {
+      const embed = new EmbedBuilder()
+        .setTitle(`**${location.name}, ${location.country}**`)
+        .setThumbnail(current.weather_icons[0])
+        .setColor(colors.default)
+        .setDescription(
+          `# ${current.temperature}° ${current.weather_descriptions[0]}`
+        )
+        .addFields(
+          {
+            name: "Feels Like",
+            value: `${current.feelslike}°`,
+            inline: true,
+          },
+          {
+            name: "Wind Speed (Dir)",
+            value: `${current.wind_speed} mph (${current.wind_dir})`,
+            inline: true,
+          },
+          {
+            name: "Humidity",
+            value: `${current.humidity}%`,
+            inline: true,
+          },
+          {
+            name: "Visibility",
+            value: `${current.visibility} mi`,
+            inline: true,
+          },
+          {
+            name: "Pressure",
+            value: `${current.pressure} hPa`,
+            inline: true,
+          },
+          {
+            name: "UV Index",
+            value: `${current.uv_index}`,
+            inline: true,
+          }
+        )
+        .setFooter({
+          text: location.localtime,
+          iconURL: footers.date,
+        });
+
+      const colorArray = [
+        {
+          name: "sunny",
+          color: colors.sunny_weather,
+        },
+        {
+          name: "clear",
+          color: colors.clear_weather,
+        },
+        {
+          name: "rain",
+          color: colors.rain_weather,
+        },
+        {
+          name: "wind",
+          color: colors.wind_weather,
+        },
+        {
+          name: "storm",
+          color: colors.storm_weather,
+        },
+        {
+          name: "cloud",
+          color: colors.cloud_weather,
+        },
+        {
+          name: "snow",
+          color: colors.snow_weather,
+        },
+      ];
+
+      colorArray.forEach((condition) => {
+        if (
+          current.weather_descriptions[0].toLowerCase().includes(condition.name)
+        )
+          embed.setColor(condition.color);
+      });
+
+      await interaction.editReply({
+        embeds: [embed],
+      });
+
+      success = true;
+    }
+
+    handleNonMusicalDeletion(interaction, success, undefined, 10);
   },
 };

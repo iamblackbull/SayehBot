@@ -1,7 +1,7 @@
 const playerDB = require("../../schemas/player-schema");
-const embedCreator = require("../../utils/createEmbed");
-const buttonCreator = require("../../utils/createButtons");
-const deletionHandler = require("../../utils/handleDeletion");
+const embedCreator = require("../../utils/player/createMusicEmbed");
+const buttonCreator = require("../../utils/main/createButtons");
+const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   name: "playerStart",
@@ -20,7 +20,7 @@ module.exports = {
       );
     }
 
-    if (queue.repeatMode !== 0) return;
+    if (queue.repeatMode !== 0 && queue.repeatMode < 3) return;
     if (!song.url || song.url === undefined || song.url === null) return;
     if (queue.metadata.track === undefined) return;
     if (queue.metadata.track.url === song.url) return;

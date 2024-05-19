@@ -3,6 +3,7 @@ const { readdirSync } = require("fs");
 module.exports = (client) => {
   client.handleComponents = async () => {
     const componentFolders = readdirSync(`./src/components`);
+
     for (const folder of componentFolders) {
       const componentFiles = readdirSync(`./src/components/${folder}`).filter(
         (file) => file.endsWith(".js")
@@ -14,6 +15,7 @@ module.exports = (client) => {
         case "buttons":
           for (const file of componentFiles) {
             const button = require(`../../components/${folder}/${file}`);
+
             buttons.set(button.data.name, button);
           }
           break;
@@ -21,6 +23,7 @@ module.exports = (client) => {
         case "modals":
           for (const file of componentFiles) {
             const modal = require(`../../components/${folder}/${file}`);
+
             modals.set(modal.data.name, modal);
           }
           break;
@@ -28,6 +31,7 @@ module.exports = (client) => {
         case "selectMenus":
           for (const file of componentFiles) {
             const menu = require(`../../components/${folder}/${file}`);
+
             selectMenus.set(menu.data.name, menu);
           }
           break;

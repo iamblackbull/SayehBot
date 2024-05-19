@@ -1,12 +1,14 @@
-const mongoose = require("mongoose");
+const { Schema, model } = require("mongoose");
 
-const favoriteSchema = new mongoose.Schema({
+const favoriteSchema = new Schema({
   User: String,
   Playlist: [
     {
       Url: String,
+      Name: String,
+      Author: String,
     },
   ],
 });
 
-module.exports = mongoose.model("favorite", favoriteSchema);
+module.exports = model("favorite", favoriteSchema, "favorites");

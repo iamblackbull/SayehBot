@@ -1,8 +1,8 @@
 const { SlashCommandBuilder } = require("discord.js");
-const errorHandler = require("../../utils/handleErrors");
-const embedCreator = require("../../utils/createEmbed");
-const buttonCreator = require("../../utils/createButtons");
-const deletionHandler = require("../../utils/handleDeletion");
+const embedCreator = require("../../utils/player/createMusicEmbed");
+const errorHandler = require("../../utils/main/handleErrors");
+const buttonCreator = require("../../utils/main/createButtons");
+const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()

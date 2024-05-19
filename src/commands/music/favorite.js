@@ -1,15 +1,15 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { mongoose } = require("mongoose");
 const favorite = require("../../schemas/favorite-schema");
-const errorHandler = require("../../utils/handleErrors");
-const queueCreator = require("../../utils/createQueue");
-const searchHandler = require("../../utils/handleSearch");
-const playerDataHandler = require("../../utils/handlePlayerData");
-const embedCreator = require("../../utils/createEmbed");
-const favoriteHandler = require("../../utils/handleFavorite");
-const buttonCreator = require("../../utils/createButtons");
-const reactHandler = require("../../utils/handleReaction");
-const deletionHandler = require("../../utils/handleDeletion");
+const errorHandler = require("../../utils/main/handleErrors");
+const queueCreator = require("../../utils/player/createQueue");
+const searchHandler = require("../../utils/player/handleSearch");
+const playerDataHandler = require("../../utils/player/handlePlayerData");
+const embedCreator = require("../../utils/player/createMusicEmbed");
+const favoriteHandler = require("../../utils/player/handleFavorite");
+const buttonCreator = require("../../utils/main/createButtons");
+const reactHandler = require("../../utils/main/handleReaction");
+const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -93,7 +93,7 @@ module.exports = {
 
     if (mongoose.connection.readyState !== 1) {
       errorHandler.handleDatabaseError(interaction);
-    } else if (favoriteList?.Playlist.length === 0) {
+    } else if (!favoriteList || favoriteList.Playlist.length === 0) {
       errorHandler.handleEmptyPlaylistError(interaction, owner);
     } else if (sub === "play" && !interaction.member.voice.channel) {
       errorHandler.handleVoiceChannelError(interaction);
@@ -153,8 +153,6 @@ module.exports = {
               ////////////// add first track to queue //////////////
               await queue.addTrack(song);
 
-              const length = playlistLength;
-
               ////////////// original response //////////////
               const { embed, nowPlaying } =
                 embedCreator.createPlayFavoriteEmbed(
@@ -162,7 +160,7 @@ module.exports = {
                   queue,
                   song,
                   target,
-                  length
+                  playlistLength
                 );
 
               await playerDataHandler.handleData(interaction, nowPlaying);
@@ -198,6 +196,7 @@ module.exports = {
               owner,
               song,
               target,
+              0,
               0
             );
 
@@ -215,8 +214,14 @@ module.exports = {
               song
             );
           } else {
-            const { mappedArray, resultArray } =
-              await searchHandler.searchFavorite(splitPlaylist, 0);
+            const stringPlaylist = favoriteList.Playlist.map(
+              (song, index) =>
+                `**${index + 1}.** ["${song.Name}" by "${song.Author}"](${
+                  song.Url
+                })`
+            ).join("\n");
+
+            const mappedArray = stringPlaylist.split("\n");
 
             if (mappedArray.length === 0) {
               errorHandler.handleNoResultError(interaction);
@@ -231,7 +236,8 @@ module.exports = {
                 owner,
                 mappedArray,
                 target,
-                page
+                page,
+                totalPages
               );
 
               await interaction.editReply({
@@ -261,7 +267,8 @@ module.exports = {
                     owner,
                     mappedArray,
                     target,
-                    page
+                    page,
+                    totalPages
                   );
 
                   await interaction.editReply({

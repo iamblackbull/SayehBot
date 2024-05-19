@@ -7,11 +7,11 @@ const {
   ComponentType,
 } = require("discord.js");
 const { TRACKERGG_API_KEY } = process.env;
+const apex = require("../../schemas/apex-schema");
 const { TrackerClient } = require("tracker.gg");
 const api = new TrackerClient({
   apiKey: TRACKERGG_API_KEY,
 });
-const apex = require("../../schemas/apex-schema");
 
 module.exports = {
   data: new SlashCommandBuilder()

@@ -3,11 +3,11 @@ const {
   PermissionsBitField,
   PermissionFlagsBits,
 } = require("discord.js");
-const errorHandler = require("../../utils/handleErrors");
-const embedCreator = require("../../utils/createEmbed");
-const reactHandler = require("../../utils/handleReaction");
-const skipHandler = require("../../utils/handleSkip");
-const deletionHandler = require("../../utils/handleDeletion");
+const embedCreator = require("../../utils/player/createMusicEmbed");
+const skipHandler = require("../../utils/player/handleSkip");
+const errorHandler = require("../../utils/main/handleErrors");
+const reactHandler = require("../../utils/main/handleReaction");
+const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
