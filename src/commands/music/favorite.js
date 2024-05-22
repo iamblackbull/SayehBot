@@ -1,14 +1,14 @@
 const { SlashCommandBuilder } = require("discord.js");
 const { mongoose } = require("mongoose");
-const favorite = require("../../schemas/favorite-schema");
+const favoriteModel = require("../../database/favoriteModel");
 const errorHandler = require("../../utils/main/handleErrors");
-const queueCreator = require("../../utils/player/createQueue");
-const searchHandler = require("../../utils/player/handleSearch");
-const playerDataHandler = require("../../utils/player/handlePlayerData");
+const { createFavoriteQueue } = require("../../utils/player/createQueue");
+const { search, searchFavorite } = require("../../utils/player/handleSearch");
+const { handleData } = require("../../utils/player/handlePlayerData");
 const embedCreator = require("../../utils/player/createMusicEmbed");
 const favoriteHandler = require("../../utils/player/handleFavorite");
 const buttonCreator = require("../../utils/main/createButtons");
-const reactHandler = require("../../utils/main/handleReaction");
+const { pageReact } = require("../../utils/main/handleReaction");
 const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
@@ -87,7 +87,7 @@ module.exports = {
     const sub = options.getSubcommand();
     const owner = options.getUser("user") || interaction.user;
 
-    let favoriteList = await favorite.findOne({
+    let favoriteList = await favoriteModel.findOne({
       User: owner.id,
     });
 
@@ -121,7 +121,7 @@ module.exports = {
         ? inputQuery
         : splitPlaylist[0];
 
-      const result = await searchHandler.search(query);
+      const result = await search(query);
 
       const song = result.tracks[0];
 
@@ -129,11 +129,7 @@ module.exports = {
         ////////////// handling play subcommand //////////////
         case "play":
           if (!queue) {
-            queue = await queueCreator.createFavoriteQueue(
-              client,
-              interaction,
-              song
-            );
+            queue = await createFavoriteQueue(client, interaction, song);
           }
 
           if (!queue.connection) {
@@ -163,7 +159,7 @@ module.exports = {
                   playlistLength
                 );
 
-              await playerDataHandler.handleData(interaction, nowPlaying);
+              await handleData(interaction, nowPlaying);
 
               if (!queue.node.isPlaying() && !queue.node.isPaused())
                 await queue.node.play();
@@ -179,8 +175,7 @@ module.exports = {
 
               ////////////// add rest of tracks to queue //////////////
               if (!target) {
-                const { mappedArray, resultArray } =
-                  await searchHandler.searchFavorite(splitPlaylist, 1);
+                const { resultArray } = await searchFavorite(splitPlaylist, 1);
 
                 await queue.addTrack(resultArray);
               }
@@ -247,10 +242,7 @@ module.exports = {
               success = "favorite";
 
               if (totalPages > 1 && !target) {
-                const collector = reactHandler.pageReact(
-                  interaction,
-                  favoriteEmbed
-                );
+                const collector = pageReact(interaction, favoriteEmbed);
 
                 collector.on("collect", async (reaction, user) => {
                   if (user.bot) return;
@@ -338,7 +330,7 @@ module.exports = {
               favoriteEmbed,
               embed,
               favoriteList,
-              favorite,
+              favoriteModel,
               target,
               song
             );

@@ -1,7 +1,7 @@
 const { birthdayChannelID, guildID } = process.env;
 const { ActivityType } = require("discord.js");
-const birthday = require("../../schemas/birthday-schema");
-const checkBirthday = require("../../schemas/checkBirthday-schema");
+const birthday = require("../../database/birthdayModel");
+const checkBirthday = require("../../database/checkBirthdayModel");
 
 module.exports = (client) => {
   client.remindBirthday = async () => {

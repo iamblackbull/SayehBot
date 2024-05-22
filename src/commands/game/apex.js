@@ -6,11 +6,12 @@ const {
   ButtonStyle,
   ComponentType,
 } = require("discord.js");
-const { TRACKERGG_API_KEY } = process.env;
-const apex = require("../../schemas/apex-schema");
+const apex = require("../../database/apexModel");
 const { TrackerClient } = require("tracker.gg");
+const { handleUnavailableError } = require("../../utils/main/handleErrors");
+
 const api = new TrackerClient({
-  apiKey: TRACKERGG_API_KEY,
+  apiKey: process.env.TRACKERGG_API_KEY,
 });
 
 module.exports = {
@@ -45,6 +46,10 @@ module.exports = {
     ),
 
   async execute(interaction, client) {
+    return await handleUnavailableError(interaction);
+
+    //// temporarily unavailable
+
     const apexEmbed = await interaction.deferReply({
       fetchReply: true,
     });

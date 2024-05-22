@@ -7,22 +7,22 @@ const { mongoose } = require("mongoose");
 const errorHandler = require("../../utils/main/handleErrors");
 const { clear } = require("../../utils/main/warnTarget");
 const utils = require("../../utils/main/mainUtils");
-const deletionHandler = require("../../utils/main/handleDeletion");
+const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("clearwarns")
     .setDescription("Clear all warnings of a user in this server.")
-    .addUserOption((option) => {
-      return option
+    .addUserOption((option) =>
+      option
         .setName("user")
         .setDescription("Pick any member to clear their warns.")
-        .setRequired(true);
-    })
+        .setRequired(true)
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .setDMPermission(false),
 
-  async execute(interaction, client) {
+  async execute(interaction) {
     let success = false;
     const { guild, options, user } = interaction;
     const target = options.getUser("user");
@@ -34,7 +34,7 @@ module.exports = {
         fetchReply: true,
       });
 
-      await clear(user, target, guild);
+      await clear(user, target, guild.id);
 
       const embed = new EmbedBuilder()
         .setTitle(utils.titles.clear)
@@ -52,11 +52,7 @@ module.exports = {
         embeds: [embed],
       });
     }
-    deletionHandler.handleNonMusicalDeletion(
-      interaction,
-      success,
-      undefined,
-      5
-    );
+
+    handleNonMusicalDeletion(interaction, success, undefined, 5);
   },
 };

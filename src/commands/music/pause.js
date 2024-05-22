@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
-const embedCreator = require("../../utils/player/createMusicEmbed");
-const buttonCreator = require("../../utils/main/createButtons");
+const { createPauseEmbed } = require("../../utils/player/createMusicEmbed");
+const { createPauseButton } = require("../../utils/main/createButtons");
 const errorHandler = require("../../utils/main/handleErrors");
 const deletionHandler = require("../../utils/main/handleDeletion");
 
@@ -28,8 +28,8 @@ module.exports = {
         errorHandler.handleBusyError(interaction);
       } else {
         ////////////// toggle pause mode of queue //////////////
-        const embed = await embedCreator.createPauseEmbed(interaction, queue);
-        const button = buttonCreator.createPauseButtons();
+        const embed = await createPauseEmbed(interaction, queue);
+        const button = createPauseButton();
 
         await interaction.reply({
           embeds: [embed],

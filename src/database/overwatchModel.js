@@ -5,4 +5,4 @@ const owSchema = new mongoose.Schema({
   Tag: String,
 });
 
-module.exports = mongoose.model("wow", owSchema);
+module.exports = mongoose.model("overwatch", owSchema);

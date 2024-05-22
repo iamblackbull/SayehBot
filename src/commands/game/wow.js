@@ -101,7 +101,7 @@ module.exports = {
           },
           {
             name: "Raid Progress",
-            value: raid_progression[`amirdrassil-the-dreams-hope`].summary,
+            value: raid_progression["amirdrassil-the-dreams-hope"].summary,
           },
           {
             name: "Realm Class Rank",

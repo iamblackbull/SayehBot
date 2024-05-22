@@ -1,6 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder } = require("discord.js");
 const { mongoose } = require("mongoose");
-const video = require("../../schemas/video-schema");
+const video = require("../../database/videoModel");
 const { createUrlButton } = require("../../utils/main/createButtons");
 const { footers, colors, texts } = require("../../utils/player/musicUtils");
 const { tag, thumbnails, urls, labels } = require("../../utils/main/mainUtils");

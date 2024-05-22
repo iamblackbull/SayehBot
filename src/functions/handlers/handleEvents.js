@@ -14,6 +14,8 @@ module.exports = (client) => {
       switch (folder) {
         case "client":
         case "logs":
+        case "music":
+        case "guild":
         case "notifications":
           for (const file of eventFiles) {
             const event = require(`../../events/${folder}/${file}`);

@@ -1,17 +1,12 @@
-const playerDB = require("../../schemas/player-schema");
+const playerDB = require("../../database/playerModel");
 
 async function updatePlayerData(guildId, updates) {
   await playerDB.updateOne({ guildId }, updates);
 }
 
-async function handleData(interaction, nowPlaying) {
+async function handleData(guildId, nowPlaying) {
   const updates = { isJustAdded: nowPlaying };
-  await updatePlayerData(interaction.guildId, updates);
-}
-
-async function handleMessageData(message, nowPlaying) {
-  const updates = { isJustAdded: nowPlaying };
-  await updatePlayerData(message.guild.id, updates);
+  await updatePlayerData(guildId, updates);
 }
 
 async function handleSkipData(interaction) {
@@ -21,6 +16,5 @@ async function handleSkipData(interaction) {
 
 module.exports = {
   handleData,
-  handleMessageData,
   handleSkipData,
 };

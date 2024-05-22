@@ -1,19 +1,27 @@
 ﻿const { PermissionFlagsBits, Events } = require("discord.js");
 const scan = require("../../utils/api/scanUrlApi");
 const { bannedWords } = require("../../utils/main/mainUtils");
+const { warn } = require("../../utils/main/warnTarget");
 const { calculateXP } = require("../../utils/level/handleXPRate");
 const { handleMessageXp } = require("../../utils/level/handleLevel");
 const Levels = require("discord-xp");
 
 Levels.setURL(process.env.DBTOKEN);
 
-module.exports = (client) => {
-  client.on(Events.MessageCreate, async (message) => {
+module.exports = {
+  name: Events.MessageCreate,
+
+  async execute(message, client) {
     if (message.author.bot) return;
     if (message.webhookId) return;
     if (!message.guild) return;
 
-    const member = message.member;
+    const { member, content, channel, author, guild } = message;
+
+    const hasPermission = member.permissions.has(
+      PermissionFlagsBits.ManageMessages
+    );
+
     let ban = false;
     let reason;
 
@@ -26,7 +34,7 @@ module.exports = (client) => {
     ];
 
     const urlRegex = /(https?:\/\/[^\s]+)/;
-    const match = message.content.match(urlRegex);
+    const match = content.match(urlRegex);
 
     if (match) {
       const url = match[0];
@@ -37,16 +45,16 @@ module.exports = (client) => {
         ban = true;
         reason = "virus url";
       } else {
-        if (member.permissions.has(PermissionFlagsBits.ManageMessages)) return;
+        if (hasPermission) return;
 
         if (
-          message.channel.id === process.env.emoteChannelID &&
+          channel.id === process.env.emoteChannelID &&
           url.startsWith("https://7tv.app")
         )
           return;
 
         if (
-          message.channel.id === process.env.clipChannelID &&
+          channel.id === process.env.clipChannelID &&
           url.startsWith("https://clips.twitch.tv/")
         )
           return;
@@ -55,34 +63,34 @@ module.exports = (client) => {
           ban = true;
           reason = "discord url";
         } else {
-          if (ignoredChannels.includes(message.channel.id)) return;
-          else {
-            ban = true;
-            reason = "url";
-          }
+          if (ignoredChannels.includes(channel.id)) return;
+
+          ban = true;
+          reason = "url";
         }
       }
-    } else if (bannedWords.includes(message.content.toLowerCase())) {
-      if (member.permissions.has(PermissionFlagsBits.ManageMessages)) return;
-      else {
-        ban = true;
-        reason = "text";
-      }
+    } else if (bannedWords.includes(content.toLowerCase())) {
+      if (hasPermission) return;
+
+      ban = true;
+      reason = "text";
     }
 
     if (ban) {
       console.log(
-        `Deleted a message contained a ${reason} in ${message.channel.name} by ${message.author.username}.`
+        `Deleted a message contained a ${reason} in ${channel.name} by ${author.username}.`
       );
 
       message.delete();
-    } else {
-      if (message.channel.id === process.env.selfpromoChannelID) return;
 
-      const user = await Levels.fetch(message.author.id, message.guild.id);
+      if (!hasPermission) await warn(client.user, author, guild.id);
+    } else {
+      if (channel.id === process.env.selfpromoChannelID) return;
+
+      const user = await Levels.fetch(author.id, guild.id);
       const { finalXp } = calculateXP(message, user);
 
       await handleMessageXp(message, finalXp);
     }
-  });
+  },
 };

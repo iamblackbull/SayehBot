@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require("discord.js");
-const welcomeSchema = require("../../schemas/welcome-schema");
+const welcomeSchema = require("../../database/welcomeModel");
 
 const cache = new Map();
 
@@ -51,6 +51,7 @@ module.exports = {
     
   },
 };
+
 module.exports.getChannelId = (guildId) => {
   return cache.get(guildId);
 };

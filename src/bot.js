@@ -1,6 +1,6 @@
 require("dotenv").config();
 const { TOKEN, DBTOKEN } = process.env;
-const { connect, mongoose } = require("mongoose");
+const mongoose = require("mongoose");
 const fs = require("fs");
 const { Player } = require("discord-player");
 const executing = require("node:process");
@@ -16,6 +16,7 @@ const {
   ytdlOptions,
 } = require("./utils/player/queueUtils");
 const { getClient } = require("./utils/main/handleNotifications");
+const { getWarnClient } = require("./utils/main/warnPenalty");
 
 const client = new Client({
   intents: [
@@ -43,6 +44,7 @@ const client = new Client({
 });
 
 getClient(client);
+getWarnClient(client);
 
 client.player = new Player(client, {
   ...booleans,
@@ -77,9 +79,4 @@ client.handleEvents();
 client.handleCommands();
 client.handleComponents();
 client.login(TOKEN);
-
-mongoose.set("strictQuery", false);
-
-(async () => {
-  await connect(DBTOKEN).catch(console.error);
-})();
+mongoose.connect(DBTOKEN);

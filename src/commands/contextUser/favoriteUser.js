@@ -3,13 +3,13 @@ const {
   ApplicationCommandType,
 } = require("discord.js");
 const { mongoose } = require("mongoose");
-const favorite = require("../../schemas/favorite-schema");
+const favoriteModel = require("../../database/favoriteModel");
 const errorHandler = require("../../utils/main/handleErrors");
-const queueCreator = require("../../utils/player/createQueue");
-const searchHandler = require("../../utils/player/handleSearch");
+const { createFavoriteQueue } = require("../../utils/player/createQueue");
+const { search, searchFavorite } = require("../../utils/player/handleSearch");
 const embedCreator = require("../../utils/player/createMusicEmbed");
-const playerDataHandler = require("../../utils/player/handlePlayerData");
-const buttonCreator = require("../../utils/main/createButtons");
+const { handleData } = require("../../utils/player/handlePlayerData");
+const { createButtons } = require("../../utils/main/createButtons");
 const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
@@ -23,7 +23,7 @@ module.exports = {
     let success = false;
     const owner = interaction.targetUser;
 
-    let favoriteList = await favorite.findOne({
+    let favoriteList = await favoriteModel.findOne({
       User: owner.id,
     });
 
@@ -46,16 +46,12 @@ module.exports = {
 
       ////////////// first song data //////////////
       const query = splitPlaylist[0];
-      const result = await searchHandler.search(query);
-      
+      const result = await search(query);
+
       const song = result.tracks[0];
 
       if (!queue) {
-        queue = await queueCreator.createFavoriteQueue(
-          client,
-          interaction,
-          song
-        );
+        queue = await createFavoriteQueue(client, interaction, song);
       }
 
       if (!queue.connection) {
@@ -76,7 +72,7 @@ module.exports = {
           await queue.addTrack(song);
 
           ////////////// original response //////////////
-          const { embed, nowPlaying } = embedCreator.createPlayFavoriteEmbed(
+          const embedData = embedCreator.createPlayFavoriteEmbed(
             owner,
             queue,
             song,
@@ -84,23 +80,22 @@ module.exports = {
             playlistLength
           );
 
-          await playerDataHandler.handleData(interaction, nowPlaying);
+          await handleData(interaction, embedData.nowPlaying);
 
           if (!queue.node.isPlaying() && !queue.node.isPaused())
             await queue.node.play();
 
-          const button = buttonCreator.createButtons(nowPlaying);
+          const button = createButtons(embedData.nowPlaying);
 
           await interaction.editReply({
-            embeds: [embed],
+            embeds: [embedData.embed],
             components: [button],
           });
 
           success = true;
 
           ////////////// add rest of tracks to queue //////////////
-          const { mappedArray, resultArray } =
-            await searchHandler.searchFavorite(splitPlaylist, 1);
+          const { resultArray } = await searchFavorite(splitPlaylist, 1);
 
           await queue.addTrack(resultArray);
         }

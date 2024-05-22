@@ -3,10 +3,10 @@ const {
   PermissionsBitField,
   PermissionFlagsBits,
 } = require("discord.js");
-const embedCreator = require("../../utils/player/createMusicEmbed");
-const skipHandler = require("../../utils/player/handleSkip");
+const { createVoteEmbed } = require("../../utils/player/createMusicEmbed");
+const { previous } = require("../../utils/player/handleSkip");
 const errorHandler = require("../../utils/main/handleErrors");
-const reactHandler = require("../../utils/main/handleReaction");
+const { voteReact } = require("../../utils/main/handleReaction");
 const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
@@ -16,7 +16,9 @@ module.exports = {
 
   async execute(interaction, client) {
     ////////////// base variables //////////////
-    const queue = client.player.nodes.get(interaction.guildId);
+    const { guildId, member } = interaction;
+
+    const queue = client.player.nodes.get(guildId);
     let success = false;
 
     if (
@@ -25,14 +27,13 @@ module.exports = {
       )
     ) {
       errorHandler.handlePermissionError(interaction);
-    } else if (!interaction.member.voice.channel) {
+    } else if (!member.voice.channel) {
       errorHandler.handleVoiceChannelError(interaction);
     } else if (queue?.history?.length === 0) {
       errorHandler.handleQueueError(interaction);
     } else {
       const sameChannel =
-        queue.connection.joinConfig.channelId ===
-        interaction.member.voice.channel.id;
+        queue.connection.joinConfig.channelId === member.voice.channel.id;
 
       if (!sameChannel) {
         errorHandler.handleBusyError(interaction);
@@ -42,22 +43,19 @@ module.exports = {
         });
 
         ////////////// vote requirement check //////////////
-        const requiredVotes = Math.ceil(
-          (interaction.member.voice.channel.members.size - 1) / 2
-        );
+        const requiredVotes = member.voice.channel.members.size - 1;
 
         const allowed =
-          interaction.member.permissions.has(
-            PermissionFlagsBits.ManageMessages
-          ) || requiredVotes <= 1;
+          member.permissions.has(PermissionFlagsBits.ManageMessages) ||
+          requiredVotes <= 1;
 
         success = true;
 
         if (allowed) {
-          await skipHandler.previous(interaction, queue, true);
+          await previous(interaction, queue, true);
         } else {
           ////////////// vote phase //////////////
-          let embed = embedCreator.createVoteEmbed(requiredVotes, "start");
+          let embed = createVoteEmbed(requiredVotes, "start");
 
           await interaction.editReply({
             embeds: [embed],
@@ -67,11 +65,7 @@ module.exports = {
           let skip = false;
           const timer = requiredVotes * 10 * 1000;
 
-          const collector = reactHandler.voteReact(
-            interaction,
-            previousEmbed,
-            timer
-          );
+          const collector = voteReact(interaction, previousEmbed, timer);
 
           collector.on("collect", async (user) => {
             if (user.bot) return;
@@ -83,20 +77,20 @@ module.exports = {
                 skip = true;
                 collector.stop();
 
-                embed = embedCreator.createVoteEmbed(requiredVotes, "success");
+                embed = createVoteEmbed(requiredVotes, "success");
 
                 await interaction.editReply({
                   embeds: [embed],
                 });
 
-                await skipHandler.previous(interaction, queue, true);
+                await previous(interaction, queue, true);
               }
             }
           });
 
           collector.on("end", async () => {
             if (!skip) {
-              embed = embedCreator.createVoteEmbed(requiredVotes, "fail");
+              embed = createVoteEmbed(requiredVotes, "fail");
 
               await interaction.editReply({
                 embeds: [embed],

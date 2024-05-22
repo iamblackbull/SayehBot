@@ -1,6 +1,6 @@
 const { ActivityType } = require("discord.js");
 const { presences } = require("./mainUtils");
-const presenceModel = require("../../schemas/presence-schema");
+const presenceModel = require("../../database/presenceModel");
 
 async function mainPresence(client) {
   let name, type, status;

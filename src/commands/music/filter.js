@@ -6,7 +6,7 @@ const {
 } = require("discord.js");
 const { AudioFilters, useTimeline } = require("discord-player");
 const { filters } = require("../../utils/player/musicUtils");
-const embedCreator = require("../../utils/player/createMusicEmbed");
+const { createFilterEmbed } = require("../../utils/player/createMusicEmbed");
 const errorHandler = require("../../utils/main/handleErrors");
 const deletionHandler = require("../../utils/main/handleDeletion");
 
@@ -32,17 +32,17 @@ module.exports = {
 
   async execute(interaction, client) {
     ////////////// base variables //////////////
-    const queue = client.player.nodes.get(interaction.guildId);
+    const { guildId, member, user } = interaction;
+    const queue = client.player.nodes.get(guildId);
     let success = false;
 
-    if (!interaction.member.voice.channel) {
+    if (!member.voice.channel) {
       errorHandler.handleVoiceChannelError(interaction);
     } else if (!queue) {
       errorHandler.handleQueueError(interaction);
     } else {
       const sameChannel =
-        queue.connection.joinConfig.channelId ===
-        interaction.member.voice.channel.id;
+        queue.connection.joinConfig.channelId === member.voice.channel.id;
 
       if (!sameChannel) {
         errorHandler.handleBusyError(interaction);
@@ -67,10 +67,10 @@ module.exports = {
           description = "Filters are disabled.";
         }
 
-        let embed = embedCreator.createFilterEmbed(description);
+        let embed = createFilterEmbed(description);
 
         const filterMenu = new StringSelectMenuBuilder()
-          .setCustomId(`filters`)
+          .setCustomId("filters")
           .setPlaceholder("Select which filters to apply")
           .setMinValues(0)
           .setMaxValues(filtersOptions.length)
@@ -78,15 +78,8 @@ module.exports = {
 
         const button = new ActionRowBuilder().addComponents(filterMenu);
 
-        const filterEmbed = await interaction.reply({
-          embeds: [embed],
-          components: [button],
-        });
-
-        success = true;
-
         ////////////// handling menu interaction //////////////
-        const { timestamp } = useTimeline(interaction.guildId);
+        const { timestamp } = useTimeline(guildId);
         const duration = timestamp.total.label;
         const convertor = duration.split(":");
         const totalTimer = +convertor[0] * 60 + +convertor[1];
@@ -100,78 +93,91 @@ module.exports = {
         if (timer > 10 * 60) timer = 10 * 60;
         if (timer < 1 * 60) timer = 1 * 60;
 
-        try {
-          const collector = await filterEmbed.createMessageComponentCollector({
-            filter: (input) => input.user.id === interaction.user.id,
-            time: timer * 1000,
+        if (totalTimer == 0) {
+          await errorHandler.handleLiveTrackError(interaction);
+        } else {
+          const filterEmbed = await interaction.reply({
+            embeds: [embed],
+            components: [button],
           });
 
-          collector.on("collect", async (input) => {
-            ////////////// apply filters //////////////
-            input.deferUpdate();
+          success = true;
 
-            if (queue.filters.ffmpeg.filters.length > 0) {
-              queue.filters.ffmpeg.setFilters(false);
-            }
-            if (input.values.length === 0) {
-              description = "Filters are disabled.";
-            } else {
-              if (
-                input.values.includes("bassboost_low") &&
-                !input.values.includes("normalizer")
-              ) {
-                input.values.push("normalizer");
+          try {
+            const collector = await filterEmbed.createMessageComponentCollector(
+              {
+                filter: (input) => input.user.id === user.id,
+                time: timer * 1000,
+              }
+            );
+
+            collector.on("collect", async (input) => {
+              ////////////// apply filters //////////////
+              input.deferUpdate();
+
+              if (queue.filters.ffmpeg.filters.length > 0) {
+                queue.filters.ffmpeg.setFilters(false);
+              }
+              if (input.values.length === 0) {
+                description = "Filters are disabled.";
+              } else {
+                if (
+                  input.values.includes("bassboost_low") &&
+                  !input.values.includes("normalizer")
+                ) {
+                  input.values.push("normalizer");
+                }
+
+                queue.filters.ffmpeg.toggle(input.values);
+
+                ////////////// updating embed //////////////
+                description = `**${
+                  queue.filters.ffmpeg.filters.length
+                }** filters are enabled.\n
+                ${input.values
+                  .map((enabledFilter) => {
+                    let filter = filters.find(
+                      (filter) => enabledFilter == filter.value
+                    );
+
+                    return `- **${filter.emoji} ${filter.label}**`;
+                  })
+                  .join("\n")}`;
               }
 
-              queue.filters.ffmpeg.toggle(input.values);
+              embed = createFilterEmbed(description);
 
-              ////////////// updating embed //////////////
-              description = `**${
-                queue.filters.ffmpeg.filters.length
-              }** filters are enabled.\n
-              ${input.values
-                .map((enabledFilter) => {
-                  let filter = filters.find(
-                    (filter) => enabledFilter == filter.value
-                  );
+              ////////////// updating menu //////////////
+              const updatedOptions = filters.map((filter) => {
+                const isEnabled = queue.filters.ffmpeg.filters.includes(
+                  filter.value
+                );
 
-                  return `- **${filter.emoji} ${filter.label}**`;
-                })
-                .join("\n")}`;
-            }
+                return new StringSelectMenuOptionBuilder()
+                  .setLabel(filter.label)
+                  .setDescription(filter.description)
+                  .setValue(filter.value)
+                  .setEmoji(filter.emoji)
+                  .setDefault(isEnabled);
+              });
 
-            embed = embedCreator.createFilterEmbed(description);
+              filterMenu.setOptions(updatedOptions);
 
-            ////////////// updating menu //////////////
-            const updatedOptions = filters.map((filter) => {
-              const isEnabled = queue.filters.ffmpeg.filters.includes(
-                filter.value
+              await interaction.editReply({
+                embeds: [embed],
+                components: [button],
+              });
+            });
+          } catch (error) {
+            if (error.code === "InteractionCollectorError") {
+              console.log(
+                `Interaction response timed out for command ${interaction.commandName}.`
               );
-
-              return new StringSelectMenuOptionBuilder()
-                .setLabel(filter.label)
-                .setDescription(filter.description)
-                .setValue(filter.value)
-                .setEmoji(filter.emoji)
-                .setDefault(isEnabled);
-            });
-
-            filterMenu.setOptions(updatedOptions);
-
-            await interaction.editReply({
-              embeds: [embed],
-              components: [button],
-            });
-          });
-        } catch (error) {
-          if (error.code === "InteractionCollectorError") {
-            console.log(
-              `Interaction response timed out for command ${interaction.commandName}.`
-            );
-          } else {
-            console.log(
-              `Something went wrong while awaiting interaction response for command ${interaction.commandName}.`
-            );
+            } else {
+              console.log(
+                `Something went wrong while awaiting interaction response for command ${interaction.commandName}.`
+              );
+            }
           }
         }
       }

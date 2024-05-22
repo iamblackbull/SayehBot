@@ -1,21 +1,21 @@
+const { Events } = require("discord.js");
 const { EmbedBuilder } = require("discord.js");
-const { DBTOKEN } = process.env;
-const { colors, thumbnails } = require("../../utils/main/mainUtils");
+const { titles, colors, thumbnails } = require("../../utils/main/mainUtils");
 const { calculateXP } = require("../../utils/level/handleXPRate");
 const { handleInteractionXp } = require("../../utils/level/handleLevel");
 const Levels = require("discord-xp");
 
-Levels.setURL(DBTOKEN);
+Levels.setURL(process.env.DBTOKEN);
 
-let failedEmbed = new EmbedBuilder()
-  .setTitle("**Error**")
+const failedEmbed = new EmbedBuilder()
+  .setTitle(titles.error)
   .setColor(colors.error)
   .setThumbnail(thumbnails.error);
 
 const notFoundError = "COMMAND_NOT_FOUND";
 
 module.exports = {
-  name: "interactionCreate",
+  name: Events.InteractionCreate,
 
   async execute(interaction, client) {
     if (interaction.commandName !== "roll") {

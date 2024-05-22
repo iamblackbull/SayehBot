@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
-const embedCreator = require("../../utils/player/createMusicEmbed");
-const reactHandler = require("../../utils/main/handleReaction");
+const { createShuffleEmbed } = require("../../utils/player/createMusicEmbed");
+const { shuffleReact } = require("../../utils/main/handleReaction");
 const errorHandler = require("../../utils/main/handleErrors");
 const deletionHandler = require("../../utils/main/handleDeletion");
 
@@ -32,12 +32,10 @@ module.exports = {
           fetchReply: true,
         });
 
-        const reminder =
-          "Use </shuffle:1047903145218547863> again or react below to reshuffle.";
-
+        const reminder = `Use ${interaction.commandId} again or react below to reshuffle.`;
         let description = `Queue of **${queue.tracks.data.length} tracks** has been shuffled!\n${reminder}`;
 
-        let embed = embedCreator.createShuffleEmbed(description);
+        let embed = createShuffleEmbed(description);
 
         ////////////// shuffle queue //////////////
         await queue.tracks.shuffle();
@@ -49,7 +47,7 @@ module.exports = {
         success = true;
 
         ////////////// shuffle interaction collector //////////////
-        const collector = reactHandler.shuffleReact(interaction, shuffleEmbed);
+        const collector = shuffleReact(interaction, shuffleEmbed);
 
         collector.on("collect", async (reaction, user) => {
           if (user.bot) return;
@@ -60,7 +58,7 @@ module.exports = {
 
           description = `Queue of **${queue.tracks.data.length} tracks** has been reshuffled!\n${reminder}`;
 
-          embed = embedCreator.createShuffleEmbed(description);
+          embed = createShuffleEmbed(description);
 
           await interaction.editReply({
             embeds: [embed],

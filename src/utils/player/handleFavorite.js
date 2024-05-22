@@ -1,7 +1,7 @@
 const { ComponentType } = require("discord.js");
 const { mongoose } = require("mongoose");
-const favorite = require("../../schemas/favorite-schema");
-const { titles } = require("./musicUtils");
+const favorite = require("../../database/favoriteModel");
+const { titles, favoriteSizes } = require("./musicUtils");
 const queueCreator = require("./createQueue");
 const embedCreator = require("./createMusicEmbed");
 const playerDataHandler = require("./handlePlayerData");
@@ -38,7 +38,7 @@ async function updateFavoriteList(user, song) {
     );
 
     if (songIndex === -1) {
-      if (favoriteList.Playlist.length > 100) {
+      if (favoriteList.Playlist.length > favoriteSizes[0].value) {
         favoriteMode = "full";
       } else {
         favoriteSongs.push({

@@ -34,12 +34,13 @@ const colors = {
 };
 
 const buttons = {
+  bookmark: "🔖",
   play: "▶",
   previous: "⏮",
   pause: "⏸",
   skip: "⏭",
+  shuffle: "🔀",
   favorite: "🤍",
-  lyrics: "🎤",
 };
 
 const footers = {
@@ -141,6 +142,12 @@ const filters = [
   },
 ];
 
+const favoriteSizes = [
+  { label: "Tier 1", value: 100 },
+  { label: "Tier 2", value: 150 },
+  { label: "Tier 3", value: 200 },
+];
+
 module.exports = {
   titles,
   colors,
@@ -149,4 +156,5 @@ module.exports = {
   texts,
   thumbnails,
   filters,
+  favoriteSizes,
 };

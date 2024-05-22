@@ -1,8 +1,11 @@
+const { Events } = require("discord.js");
 const { boostChannelID } = process.env;
 const boostMessageSent = new Set();
 
-module.exports = (client) => {
-  client.on("guildMemberUpdate", async (oldMember, newMember) => {
+module.exports = {
+  name: Events.GuildMemberUpdate,
+
+  async execute(oldMember, newMember, client) {
     const oldStatus = oldMember.premiumSince;
     const newStatus = newMember.premiumSince;
 
@@ -21,5 +24,5 @@ module.exports = (client) => {
         boostMessageSent.delete(newMember.id);
       }, 10 * 60 * 1000);
     }
-  });
+  },
 };

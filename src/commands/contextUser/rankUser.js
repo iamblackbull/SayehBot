@@ -9,6 +9,7 @@ const { generateCard } = require("../../utils/level/generateCard");
 const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 const { mongoose } = require("mongoose");
 const Levels = require("discord-xp");
+
 Levels.setURL(DBTOKEN);
 
 module.exports = {

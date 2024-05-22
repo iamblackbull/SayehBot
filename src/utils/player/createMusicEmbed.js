@@ -2,7 +2,7 @@ const { EmbedBuilder } = require("discord.js");
 const { titles, footers, texts, thumbnails, colors } = require("./musicUtils");
 
 function createEmbed({ title, description, color, author, thumbnail, footer }) {
-  let embed = new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setTitle(title)
     .setDescription(description)
     .setColor(color);
@@ -61,6 +61,16 @@ function determineSourceAndColor(url) {
   }
 
   return sources.music;
+}
+
+function setDurationLabel(trackDuration) {
+  const convertor = trackDuration.split(":");
+  const totalTimer = +convertor[0] * 60 + +convertor[1];
+
+  let duration = "LIVE";
+  if (totalTimer != 0) duration = trackDuration;
+
+  return duration;
 }
 
 function createTrackEmbed(interaction, queue, result, song) {
@@ -149,7 +159,8 @@ function createTrackEmbed(interaction, queue, result, song) {
     }
   }
 
-  const description = `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`;
+  const duration = setDurationLabel(song.duration);
+  const description = `**[${song.title}](${song.url})**\n**${song.author}**\n${duration}`;
 
   const thumbnail = song.thumbnail;
 
@@ -206,9 +217,9 @@ function createSearchEmbed(result, isLink) {
   const description = result.tracks
     .slice(0, resultLength)
     .map((song, i) => {
-      return `**${i + 1}.** \`[${song.duration}]\` [${song.title} -- ${
-        song.author
-      }](${song.url})`;
+      return `**${i + 1}.** \`[${setDurationLabel(song.duration)}]\` [${
+        song.title
+      } -- ${song.author}](${song.url})`;
     })
     .join("\n");
 
@@ -254,8 +265,7 @@ async function createPauseEmbed(interaction, queue) {
     thumbnail = thumbnails.resume;
   }
 
-  const description =
-    "Use </pause:1047903145071759424> again or click the button below to toggle.";
+  const description = `Use ${interaction.commandId} again or click the button below to toggle.`;
 
   const { iconURL, text, color } = determineSourceAndColor("music");
 
@@ -281,9 +291,9 @@ function createQueueEmbed(page, totalPages, queue) {
   const queueString = queue.tracks.data
     .slice(page * 10, page * 10 + 10)
     .map((song, i) => {
-      return `**${page * 10 + i + 1}.** \`[${song.duration}]\` ["${
-        song.title
-      }" by "${song.author}"](${song.url})`;
+      return `**${page * 10 + i + 1}.** \`[${setDurationLabel(
+        song.duration
+      )}]\` ["${song.title}" by "${song.author}"](${song.url})`;
     })
     .join("\n");
 
@@ -443,7 +453,8 @@ function createPlayFavoriteEmbed(owner, queue, song, target, length) {
       : `**${titles.track} ${queueSize}**`
     : `${titles.playlist} (${length} Tracks)`;
 
-  const description = `**[${song.title}](${song.url})**\n**${song.author}**\n${song.duration}`;
+  const duration = setDurationLabel(song.duration);
+  const description = `**[${song.title}](${song.url})**\n**${song.author}**\n${duration}`;
 
   const thumbnail = song.thumbnail;
 
@@ -625,6 +636,7 @@ function createLeaveEmbed() {
 }
 
 module.exports = {
+  setDurationLabel,
   createTrackEmbed,
   createSongEmbed,
   createSearchEmbed,

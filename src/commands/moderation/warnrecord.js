@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { mongoose } = require("mongoose");
 const errorHandler = require("../../utils/main/handleErrors");
-const warnModel = require("../../schemas/warn-schema");
+const warnModel = require("../../database/warnModel");
 const utils = require("../../utils/main/mainUtils");
 
 module.exports = {
@@ -10,7 +10,7 @@ module.exports = {
     .setDescription("Check your warning record in this server.")
     .setDMPermission(false),
 
-  async execute(interaction, client) {
+  async execute(interaction) {
     const { guild, user } = interaction;
 
     if (mongoose.connection.readyState !== 1) {

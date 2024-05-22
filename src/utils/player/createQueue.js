@@ -1,28 +1,18 @@
 const { booleans, cooldowns, ytdlOptions } = require("./queueUtils");
 
 async function createMainQueue(client, type, mode, song) {
-  let Metadata = {};
+  const requestor = mode === "interaction" ? type.user : type.author;
 
-  if (mode === "interaction") {
-    Metadata = {
-      guild: type.guildId,
-      channel: type.member.voice.channel,
-      client: type.guild.members.me,
-      requestedBy: type.user,
-      track: song,
-    };
-  } else {
-    Metadata = {
-      guild: type.guild.id,
-      channel: type.member.voice.channel,
-      client: type.guild.members.me,
-      requestedBy: type.author,
-      track: song,
-    };
-  }
+  const metadata = {
+    guild: type.guild.id,
+    channel: type.member.voice.channel,
+    client: type.guild.members.me,
+    requestedBy: requestor,
+    track: song,
+  };
 
   const queue = await client.player.nodes.create(type.guild, {
-    metadata: Metadata,
+    metadata,
     ...booleans,
     ...cooldowns,
     ...ytdlOptions,

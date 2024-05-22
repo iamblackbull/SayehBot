@@ -483,6 +483,59 @@ async function handleRateLimitError(interaction) {
   }
 }
 
+async function handleUnavailableError(interaction) {
+  const unavailableEmbed = new EmbedBuilder()
+    .setTitle("**Not Available**")
+    .setDescription(
+      "This command is currenty unavailable and under development. Stay tuned for upcoming updates!"
+    )
+    .setColor(colors.warning)
+    .setThumbnail(thumbnails.tools);
+
+  if (interaction.deferred || interaction.replied) {
+    await interaction.editReply({
+      embeds: [unavailableEmbed],
+    });
+  } else {
+    await interaction.reply({
+      embeds: [unavailableEmbed],
+      ephemeral: true,
+    });
+  }
+}
+
+async function handleNoBookmarkProfileError(interaction) {
+  warningEmbed
+    .setTitle("**Profile not found**")
+    .setDescription("Make sure they have bookmarked their profile first.");
+
+  if (interaction.deferred || interaction.replied) {
+    await interaction.editReply({
+      embeds: [warningEmbed],
+    });
+  } else {
+    await interaction.reply({
+      embeds: [warningEmbed],
+      ephemeral: true,
+    });
+  }
+}
+
+async function handleLiveTrackError(interaction) {
+  warningEmbed.setDescription("Unable to perform this action on a live track.");
+
+  if (interaction.deferred || interaction.replied) {
+    await interaction.editReply({
+      embeds: [warningEmbed],
+    });
+  } else {
+    await interaction.reply({
+      embeds: [warningEmbed],
+      ephemeral: true,
+    });
+  }
+}
+
 module.exports = {
   handleDatabaseError,
   handleStreamModeError,
@@ -513,4 +566,7 @@ module.exports = {
   handleFileFormatError,
   handleLargeFileError,
   handleRateLimitError,
+  handleUnavailableError,
+  handleNoBookmarkProfileError,
+  handleLiveTrackError,
 };

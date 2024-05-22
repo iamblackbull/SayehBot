@@ -1,5 +1,5 @@
 const { mongoose } = require("mongoose");
-const streamModel = require("../../schemas/stream-schema");
+const streamModel = require("../../database/streamModel");
 const { mainPresence } = require("../../utils/main/handlePresence");
 
 module.exports = (client) => {

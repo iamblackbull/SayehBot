@@ -1,14 +1,16 @@
-const { PermissionsBitField } = require("discord.js");
-const playerDataHandler = require("../../utils/player/handlePlayerData");
-const queueCreator = require("../../utils/player/createQueue");
-const embedCreator = require("../../utils/player/createMusicEmbed");
-const searchHandler = require("../../utils/player/handleSearch");
+const { PermissionsBitField, Events } = require("discord.js");
 const errorHandler = require("../../utils/main/handleErrors");
-const buttonCreator = require("../../utils/main/createButtons");
-const deletionHandler = require("../../utils/main/handleDeletion");
+const { handleData } = require("../../utils/player/handlePlayerData");
+const { createMessageQueue } = require("../../utils/player/createQueue");
+const { createTrackEmbed } = require("../../utils/player/createMusicEmbed");
+const { search } = require("../../utils/player/handleSearch");
+const { createButtons } = require("../../utils/main/createButtons");
+const { handleMessageDelection } = require("../../utils/main/handleDeletion");
 
-module.exports = (client) => {
-  client.on("messageCreate", async (message) => {
+module.exports = {
+  name: Events.MessageCreate,
+
+  async execute(message, client) {
     ////////////// return checks //////////////
     if (message.author.bot) return;
     if (message.webhookId) return;
@@ -34,14 +36,14 @@ module.exports = (client) => {
     } else {
       const query = message.content.slice(match[0].length).trim();
 
-      const result = await searchHandler.search(query);
+      const result = await search(query);
 
       if (!result.hasTracks()) {
         msg = await errorHandler.handleNoResultErrorMessage(message);
       } else {
         const queue =
           client.player.nodes.get(message.guild.id) ||
-          (await queueCreator.createMessageQueue(client, message, result));
+          (await createMessageQueue(client, message, result));
 
         if (!queue.connection) {
           await queue.connect(message.member.voice.channel);
@@ -61,22 +63,17 @@ module.exports = (client) => {
             const target = result.playlist ? result.tracks : song;
             await queue.addTrack(target);
 
-            const { embed, nowPlaying } = embedCreator.createTrackEmbed(
-              false,
-              queue,
-              result,
-              song
-            );
+            const embedData = createTrackEmbed(false, queue, result, song);
 
-            await playerDataHandler.handleMessageData(message, nowPlaying);
+            await handleData(message.guild.id, embedData.nowPlaying);
 
             if (!queue.node.isPlaying() && !queue.node.isPaused())
               await queue.node.play();
 
-            const button = buttonCreator.createButtons(nowPlaying);
+            const button = createButtons(embedData.nowPlaying);
 
             msg = await message.reply({
-              embeds: [embed],
+              embeds: [embedData.embed],
               components: [button],
             });
 
@@ -106,6 +103,6 @@ module.exports = (client) => {
       }
     }
 
-    deletionHandler.handleMessageDelection(client, firstMsg, msg, success);
-  });
+    handleMessageDelection(client, firstMsg, msg, success);
+  },
 };

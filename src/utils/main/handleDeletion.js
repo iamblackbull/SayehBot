@@ -9,7 +9,7 @@ function calculateTimer(interaction, id, success) {
       interaction?.commandName !== "skip" &&
       interaction?.customId !== "skip-button"
     ) {
-      const timeline = useTimeline(id);
+      const timeline = useTimeline(interaction.guild.id);
 
       if (
         timeline !== null &&
@@ -30,10 +30,10 @@ function calculateTimer(interaction, id, success) {
 
           timer = totalTimer - currentTimer;
 
-          if (timer > 10 * 60) timer = 10 * 60;
-          if (timer < 1 * 60) timer = 1 * 60;
+          if (totalTimer == 0 || timer > 10 * 60) timer = 10 * 60;
+          else if (timer < 1 * 60) timer = 1 * 60;
         } catch (error) {
-          console.log(error);
+          console.log("Error while calculating track timer: ", error);
         }
       }
     }

@@ -1,13 +1,14 @@
-const { AttachmentBuilder } = require("discord.js");
-const { welcomeRoleID, leaveChannelID, guildID } = process.env;
+const { AttachmentBuilder, Events } = require("discord.js");
+const { welcomeRoleID, guildID } = process.env;
 const { getChannelId } = require("../../commands/server/setwelcome");
 const { generateWelcomeCard } = require("../../utils/level/generateCard");
 
 const welcomeMessageSent = new Set();
-const leaveMessageSent = new Set();
 
-module.exports = (client) => {
-  client.on("guildMemberAdd", async (member) => {
+module.exports = {
+  name: Events.GuildMemberAdd,
+
+  async execute(member) {
     if (welcomeMessageSent.has(member.id)) return;
     welcomeMessageSent.add(member.id);
 
@@ -51,25 +52,5 @@ module.exports = (client) => {
     setTimeout(() => {
       welcomeMessageSent.delete(member.id);
     }, 10 * 60 * 1000);
-  });
-
-  client.on("guildMemberRemove", async (member) => {
-    if (leaveMessageSent.has(member.id)) return;
-    leaveMessageSent.add(member.id);
-
-    const { guild, user } = member;
-    const channel = guild.channels.cache.get(leaveChannelID);
-
-    console.log(`${user.username} left the server.`);
-
-    setTimeout(async () => {
-      await channel.send({
-        content: `**${user.username}** left the server.`,
-      });
-    }, 2 * 1000);
-
-    setTimeout(() => {
-      leaveMessageSent.delete(member.id);
-    }, 10 * 60 * 1000);
-  });
+  },
 };

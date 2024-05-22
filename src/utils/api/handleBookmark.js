@@ -2,8 +2,8 @@ const { EmbedBuilder, ComponentType } = require("discord.js");
 const { mongoose } = require("mongoose");
 const errorHandler = require("../../utils/main/handleErrors");
 const utils = require("../main/mainUtils");
-const wow = require("../../schemas/wow-schema");
-const ow = require("../../schemas/owProfile");
+const wow = require("../../database/wowModel");
+const ow = require("../../database/overwatchModel");
 
 export async function bookmark(interaction, reply) {
   const { options } = interaction;

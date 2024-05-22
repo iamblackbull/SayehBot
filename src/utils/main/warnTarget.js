@@ -1,17 +1,17 @@
-const warnModel = require("../../schemas/warn-schema");
+const warnModel = require("../../database/warnModel");
 
-async function warn(user, target, guild) {
+async function warn(user, target, guildId) {
   let warnSuccess = false;
   let warns = 1;
 
   let warnList = await warnModel.findOne({
-    guildId: guild.id,
+    guildId: guildId,
     UserId: target.id,
   });
 
   if (!warnList) {
     warnList = new warnModel({
-      guildId: guild.id,
+      guildId: guildId,
       UserId: target.id,
       Username: target.globalName,
       Warns: warns,
@@ -24,7 +24,7 @@ async function warn(user, target, guild) {
 
     warnList = await warnModel.updateOne(
       {
-        guildId: guild.id,
+        guildId: guildId,
         UserId: target.id,
       },
       {
@@ -34,10 +34,8 @@ async function warn(user, target, guild) {
     );
   }
 
-  const username = user === "SayehBot" ? user : user.name;
-
   console.log(
-    `${username} warned ${target.username}. (Total Warnings: ${warns})`
+    `${user.username} warned ${target.username}. (Total Warnings: ${warns})`
   );
 
   warnSuccess = true;
@@ -45,9 +43,9 @@ async function warn(user, target, guild) {
   return { warnSuccess, warns };
 }
 
-async function clear(user, target, guild) {
+async function clear(user, target, guildId) {
   await warnModel.findOneAndRemove({
-    guildId: guild.id,
+    guildId: guildId,
     UserId: target.id,
   });
 

@@ -5,10 +5,10 @@ const {
 } = require("discord.js");
 const { mongoose } = require("mongoose");
 const errorHandler = require("../../utils/main/handleErrors");
-const warnModel = require("../../schemas/warn-schema");
+const warnModel = require("../../database/warnModel");
 const utils = require("../../utils/main/mainUtils");
 const { pageReact } = require("../../utils/main/handleReaction");
-const deletionHandler = require("../../utils/main/handleDeletion");
+const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -111,11 +111,7 @@ module.exports = {
         });
       }
     }
-    deletionHandler.handleNonMusicalDeletion(
-      interaction,
-      success,
-      undefined,
-      10
-    );
+
+    handleNonMusicalDeletion(interaction, success, undefined, 10);
   },
 };

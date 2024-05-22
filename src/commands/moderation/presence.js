@@ -6,8 +6,8 @@ const {
 const { mongoose } = require("mongoose");
 const utils = require("../../utils/main/mainUtils");
 const errorHandler = require("../../utils/main/handleErrors");
-const streamModel = require("../../schemas/stream-schema");
-const presenceModel = require("../../schemas/presence-schema");
+const streamModel = require("../../database/streamModel");
+const presenceModel = require("../../database/presenceModel");
 const { customPresence } = require("../../utils/main/handlePresence");
 const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 

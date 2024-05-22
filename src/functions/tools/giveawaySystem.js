@@ -1,5 +1,5 @@
 const { GiveawaysManager } = require("discord-giveaways");
-const giveaway = require("../../schemas/giveaway-schema");
+const giveaway = require("../../database/giveawayModel");
 
 module.exports = (client) => {
   const GiveawayManagerWithOwnDatabase = class extends GiveawaysManager {

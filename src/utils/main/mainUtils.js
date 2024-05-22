@@ -11,6 +11,7 @@ const titles = {
   gamble_winner: "**🥇 Winner**",
   gamble_loser: "**☹ Loser**",
   bookmark: "**🔖 Bookmark**",
+  error: "**Error**",
   warn: "**Target Warned**",
   warning: "**Warning!**",
   warnlist: "**WarnList**",
@@ -76,6 +77,7 @@ const footers = {
 };
 
 const thumbnails = {
+  tools: "https://i.imgur.com/l15zpW0.png",
   clear: "https://i.imgur.com/FhH4jJL.png",
   delete: "https://i.imgur.com/NA5jsRa.png",
   system: "https://i.imgur.com/UD49B9U.png",
@@ -103,16 +105,16 @@ const urls = {
 };
 
 const warnPenalties = [
-  { label: "Simple warning message", timer: 0 },
-  { label: "1 minute time out.", timer: 1 * 60 * 1000 },
-  { label: "10 minutes time out.", timer: 10 * 60 * 1000 },
-  { label: "30 minutes time out.", timer: 30 * 60 * 1000 },
-  { label: "1 hour time out.", timer: 1 * 60 * 60 * 1000 },
-  { label: "5 hours time out.", timer: 5 * 60 * 60 * 1000 },
-  { label: "12 hours time out.", timer: 12 * 60 * 60 * 1000 },
-  { label: "1 day time out.", timer: 1 * 24 * 60 * 60 * 1000 },
-  { label: "1 week time out.", timer: 7 * 24 * 60 * 60 * 1000 },
-  { label: "Permanent Ban!", timer: 0 },
+  { label: "Warning Message", timer: 0 },
+  { label: "1 Minute Timeout", timer: 1 * 60 * 1000 },
+  { label: "10 Minutes Timeout", timer: 10 * 60 * 1000 },
+  { label: "30 Minutes Timeout", timer: 30 * 60 * 1000 },
+  { label: "1 Hour Timeout", timer: 1 * 60 * 60 * 1000 },
+  { label: "5 Hours Timeout", timer: 5 * 60 * 60 * 1000 },
+  { label: "12 Hours Time out", timer: 12 * 60 * 60 * 1000 },
+  { label: "1 Day Timeout", timer: 1 * 24 * 60 * 60 * 1000 },
+  { label: "1 Week Timeout", timer: 7 * 24 * 60 * 60 * 1000 },
+  { label: "2 Week Timeout", timer: 14 * 24 * 60 * 60 * 1000 },
 ];
 
 const bannedWords = [

@@ -1,4 +1,4 @@
-const playerDB = require("../../schemas/player-schema");
+const playerDB = require("../../database/playerModel");
 const embedCreator = require("../../utils/player/createMusicEmbed");
 const buttonCreator = require("../../utils/main/createButtons");
 const deletionHandler = require("../../utils/main/handleDeletion");

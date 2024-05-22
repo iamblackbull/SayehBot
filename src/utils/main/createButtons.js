@@ -5,7 +5,7 @@ function createBookmarkButton(customId) {
   return new ButtonBuilder()
     .setCustomId(customId)
     .setLabel("Bookmark")
-    .setEmoji("🔖")
+    .setEmoji(buttons.bookmark)
     .setStyle(ButtonStyle.Primary);
 }
 
@@ -22,8 +22,8 @@ function createButtons(nowPlaying) {
     ["previous-button", buttons.previous, ButtonStyle.Secondary],
     ["pause-button", buttons.pause, ButtonStyle.Secondary],
     ["skip-button", buttons.skip, ButtonStyle.Secondary],
+    ["shuffle-button", buttons.shuffle, ButtonStyle.Secondary],
     ["favorite-button", buttons.favorite, ButtonStyle.Danger],
-    ["lyrics-button", buttons.lyrics, ButtonStyle.Primary],
   ];
 
   const components = buttonsConfig.map(([customId, emoji, style]) =>
@@ -35,7 +35,7 @@ function createButtons(nowPlaying) {
   return button;
 }
 
-function createPauseButtons() {
+function createPauseButton() {
   const pauseButton = createButton(
     "pause-button",
     buttons.pause,
@@ -44,6 +44,19 @@ function createPauseButtons() {
   );
 
   const button = new ActionRowBuilder().addComponents(pauseButton);
+
+  return button;
+}
+
+function createShuffleButton() {
+  const shuffleButton = createButton(
+    "shuffle-button",
+    buttons.shuffle,
+    ButtonStyle.Secondary,
+    false
+  );
+
+  const button = new ActionRowBuilder().addComponents(shuffleButton);
 
   return button;
 }
@@ -120,7 +133,8 @@ function createGameButtons(customId, recentRunUrl, bestRunUrl) {
 
 module.exports = {
   createButtons,
-  createPauseButtons,
+  createPauseButton,
+  createShuffleButton,
   createFavoriteButtons,
   createWarningButtons,
   createUrlButton,

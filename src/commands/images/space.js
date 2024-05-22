@@ -1,8 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { NASA_API_KEY } = process.env;
 const apod = require("nasa-apod");
-nasa = new apod.Client({
-  apiKey: NASA_API_KEY,
+
+const nasa = new apod.Client({
+  apiKey: process.env.NASA_API_KEY,
 });
 
 module.exports = {
@@ -49,7 +49,9 @@ module.exports = {
 
       let failedEmbed = new EmbedBuilder()
         .setTitle(`**No Response**`)
-        .setDescription(`NASA API did not respond. Please try again later with </space:1050160950583513189>.`)
+        .setDescription(
+          `NASA API did not respond. Please try again later with </space:1050160950583513189>.`
+        )
         .setColor(0xffea00)
         .setThumbnail(
           `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
@@ -60,7 +62,7 @@ module.exports = {
         ephemeral: true,
       });
     }
-    
+
     setTimeout(() => {
       interaction.deleteReply().catch((e) => {
         console.log(`Failed to delete ${interaction.commandName} interaction.`);

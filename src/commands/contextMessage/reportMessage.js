@@ -7,7 +7,7 @@ const {
   TextInputBuilder,
   TextInputStyle,
 } = require("discord.js");
-const report = require("../../schemas/report-schema");
+const report = require("../../database/reportModel");
 
 module.exports = {
   data: new ContextMenuCommandBuilder()

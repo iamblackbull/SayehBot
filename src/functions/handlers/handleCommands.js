@@ -27,14 +27,14 @@ module.exports = (client) => {
     const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
     try {
-      console.log(chalk.cyan("Retrieving application slash commands..."));
+      console.log(chalk.cyan("[Application Commands]: Refreshing...."));
 
       await rest.put(Routes.applicationCommands(clientID), {
         body: client.commandArray,
       });
 
       console.log(
-        chalk.green("Successfully retrieved application slash commands.")
+        chalk.green("[Application Commands]: Successfully refreshed..")
       );
     } catch (error) {
       console.error(error);
