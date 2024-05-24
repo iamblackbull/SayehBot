@@ -15,8 +15,6 @@ const {
   cooldowns,
   ytdlOptions,
 } = require("./utils/player/queueUtils");
-const { getClient } = require("./utils/main/handleNotifications");
-const { getWarnClient } = require("./utils/main/warnPenalty");
 
 const client = new Client({
   intents: [
@@ -42,9 +40,6 @@ const client = new Client({
     Partials.ThreadMember,
   ],
 });
-
-getClient(client);
-getWarnClient(client);
 
 client.player = new Player(client, {
   ...booleans,

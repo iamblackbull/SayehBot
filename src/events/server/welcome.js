@@ -1,5 +1,6 @@
 const { AttachmentBuilder, Events } = require("discord.js");
 const { welcomeRoleID, guildID } = process.env;
+const eventsModel = require("../../database/eventsModel");
 const { getChannelId } = require("../../commands/server/setwelcome");
 const { generateWelcomeCard } = require("../../utils/level/generateCard");
 
@@ -9,11 +10,17 @@ module.exports = {
   name: Events.GuildMemberAdd,
 
   async execute(member) {
-    if (welcomeMessageSent.has(member.id)) return;
-    welcomeMessageSent.add(member.id);
-
     const { guild, user } = member;
     const { memberCount } = guild;
+
+    const eventsList = await eventsModel.findOne({
+      guildId: guild.id,
+      MemberAdd: true,
+    });
+    if (!eventsList) return;
+
+    if (welcomeMessageSent.has(member.id)) return;
+    welcomeMessageSent.add(member.id);
 
     const channelId = getChannelId(guildID);
     if (!channelId) return;

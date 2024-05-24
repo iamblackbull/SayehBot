@@ -4,6 +4,7 @@ const video = require("../../database/videoModel");
 const { createUrlButton } = require("../../utils/main/createButtons");
 const { footers, colors, texts } = require("../../utils/player/musicUtils");
 const { tag, thumbnails, urls, labels } = require("../../utils/main/mainUtils");
+const eventsModel = require("../../database/eventsModel");
 const Parser = require("rss-parser");
 const parser = new Parser();
 
@@ -16,6 +17,12 @@ module.exports = (client) => {
     const guild = await client.guilds.fetch(process.env.guildID);
     const channel = await guild.channels.fetch(process.env.youtubeChannelID);
     if (!guild || !channel) return;
+
+    const eventsList = await eventsModel.findOne({
+      guildId: guild.id,
+      Video: true,
+    });
+    if (!eventsList) return;
 
     try {
       const dataSayeh = await parser

@@ -17,14 +17,12 @@ export async function bookmark(interaction, reply) {
       if (mongoose.connection.readyState !== 1) {
         errorHandler.handleDatabaseError(messageComponentInteraction);
       } else {
-        let profile = false;
-
         if (messageComponentInteraction.customId === "wow") {
           const character = options.getString("character");
           const realm = options.getString("realm");
           const region = options.getString("region");
 
-          profile = await wow.findOneAndUpdate(
+          await wow.findOneAndUpdate(
             {
               User: messageComponentInteraction.user.id,
             },
@@ -42,7 +40,7 @@ export async function bookmark(interaction, reply) {
           const username = options.getString("username");
           const tag = `${username}}-${options.getInteger("tag")}`;
 
-          profile = ow.findOneAndUpdate(
+          await ow.findOneAndUpdate(
             {
               User: messageComponentInteraction.user.id,
             },
@@ -56,32 +54,23 @@ export async function bookmark(interaction, reply) {
           );
         }
 
-        let action;
-        if (profile && profile._id) action = "saved";
-        else if (profile != null) action = "edited";
-        else action = "failed to save";
-
-        if (action === "failed to save") {
-          errorHandler.handleUnknownError(messageComponentInteraction);
-        } else {
-          const bookmarkEmbed = new EmbedBuilder()
-            .setTitle(utils.titles.bookmark)
-            .setDescription(`Your profile has been ${action} in the database.`)
-            .setColor(utils.colors.default)
-            .setThumbnail(utils.thumbnails.bookmark)
-            .setFooter({
-              iconURL: utils.footers.tools,
-              text: utils.texts.tools,
-            });
-
-          await messageComponentInteraction.reply({
-            embeds: [bookmarkEmbed],
-            ephemeral: true,
+        const bookmarkEmbed = new EmbedBuilder()
+          .setTitle(utils.titles.bookmark)
+          .setDescription("Your profile has been saved in the database.")
+          .setColor(utils.colors.default)
+          .setThumbnail(utils.thumbnails.bookmark)
+          .setFooter({
+            iconURL: utils.footers.tools,
+            text: utils.texts.tools,
           });
-        }
+
+        await messageComponentInteraction.reply({
+          embeds: [bookmarkEmbed],
+          ephemeral: true,
+        });
 
         console.log(
-          `${messageComponentInteraction.user.userrname} just ${action} their profile in the database.`
+          `${messageComponentInteraction.user.userrname} just saved their profile in the database.`
         );
       }
     })

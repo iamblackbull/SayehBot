@@ -1,6 +1,14 @@
 const warnModel = require("../../database/warnModel");
+const eventsModel = require("../../database/eventsModel");
 
 async function warn(user, target, guildId) {
+  const eventsList = await eventsModel.findOne({
+    guildId: guildId,
+    Moderation: true,
+  });
+
+  if (!eventsList) return;
+
   let warnSuccess = false;
   let warns = 1;
 

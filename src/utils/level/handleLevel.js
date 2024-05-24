@@ -1,4 +1,5 @@
 const { DBTOKEN, rankChannelID } = process.env;
+const eventsModel = require("../../database/eventsModel");
 const Levels = require("discord-xp");
 Levels.setURL(DBTOKEN);
 
@@ -35,6 +36,12 @@ async function checkLevelDown(hasLevelDown, target, guild) {
 }
 
 async function handleMessageXp(message, xp) {
+  const eventsList = await eventsModel.findOne({
+    guildId: message.guild.id,
+    Level: true,
+  });
+  if (!eventsList) return;
+
   const hasLevelUp = await Levels.appendXp(
     message.author.id,
     message.guild.id,
@@ -47,6 +54,12 @@ async function handleMessageXp(message, xp) {
 }
 
 async function handleInteractionXp(interaction, xp) {
+  const eventsList = await eventsModel.findOne({
+    guildId: interaction.guild.id,
+    Level: true,
+  });
+  if (!eventsList) return;
+
   const hasLevelUp = await Levels.appendXp(
     interaction.user.id,
     interaction.guild.id,
@@ -59,6 +72,12 @@ async function handleInteractionXp(interaction, xp) {
 }
 
 async function handleVoiceXp(state, xp) {
+  const eventsList = await eventsModel.findOne({
+    guildId: state.guild.id,
+    Level: true,
+  });
+  if (!eventsList) return;
+
   const hasLevelUp = await Levels.appendXp(state.member.id, state.guild.id, xp);
 
   await checkLevelUp(hasLevelUp, state.member.user, state.guild.id);

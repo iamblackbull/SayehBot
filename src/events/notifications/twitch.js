@@ -1,29 +1,35 @@
 const { TwitchOnlineTracker } = require("@matsukky/twitchtracker");
 const notificationHandler = require("../../utils/main/handleNotifications");
 
-const tracker = new TwitchOnlineTracker({
-  client_id: process.env.TWITCH_CLIENT_ID,
-  client_secret: process.env.TWTICH_CLIENT_SECRET,
-  track: ["sayeh", "hamiitz"],
-  pollInterval: 30,
-  debug: false,
-  start: true,
-});
+module.exports = {
+  name: "twitch",
 
-console.log("[Notification]: Twitch event listener is ready.");
+  async execute(client) {
+    const tracker = new TwitchOnlineTracker({
+      client_id: process.env.TWITCH_CLIENT_ID,
+      client_secret: process.env.TWTICH_CLIENT_SECRET,
+      track: ["sayeh", "hamiitz"],
+      pollInterval: 30,
+      debug: false,
+      start: true,
+    });
 
-tracker.on("live", (data) => {
-  console.log(`[Notification]: ${data.user_name} is now live on Twitch!`);
+    console.log("[Notification]: Twitch event listener is ready.");
 
-  notificationHandler.sendStreamNotification(data);
-});
+    tracker.on("live", (data) => {
+      console.log(`[Notification]: ${data.user_name} is now live on Twitch!`);
 
-tracker.on("offline", function (channel) {
-  console.log(`[Notification]: ${channel} has gone offline.`);
+      notificationHandler.sendStreamNotification(client, data);
+    });
 
-  notificationHandler.endStreamNotification(channel);
-});
+    tracker.on("offline", function (channel) {
+      console.log(`[Notification]: ${channel} has gone offline.`);
 
-tracker.on("error", (error) => {
-  console.error("[Notification]: Error on twitch event listener: ", error);
-});
+      notificationHandler.endStreamNotification(client, channel);
+    });
+
+    tracker.on("error", (error) => {
+      console.error("[Notification]: Error on twitch event listener: ", error);
+    });
+  },
+};

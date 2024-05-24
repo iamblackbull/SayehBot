@@ -61,7 +61,7 @@ module.exports = {
         if (mins > maxMins) amount = maxMins * 60;
         else if (mins === maxMins && seconds >= maxSecs) amount = maxMins * 60;
 
-        if (maxMins == 0) {
+        if (maxMins == 0 && maxSecs == 0) {
           await errorHandler.handleLiveTrackError(interaction);
         } else {
           await queue.node.seek(amount * 1000);

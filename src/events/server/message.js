@@ -4,6 +4,7 @@ const { bannedWords } = require("../../utils/main/mainUtils");
 const { warn } = require("../../utils/main/warnTarget");
 const { calculateXP } = require("../../utils/level/handleXPRate");
 const { handleMessageXp } = require("../../utils/level/handleLevel");
+const eventsModel = require("../../database/eventsModel");
 const Levels = require("discord-xp");
 
 Levels.setURL(process.env.DBTOKEN);
@@ -76,7 +77,12 @@ module.exports = {
       reason = "text";
     }
 
-    if (ban) {
+    const eventsList = await eventsModel.findOne({
+      guildId: guild.id,
+      Moderation: true,
+    });
+
+    if (ban && eventsList) {
       console.log(
         `Deleted a message contained a ${reason} in ${channel.name} by ${author.username}.`
       );

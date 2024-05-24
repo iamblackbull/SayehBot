@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { applyPenalty } = require("../utils/main/warnPenalty");
 
 const warnSchema = new mongoose.Schema({
   guildId: String,
@@ -8,12 +9,16 @@ const warnSchema = new mongoose.Schema({
   isApplied: Boolean,
 });
 
-warnSchema.post("save", function (doc) {
-  console.log("new schema saved!", doc.Username);
+warnSchema.post("save", async function (doc) {
+  await applyPenalty(doc.UserId);
 });
 
-warnSchema.post("updateOne", function () {
-  console.log("schema updated!", this.getUpdate().$set.Username);
+warnSchema.post("updateOne", async function () {
+  await applyPenalty(this.getFilter().UserId);
+});
+
+warnSchema.post("findOneAndUpdate", async function (doc) {
+  await applyPenalty(doc.UserId);
 });
 
 module.exports = mongoose.model("warn", warnSchema);

@@ -4,6 +4,7 @@ const {
   EmbedBuilder,
 } = require("discord.js");
 const { mongoose } = require("mongoose");
+const eventsModel = require("../../database/eventsModel");
 const errorHandler = require("../../utils/main/handleErrors");
 const { warn } = require("../../utils/main/warnTarget");
 const utils = require("../../utils/main/mainUtils");
@@ -33,10 +34,17 @@ module.exports = {
       PermissionFlagsBits.ManageMessages
     );
 
+    const eventsList = await eventsModel.findOne({
+      guildId: guild.id,
+      Moderation: true,
+    });
+
     if (mongoose.connection.readyState !== 1) {
       errorHandler.handleDatabaseError(interaction);
     } else if (hasPermission || targetId == user.id) {
       errorHandler.handleWarnError(interaction);
+    } else if (!eventsList) {
+      errorHandler.handleDisabledError(interaction);
     } else {
       await interaction.deferReply({
         fetchReply: true,

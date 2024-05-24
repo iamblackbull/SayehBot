@@ -62,8 +62,8 @@ module.exports = {
           .setColor(utils.colors.default)
           .setThumbnail(file.url)
           .setFooter({
-            text: utils.texts.moderation,
-            iconURL: utils.footers.moderation,
+            text: utils.texts.bot,
+            iconURL: utils.footers.bot,
           });
 
         console.log(`${interaction.user.username} updated bot's ${type}.`);

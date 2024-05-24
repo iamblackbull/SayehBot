@@ -3,18 +3,22 @@ const {
   EmbedBuilder,
   PermissionFlagsBits,
 } = require("discord.js");
-const { handleInteractionCommand } = require("../../utils/level/handleLevel");
 const { mongoose } = require("mongoose");
-const { DBTOKEN } = process.env;
+const errorHandler = require("../../utils/main/handleErrors");
+const eventsModel = require("../../database/eventsModel");
+const { handleInteractionCommand } = require("../../utils/level/handleLevel");
+const utils = require("../../utils/main/mainUtils");
+const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 const Levels = require("discord-xp");
-Levels.setURL(DBTOKEN);
+
+Levels.setURL(process.env.DBTOKEN);
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("xp")
     .setDescription("Manage user level and XP")
-    .addStringOption((option) => {
-      return option
+    .addStringOption((option) =>
+      option
         .setName("action")
         .setDescription("Choose action")
         .setRequired(true)
@@ -27,10 +31,10 @@ module.exports = {
             name: "Take",
             value: "removed",
           }
-        );
-    })
-    .addStringOption((option) => {
-      return option
+        )
+    )
+    .addStringOption((option) =>
+      option
         .setName("unit")
         .setDescription("Choose unit")
         .setRequired(true)
@@ -43,63 +47,45 @@ module.exports = {
             name: "XP",
             value: "xp",
           }
-        );
-    })
-    .addIntegerOption((option) => {
-      return option
+        )
+    )
+    .addIntegerOption((option) =>
+      option
         .setName("amount")
         .setDescription("Amount of level / XP")
-        .setRequired(true);
-    })
-    .addUserOption((option) => {
-      return option
-        .setName("user")
-        .setDescription("Pick any member")
-        .setRequired(true);
-    })
+        .setRequired(true)
+    )
+    .addUserOption((option) =>
+      option.setName("user").setDescription("Pick any member").setRequired(true)
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
     .setDMPermission(false),
 
-  async execute(interaction, client) {
-    const user = interaction.options.getUser("user");
-    const userLevel = await Levels.fetch(user.id, interaction.guild.id, true);
+  async execute(interaction) {
+    let success = false;
 
-    let failedEmbed = new EmbedBuilder().setColor(0xffea00);
+    const { options, guild } = interaction;
+    const user = options.getUser("user");
+    const action = options.get("action").value;
+    const unit = options.get("unit").value;
+    const amount = options.getInteger("amount");
+    const userLevel = await Levels.fetch(user.id, guild.id, true);
+
+    const eventsList = await eventsModel.findOne({
+      guildId: guild.id,
+      Level: true,
+    });
 
     if (mongoose.connection.readyState !== 1) {
-      failedEmbed
-        .setTitle(`**Connection Timed out!**`)
-        .setDescription(
-          `Connection to database has been timed out.\nTry again later with </xp:1047903144752984071>.`
-        )
-        .setThumbnail(
-          `https://cdn.iconscout.com/icon/premium/png-256-thumb/error-in-internet-959268.png`
-        );
-      interaction.editReply({
-        embeds: [failedEmbed],
-      });
+      errorHandler.handleDatabaseError(interaction);
     } else if (userLevel <= 0) {
-      failedEmbed
-        .setTitle(`**Action Failed**`)
-        .setDescription(
-          `${user} has not gained enough xp. User should at least send **1** message in the server.`
-        )
-        .setThumbnail(
-          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-        );
-      interaction.editReply({
-        embeds: [failedEmbed],
-      });
+      errorHandler.handleXpError(interaction, user);
+    } else if (!eventsList) {
+      errorHandler.handleDisabledError(interaction);
     } else {
       await interaction.deferReply({
         fetchReply: true,
       });
-
-      let embed = new EmbedBuilder().setTitle("🤖 Leveling System");
-
-      let action = interaction.options.get("action").value;
-      let unit = interaction.options.get("unit").value;
-      const amount = interaction.options.getInteger("amount");
 
       const { updatedAction, updatedUnit } = await handleInteractionCommand(
         interaction,
@@ -108,23 +94,20 @@ module.exports = {
         unit
       );
 
-      action === "granted"
-        ? embed.setColor(0x46eb34)
-        : embed.setColor(0xe01010);
-
-      embed.setDescription(
-        `**${amount} ${updatedUnit}** ${updatedAction} ${user}`
-      );
+      const embed = new EmbedBuilder()
+        .setTitle(utils.titles.level)
+        .setDescription(
+          `**${amount} ${updatedUnit}** ${updatedAction} ${user}.`
+        )
+        .setColor(utils.colors.default);
 
       await interaction.editReply({
         embeds: [embed],
       });
+
+      success = true;
     }
 
-    setTimeout(() => {
-      interaction.deleteReply().catch((e) => {
-        console.log(`Failed to delete ${interaction.commandName} interaction.`);
-      });
-    }, 5 * 60 * 1000);
+    handleNonMusicalDeletion(interaction, success, undefined, 5);
   },
 };

@@ -516,7 +516,6 @@ async function handleNoBookmarkProfileError(interaction) {
   } else {
     await interaction.reply({
       embeds: [warningEmbed],
-      ephemeral: true,
     });
   }
 }
@@ -531,7 +530,22 @@ async function handleLiveTrackError(interaction) {
   } else {
     await interaction.reply({
       embeds: [warningEmbed],
-      ephemeral: true,
+    });
+  }
+}
+
+async function handleDisabledError(interaction) {
+  warningEmbed.setDescription(
+    "This action has been disabled in this server. Please contact an admin of the server."
+  );
+
+  if (interaction.deferred || interaction.replied) {
+    await interaction.editReply({
+      embeds: [warningEmbed],
+    });
+  } else {
+    await interaction.reply({
+      embeds: [warningEmbed],
     });
   }
 }
@@ -569,4 +583,5 @@ module.exports = {
   handleUnavailableError,
   handleNoBookmarkProfileError,
   handleLiveTrackError,
+  handleDisabledError,
 };

@@ -2,6 +2,7 @@ const { birthdayChannelID, guildID } = process.env;
 const { ActivityType } = require("discord.js");
 const birthday = require("../../database/birthdayModel");
 const checkBirthday = require("../../database/checkBirthdayModel");
+const eventsModel = require("../../database/eventsModel");
 
 module.exports = (client) => {
   client.remindBirthday = async () => {
@@ -49,8 +50,13 @@ module.exports = (client) => {
 
           await birthday.updateOne({ User: user }, { Age: `${age}` });
 
-          let content;
+          const eventsList = await eventsModel.findOne({
+            guildId: guild.id,
+            Birthday: true,
+          });
+          if (!eventsList) return;
 
+          let content;
           if (user === "481094367407374348") {
             content = `🎈 🎂 👑 Today is **Our Queen**'s birthday! Happy birthday **<@${birthdayProfile.User}>**! (Age **${age}**) 👑 🥳 🎉`;
 

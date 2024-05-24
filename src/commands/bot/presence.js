@@ -104,8 +104,8 @@ module.exports = {
           .setColor(utils.colors.default)
           .setThumbnail(utils.thumbnails.success)
           .setFooter({
-            text: utils.texts.moderation,
-            iconURL: utils.footers.moderation,
+            text: utils.texts.bot,
+            iconURL: utils.footers.bot,
           });
 
         await interaction.editReply({

@@ -6,11 +6,12 @@ const titles = {
   system: "**💻 System**",
   qr: "**⏹ QR Code**",
   scan: "**🌍 Website Virus Scan**",
-  presence: "**Presence Updated**",
-  profile: "**Profile Updated**",
   gamble_winner: "**🥇 Winner**",
   gamble_loser: "**☹ Loser**",
   bookmark: "**🔖 Bookmark**",
+  level: "**🤖 Leveling System**",
+  presence: "**Presence Updated**",
+  profile: "**Profile Updated**",
   error: "**Error**",
   warn: "**Target Warned**",
   warning: "**Warning!**",
@@ -20,6 +21,9 @@ const titles = {
   reportcase_close: "**Case Closed**",
   report_success: "**Successfully Reported**",
   action_failed: "**Action Failed**",
+  simulate: "**Simulation**",
+  info: "**SayehBot Info**",
+  events: "**Events**",
 };
 
 const presences = {
@@ -40,6 +44,7 @@ const texts = {
   gamble: "Gamble",
   wow: "World of Warcraft",
   twitch: "Twitch",
+  bot: "Bot Manager",
 };
 
 const tag = "@everyone";
@@ -74,6 +79,7 @@ const footers = {
   wow: "https://i.imgur.com/n34gUTh.png",
   date: "https://i.imgur.com/BrgcQ9O.png",
   twitch: "https://i.imgur.com/KAb3lpX.png",
+  bot: "https://i.imgur.com/v8O0feS.png",
 };
 
 const thumbnails = {
@@ -149,6 +155,8 @@ const bannedWords = [
 const formats = ["image/png", "image/gif", "image/jpeg"];
 const formatsLabel = ".png, .gif, .jpeg, .jpg";
 
+const modes = { enabled: "Enabled ✔", disabled: "Disabled ❌" };
+
 const tags = {
   music: {
     play: "</play:1047903145071759425>",
@@ -219,5 +227,5 @@ module.exports = {
   formats,
   formatsLabel,
   bannedWords,
-  tags,
+  modes,
 };
