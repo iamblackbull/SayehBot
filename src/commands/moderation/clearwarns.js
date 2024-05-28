@@ -12,11 +12,13 @@ const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("clearwarns")
-    .setDescription("Clear all warnings of a user in this server.")
+    .setDescription(
+      `${utils.tags.mod} Clear all warnings of a user in this server`
+    )
     .addUserOption((option) =>
       option
         .setName("user")
-        .setDescription("Pick any member to clear their warns.")
+        .setDescription("Pick a member to clear their warns")
         .setRequired(true)
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
@@ -38,7 +40,7 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setTitle(utils.titles.clear)
-        .setDescription(`Warning record of ${target} has been cleared.`)
+        .setDescription(`Warning records of ${target} has been cleared.`)
         .setColor(utils.colors.warning)
         .setThumbnail(utils.thumbnails.success)
         .setFooter({
@@ -46,11 +48,15 @@ module.exports = {
           iconURL: utils.footers.moderation,
         });
 
-      success = true;
+      console.log(
+        `${utils.consoleTags.app} ${user.username} cleared warning records of ${target.username}.`
+      );
 
       await interaction.editReply({
         embeds: [embed],
       });
+
+      success = true;
     }
 
     handleNonMusicalDeletion(interaction, success, undefined, 5);

@@ -13,11 +13,13 @@ const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("info")
-    .setDescription("See info about the bot.")
+    .setDescription(`${utils.tags.mod} See info about the bot`)
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .setDMPermission(false),
 
   async execute(interaction, client) {
+    let success = false;
+
     if (mongoose.connection.readyState !== 1) {
       handleDatabaseError(interaction);
     } else {
@@ -25,10 +27,9 @@ module.exports = {
         fetchReply: true,
       });
 
-      let success = false;
-
       const discordJsVersion = dependencies["discord.js"].replace("^", "");
       const playerVersion = dependencies["discord-player"].replace("^", "");
+      const nodeVersion = process.version.replace("v", "");
 
       const uptimeSeconds = Math.floor(client.uptime / 1000);
       const days = Math.floor(uptimeSeconds / 86400);
@@ -51,20 +52,24 @@ module.exports = {
       });
 
       const eventsString = {
-        memberAdd: eventsList?.MemberAdd || false,
-        memberRemove: eventsList?.MemberRemove || false,
-        memberUpdate: eventsList?.MemberUpdate || false,
-        birthday: eventsList?.Birthday || false,
-        stream: eventsList?.Stream || false,
-        video: eventsList?.Video || false,
-        level: eventsList?.Level || false,
-        moderation: eventsList?.Moderation || false,
+        memberAdd: eventsList?.MemberAdd ?? false,
+        memberRemove: eventsList?.MemberRemove ?? false,
+        memberUpdate: eventsList?.MemberUpdate ?? false,
+        birthday: eventsList?.Birthday ?? false,
+        stream: eventsList?.Stream ?? false,
+        video: eventsList?.Video ?? false,
+        level: eventsList?.Level ?? false,
+        moderation: eventsList?.Moderation ?? false,
       };
 
       const versions = `### Versions:
                       > SayehBot: \`${version}\`
+                      > node.js: \`${nodeVersion}\`
                       > discord.js: \`${discordJsVersion}\`
                       > discord-player: \`${playerVersion}\``;
+
+      const uptime = `### Uptime:
+                      > ${uptimeString}`;
 
       const { enabled, disabled } = utils.modes;
       const eventsDescription = `### Events:
@@ -95,7 +100,7 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setTitle(utils.titles.info)
-        .setDescription(`${versions}\n${eventsDescription}`)
+        .setDescription(`${versions}\n${uptime}\n${eventsDescription}`)
         .setThumbnail(client.user.avatarURL())
         .setColor(utils.colors.default)
         .setFooter({

@@ -1,6 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { WEATHER_API_KEY } = process.env;
-const { colors, footers } = require("../../utils/main/mainUtils");
+const utils = require("../../utils/main/mainUtils");
 const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 const errorHandler = require("../../utils/main/handleErrors");
 const axios = require("axios");
@@ -8,18 +7,17 @@ const axios = require("axios");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("weather")
-    .setDescription("Get info about current weather conditions.")
+    .setDescription(`${utils.tags.updated} Get info about weather conditions`)
     .addStringOption((option) =>
       option
         .setName("location")
-        .setDescription("Input a location name.")
+        .setDescription("Input a location name")
         .setRequired(true)
     )
     .addStringOption((option) =>
       option
         .setName("unit")
-        .setDescription("Select degree unit. (default: °C)")
-        .setRequired(false)
+        .setDescription("Select a degree unit (default: °C)")
         .addChoices(
           {
             name: "°C",
@@ -36,7 +34,7 @@ module.exports = {
         )
     ),
 
-  async execute(interaction, client) {
+  async execute(interaction) {
     await interaction.deferReply({
       fetchReply: true,
     });
@@ -44,12 +42,15 @@ module.exports = {
     let success = false;
     const city = interaction.options.getString("location");
     const unit = interaction.options.getString("unit") || "m";
-    const apiKey = WEATHER_API_KEY;
+    const apiKey = process.env.WEATHER_API_KEY;
 
-    const url = `http://api.weatherstack.com/current?access_key=${apiKey}&query=${location}&units=${unit}`;
+    const url = `http://api.weatherstack.com/current?access_key=${apiKey}&query=${city}&units=${unit}`;
 
     const response = await axios.get(url).catch(async (error) => {
-      console.error("Error while fetching Weather data: ", error);
+      console.error(
+        `${utils.consoleTags.error} While fetching Weather data: `,
+        error
+      );
 
       await errorHandler.handleAPIError(interaction);
     });
@@ -62,7 +63,7 @@ module.exports = {
       const embed = new EmbedBuilder()
         .setTitle(`**${location.name}, ${location.country}**`)
         .setThumbnail(current.weather_icons[0])
-        .setColor(colors.default)
+        .setColor(utils.colors.default)
         .setDescription(
           `# ${current.temperature}° ${current.weather_descriptions[0]}`
         )
@@ -100,37 +101,37 @@ module.exports = {
         )
         .setFooter({
           text: location.localtime,
-          iconURL: footers.date,
+          iconURL: utils.footers.date,
         });
 
       const colorArray = [
         {
           name: "sunny",
-          color: colors.sunny_weather,
+          color: utils.colors.sunny_weather,
         },
         {
           name: "clear",
-          color: colors.clear_weather,
+          color: utils.colors.clear_weather,
         },
         {
           name: "rain",
-          color: colors.rain_weather,
+          color: utils.colors.rain_weather,
         },
         {
           name: "wind",
-          color: colors.wind_weather,
+          color: utils.colors.wind_weather,
         },
         {
           name: "storm",
-          color: colors.storm_weather,
+          color: utils.colors.storm_weather,
         },
         {
           name: "cloud",
-          color: colors.cloud_weather,
+          color: utils.olors.cloud_weather,
         },
         {
           name: "snow",
-          color: colors.snow_weather,
+          color: utils.colors.snow_weather,
         },
       ];
 

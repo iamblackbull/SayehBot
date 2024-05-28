@@ -381,6 +381,20 @@ async function handleXpError(interaction, target) {
   }
 }
 
+async function handleLeaderboardError(interaction) {
+  warningEmbed.setDescription("Leaderboard is empty.");
+
+  if (interaction.deferred || interaction.replied) {
+    await interaction.editReply({
+      embeds: [warningEmbed],
+    });
+  } else {
+    await interaction.reply({
+      embeds: [warningEmbed],
+    });
+  }
+}
+
 async function handleAPIError(interaction) {
   warningEmbed
     .setTitle("**API Error**")
@@ -550,6 +564,48 @@ async function handleDisabledError(interaction) {
   }
 }
 
+async function handleCaseOpenError(interaction, caseId) {
+  const caseErrorEmbed = new EmbedBuilder()
+    .setTitle(titles.reportcase_open)
+    .setDescription(
+      "You have already reported this message. You will be notifed as soon as a moderator respond to your report."
+    )
+    .setColor(colors.default)
+    .addFields({
+      name: "Case ID",
+      value: `${caseId}`,
+      inline: true,
+    });
+
+  if (interaction.deferred || interaction.replied) {
+    await interaction.editReply({
+      embeds: [caseErrorEmbed],
+    });
+  } else {
+    await interaction.reply({
+      embeds: [caseErrorEmbed],
+    });
+  }
+}
+
+async function handleInvalidDate(interaction) {
+  const tag = `</${interaction.commandName}:${interaction.commandId}>`;
+
+  warningEmbed.setDescription(
+    `Please specify a valid date.\nTry again with ${tag}.`
+  );
+
+  if (interaction.deferred || interaction.replied) {
+    await interaction.editReply({
+      embeds: [warningEmbed],
+    });
+  } else {
+    await interaction.reply({
+      embeds: [warningEmbed],
+    });
+  }
+}
+
 module.exports = {
   handleDatabaseError,
   handleStreamModeError,
@@ -574,6 +630,7 @@ module.exports = {
   handleEmptyPlaylistError,
   handleAccessDeniedError,
   handleXpError,
+  handleLeaderboardError,
   handleAPIError,
   handlePingConnectionError,
   handlePingUnknownError,
@@ -584,4 +641,6 @@ module.exports = {
   handleNoBookmarkProfileError,
   handleLiveTrackError,
   handleDisabledError,
+  handleCaseOpenError,
+  handleInvalidDate,
 };

@@ -10,6 +10,9 @@ const titles = {
   gamble_loser: "**☹ Loser**",
   bookmark: "**🔖 Bookmark**",
   level: "**🤖 Leveling System**",
+  leaderboard: "🎖 Leaderboard",
+  birthday: "**🎂 Birthday**",
+  commands: "**Available Commands**",
   presence: "**Presence Updated**",
   profile: "**Profile Updated**",
   error: "**Error**",
@@ -24,6 +27,9 @@ const titles = {
   simulate: "**Simulation**",
   info: "**SayehBot Info**",
   events: "**Events**",
+  website: "**sayehgame.com**",
+  yell: "**📢 Yell**",
+  announce: "**Announcement**",
 };
 
 const presences = {
@@ -44,29 +50,42 @@ const texts = {
   gamble: "Gamble",
   wow: "World of Warcraft",
   twitch: "Twitch",
+  youtube: "YouTube",
+  kick: "Kick",
+  telegram: "Telegram",
+  instagram: "Instagram",
+  steam: "Steam",
   bot: "Bot Manager",
+  nasa: "NASA",
+  imdb: "IMDb",
+  website: "Website",
 };
 
 const tag = "@everyone";
 
 const colors = {
-  default: 0x25bfc4,
-  apex: 0xb93038,
-  overwatch: 0xf99e1a,
-  valorant: 0xfd4556,
-  wow: 0xf7941d,
-  warning: 0xffea00,
-  error: 0xe01010,
-  twitch: 0x6441a5,
-  gamble_winner: 0x001eff,
-  gamble_loser: 0xd20202,
-  sunny_weather: 0xffe700,
-  clear_weather: 0x00ccff,
-  rain_weather: 0x7f9ba6,
-  wind_weather: 0x7576e0,
-  storm_weather: 0x4e6969,
-  cloud_weather: 0xf1f1f1,
-  snow_weather: 0xebecf1,
+  default: "#25bfc4",
+  apex: "#b93038",
+  overwatch: "#f99e1a",
+  valorant: "#fd4556",
+  wow: "#f7941d",
+  warning: "#ffea00",
+  error: "#e01010",
+  success: "#46eb34",
+  twitch: "#6441a5",
+  youtube: "#ff0000",
+  steam: "#1b2838",
+  giveaway: "#c42577",
+  imdb: "#deb522",
+  gamble_winner: "#001eff",
+  gamble_loser: "#d20202",
+  sunny_weather: "#ffe700",
+  clear_weather: "#00ccff",
+  rain_weather: "#7f9ba6",
+  wind_weather: "#7576e0",
+  storm_weather: "#4e6969",
+  cloud_weather: "#f1f1f1",
+  snow_weather: "#ebecf1",
 };
 
 const footers = {
@@ -79,7 +98,11 @@ const footers = {
   wow: "https://i.imgur.com/n34gUTh.png",
   date: "https://i.imgur.com/BrgcQ9O.png",
   twitch: "https://i.imgur.com/KAb3lpX.png",
+  youtube: "https://i.imgur.com/lP3PjwD.png",
+  steam: "https://i.imgur.com/a769BzM.png",
   bot: "https://i.imgur.com/v8O0feS.png",
+  nasa: "https://i.imgur.com/V9awHxy.png",
+  imdb: "https://download.logo.wine/logo/IMDb/IMDb-Logo.wine.png",
 };
 
 const thumbnails = {
@@ -103,24 +126,42 @@ const thumbnails = {
   twitch_hamid: "https://i.imgur.com/VdPzgLm.png",
   twitch_offline_sayeh: "https://i.imgur.com/6BsizDi.jpg",
   twitch_offline_hamid: "https://i.imgur.com/nmKK3BU.jpg",
+  tf2: "https://i.imgur.com/DQgNJgP.png",
+  cs: "https://i.imgur.com/J0NbZqS.png",
+  dota: "https://i.imgur.com/VrUFhs4.png",
+  market: "https://i.imgur.com/GyePHjC.png",
+  birthday: "https://i.imgur.com/ypwCxLa.png",
+};
+
+const gifs = {
+  flip: "https://i.imgur.com/I4mtHv8.gif",
+  fuch: "https://i.imgur.com/CfFt7yI.gif",
+  kish: "https://i.imgur.com/2j9km8I.gif",
+  kiss: "https://i.imgur.com/flcFO8U.gif",
+  spank: "https://i.imgur.com/QLjPSmH.gif",
 };
 
 const urls = {
   youtube_sayeh: "https://www.youtube.com/@Say3h/?sub_confirmation=1",
   youtube_hamid: "https://www.youtube.com/@Hamitz/?sub_confirmation=1",
+  twitch_sayeh: "https://twitch.tv/Sayeh",
+  kick: "https://kick.com/sayeh",
+  telegram: "https://t.me/sayeh_game",
+  instagram: "https://www.instagram.com/sayeh_game",
+  website: "https://sayehgame.com",
 };
 
 const warnPenalties = [
   { label: "Warning Message", timer: 0 },
-  { label: "1 Minute Timeout", timer: 1 * 60 * 1000 },
-  { label: "10 Minutes Timeout", timer: 10 * 60 * 1000 },
-  { label: "30 Minutes Timeout", timer: 30 * 60 * 1000 },
-  { label: "1 Hour Timeout", timer: 1 * 60 * 60 * 1000 },
-  { label: "5 Hours Timeout", timer: 5 * 60 * 60 * 1000 },
-  { label: "12 Hours Time out", timer: 12 * 60 * 60 * 1000 },
-  { label: "1 Day Timeout", timer: 1 * 24 * 60 * 60 * 1000 },
-  { label: "1 Week Timeout", timer: 7 * 24 * 60 * 60 * 1000 },
-  { label: "2 Week Timeout", timer: 14 * 24 * 60 * 60 * 1000 },
+  { label: "1 Minute Timeout", timer: 60_000 },
+  { label: "10 Minutes Timeout", timer: 600_000 },
+  { label: "30 Minutes Timeout", timer: 1_800_000 },
+  { label: "1 Hour Timeout", timer: 3_600_000 },
+  { label: "5 Hours Timeout", timer: 18_000_000 },
+  { label: "12 Hours Time out", timer: 43_200_000 },
+  { label: "1 Day Timeout", timer: 86_400_000 },
+  { label: "3 Days Timeout", timer: 259_200_000 },
+  { label: "1 Week Timeout", timer: 604_800_000 },
 ];
 
 const bannedWords = [
@@ -158,59 +199,16 @@ const formatsLabel = ".png, .gif, .jpeg, .jpg";
 const modes = { enabled: "Enabled ✔", disabled: "Disabled ❌" };
 
 const tags = {
-  music: {
-    play: "</play:1047903145071759425>",
-    queue: "</queue:1047903145071759427>",
-    skip: "</skip:1047903145218547864>",
-    song: "</song:1047903145218547865>",
-    pause: "</pause:1047903145071759424>",
-    search: "</search:1047903145071759430>",
-    seek: "</seek:1047903145218547862>",
-    repeat: "</repeat:1047903145071759428>",
-    filter: "</filter:1047903144752984073>",
-    lyrics: "</lyrics:1100831574787891240>",
-    leave: "</leave:1047903145071759422>",
-    previous: "</previous:1128669764013797467>",
-    insert: "</insert:1115953411985244180>",
-    replay: "</replay:1161072793220296766>",
-    favorite_play: "</favorite play:1108681222764367962>",
-    favorite_view: "</favorite view:1108681222764367962>",
-    favorite_add: "</favorite add:1108681222764367962>",
-    favorite_remove: "</favorite remove:1108681222764367962>",
-  },
-  gifs: {
-    avatar: "</avatar:1047903145218547869>",
-    finger: "</finger:1047903145407295498>",
-    fuch: "</fuch:1047903145407295499>",
-    kish: "</kish:1047903145407295502>",
-    kiss: "</kiss:1047903145407295503>",
-    space: "</space:1050160950583513189>",
-    spank: "</spank:1142109421795807355>",
-  },
-  mods: {
-    simjoin: "</simjoin:1047903145218547868>",
-    clear: "</clear:1047903145218547871>",
-    xp: "</xp:1047903144752984071>",
-    yell: "</yell:1047903145625407488>",
-  },
-  tools: {
-    birthday: "</birthday:1047903145218547870>",
-    social: "</social:1047903145407295506>",
-    rank: "</rank:1051248003723304963>",
-    leaderboard: "</leaderboard:1047903144752984069>",
-    weather: "</weather:1047903145407295507>",
-    currency: "</currency:1100722765587284050>",
-    movie: "</movie:1100722765587284051>",
-    system: "</system:1171177751022157895>",
-    qr: "<qr:>",
-  },
-  games: {
-    apex: "</apex:1079842730752102551>",
-    roll: "</roll:1047903145407295505>",
-    steam_market: "</steam market:1100722765587284048>",
-    steam_store: "</steam store:1100722765587284048>",
-    wow: "</wow:1079842730752102553>",
-  },
+  new: "[New]",
+  updated: "[Updated]",
+  mod: "[Mods-only]",
+};
+
+const consoleTags = {
+  app: "[Application Logs]",
+  notif: "[Notification]",
+  warning: "[Warning]",
+  error: "[Error]",
 };
 
 module.exports = {
@@ -220,6 +218,7 @@ module.exports = {
   colors,
   footers,
   thumbnails,
+  gifs,
   texts,
   tag,
   urls,
@@ -228,4 +227,6 @@ module.exports = {
   formatsLabel,
   bannedWords,
   modes,
+  tags,
+  consoleTags,
 };

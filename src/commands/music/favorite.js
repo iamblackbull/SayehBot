@@ -9,71 +9,68 @@ const embedCreator = require("../../utils/player/createMusicEmbed");
 const favoriteHandler = require("../../utils/player/handleFavorite");
 const buttonCreator = require("../../utils/main/createButtons");
 const { pageReact } = require("../../utils/main/handleReaction");
+const { consoleTags } = require("../../utils/main/mainUtils");
 const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("favorite")
-    .setDescription("Interact with favortie playlists.")
+    .setDescription("Interact with favortie playlists")
     .addSubcommand((subcommand) =>
       subcommand
         .setName("play")
-        .setDescription("Play from a favorite playlist.")
+        .setDescription("Play tracks from a favorite playlist")
         .addIntegerOption((option) =>
           option
             .setName("position")
-            .setDescription("Input a favorite playlist track position to play.")
+            .setDescription("Input a favorite playlist track position")
             .setMinValue(1)
             .setRequired(false)
         )
         .addUserOption((option) =>
           option
             .setName("user")
-            .setDescription("Pick any member to play their favorite playlist.")
+            .setDescription("Pick a member to play their favorite playlist")
             .setRequired(false)
         )
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName("view")
-        .setDescription("View and interact with a favorite playlist.")
+        .setDescription("View a favorite playlist")
         .addIntegerOption((option) =>
           option
             .setName("position")
-            .setDescription("Input a favorite playlist track position to view.")
+            .setDescription("Input a favorite playlist track position")
             .setMinValue(1)
             .setRequired(false)
         )
         .addUserOption((option) =>
           option
             .setName("user")
-            .setDescription("Pick any member to view their favorite playlist.")
+            .setDescription("Pick a member to view their favorite playlist")
             .setRequired(false)
         )
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName("add")
-        .setDescription("Add a track to your own favorite playlist.")
+        .setDescription("Add a track to your own favorite playlist")
         .addStringOption((option) =>
           option
             .setName("query")
-            .setDescription("Input a track url.")
+            .setDescription("Input a track url")
             .setRequired(true)
         )
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName("delete")
-        .setDescription(
-          "Delete a track or clear all tracks from your own favorite playlist."
-        )
+        .setDescription("Delete tracks from your own favorite playlist")
         .addIntegerOption((option) =>
           option
             .setName("position")
-            .setDescription(
-              "Input a favorite playlist track position to delete."
-            )
+            .setDescription("Input a favorite playlist track position")
             .setMinValue(1)
             .setRequired(false)
         )
@@ -87,7 +84,7 @@ module.exports = {
     const sub = options.getSubcommand();
     const owner = options.getUser("user") || interaction.user;
 
-    let favoriteList = await favoriteModel.findOne({
+    const favoriteList = await favoriteModel.findOne({
       User: owner.id,
     });
 
@@ -340,8 +337,8 @@ module.exports = {
 
         ////////////// handling default subcommad just in case //////////////
         default: {
-          console.log(
-            `Something went wrong while executing ${interaction.commandName} subcommand.`
+          console.error(
+            `${consoleTags.error} Something went wrong while executing ${interaction.commandName} subcommand.`
           );
         }
       }

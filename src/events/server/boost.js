@@ -1,27 +1,37 @@
 const { Events } = require("discord.js");
-const { boostChannelID } = process.env;
+const eventsModel = require("../../database/eventsModel");
+const { consoleTags } = require("../../utils/main/mainUtils");
+
 const boostMessageSent = new Set();
 
 module.exports = {
   name: Events.GuildMemberUpdate,
 
   async execute(oldMember, newMember, client) {
+    const eventsList = await eventsModel.findOne({
+      guildId: guild.id,
+      MemberUpdate: true,
+    });
+    if (!eventsList) return;
+
     const oldStatus = oldMember.premiumSince;
     const newStatus = newMember.premiumSince;
 
     if (!oldStatus && newStatus) {
-      if (boostMessageSent.has(newMember.id)) return;
+      const { id, user } = newMember;
 
-      boostMessageSent.add(newMember.id);
+      if (boostMessageSent.has(id)) return;
+
+      boostMessageSent.add(id);
 
       client.channels.cache
-        .get(boostChannelID)
-        .send(
-          `🚀 ${newMember.user} just boosted the server! 💜 (+50% XP Boost)`
-        );
+        .get(process.env.boostChannelID)
+        .send(`🚀 ${user} just boosted the server! 💜 (+50% XP Boost)`);
+
+      console.log(`${consoleTags.app} ${user.username} boosted the server.`);
 
       setTimeout(() => {
-        boostMessageSent.delete(newMember.id);
+        boostMessageSent.delete(id);
       }, 10 * 60 * 1000);
     }
   },

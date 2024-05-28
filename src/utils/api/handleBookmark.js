@@ -2,8 +2,9 @@ const { EmbedBuilder, ComponentType } = require("discord.js");
 const { mongoose } = require("mongoose");
 const errorHandler = require("../../utils/main/handleErrors");
 const utils = require("../main/mainUtils");
-const wow = require("../../database/wowModel");
-const ow = require("../../database/overwatchModel");
+const wowModel = require("../../database/wowModel");
+const owModel = require("../../database/overwatchModel");
+const { consoleTags } = require("../../utils/main/mainUtils");
 
 export async function bookmark(interaction, reply) {
   const { options } = interaction;
@@ -17,14 +18,16 @@ export async function bookmark(interaction, reply) {
       if (mongoose.connection.readyState !== 1) {
         errorHandler.handleDatabaseError(messageComponentInteraction);
       } else {
-        if (messageComponentInteraction.customId === "wow") {
+        const { customId, user } = messageComponentInteraction;
+
+        if (customId === "wow") {
           const character = options.getString("character");
           const realm = options.getString("realm");
           const region = options.getString("region");
 
-          await wow.findOneAndUpdate(
+          await wowModel.findOneAndUpdate(
             {
-              User: messageComponentInteraction.user.id,
+              User: user.id,
             },
             {
               WowCharacter: character,
@@ -36,13 +39,13 @@ export async function bookmark(interaction, reply) {
               new: true,
             }
           );
-        } else if (interaction.customId === "ow") {
+        } else if (customId === "ow") {
           const username = options.getString("username");
           const tag = `${username}}-${options.getInteger("tag")}`;
 
-          await ow.findOneAndUpdate(
+          await owModel.findOneAndUpdate(
             {
-              User: messageComponentInteraction.user.id,
+              User: user.id,
             },
             {
               Tag: tag,
@@ -70,13 +73,13 @@ export async function bookmark(interaction, reply) {
         });
 
         console.log(
-          `${messageComponentInteraction.user.userrname} just saved their profile in the database.`
+          `${consoleTags.app} ${user.userrname} just saved their game profile in the database.`
         );
       }
     })
     .catch((error) => {
-      console.log(
-        "Bookmark collector did not receive any interactions before ending."
+      console.error(
+        `${consoleTags.warning} Bookmark collector did not receive any interactions before ending.`
       );
     });
 }

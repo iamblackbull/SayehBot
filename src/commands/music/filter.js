@@ -8,6 +8,7 @@ const { AudioFilters, useTimeline } = require("discord-player");
 const { filters } = require("../../utils/player/musicUtils");
 const { createFilterEmbed } = require("../../utils/player/createMusicEmbed");
 const errorHandler = require("../../utils/main/handleErrors");
+const { consoleTags } = require("../../utils/main/mainUtils");
 const deletionHandler = require("../../utils/main/handleDeletion");
 
 AudioFilters.define(
@@ -27,7 +28,7 @@ AudioFilters.define(
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("filter")
-    .setDescription("Toggle audio filters for the current queue.")
+    .setDescription("Toggle audio filters for the current queue")
     .setDMPermission(false),
 
   async execute(interaction, client) {
@@ -170,12 +171,12 @@ module.exports = {
             });
           } catch (error) {
             if (error.code === "InteractionCollectorError") {
-              console.log(
-                `Interaction response timed out for command ${interaction.commandName}.`
+              console.error(
+                `${consoleTags.error} Interaction response timed out for command ${interaction.commandName}.`
               );
             } else {
-              console.log(
-                `Something went wrong while awaiting interaction response for command ${interaction.commandName}.`
+              console.error(
+                `${consoleTags.error} Something went wrong while awaiting interaction response for command ${interaction.commandName}.`
               );
             }
           }

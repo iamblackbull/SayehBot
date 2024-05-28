@@ -6,4 +6,4 @@ const checkBirthdaySchema = new mongoose.Schema({
     IsTodayChecked: Boolean,
 })
 
-module.exports = mongoose.model('checkBirthday', checkBirthdaySchema);
+module.exports = mongoose.model("checkBirthday", checkBirthdaySchema);

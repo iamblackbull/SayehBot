@@ -9,24 +9,24 @@ const errorHandler = require("../../utils/main/handleErrors");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("clear")
-    .setDescription("Clear the latest messages in a channel.")
-    .addIntegerOption((options) => {
-      return options
+    .setDescription(`${utils.tags.mod} Clear the latest messages in a channel`)
+    .addIntegerOption((options) =>
+      options
         .setName("amount")
+        .setDescription("Input the amount of messages to clear")
         .setMinValue(1)
         .setMaxValue(99)
-        .setDescription("Input the amount of messages you want to clear.")
-        .setRequired(true);
-    })
-    .addChannelOption((options) => {
-      return options
+        .setRequired(true)
+    )
+    .addChannelOption((options) =>
+      options
         .setName("channel")
-        .setDescription("Choose a channel to clear their messages.");
-    })
+        .setDescription("Choose a channel to clear messages in")
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .setDMPermission(false),
 
-  async execute(interaction, client) {
+  async execute(interaction) {
     const amount = interaction.options.getInteger("amount");
     const channel =
       interaction.options.getChannel("channel") || interaction.channel;
@@ -48,6 +48,10 @@ module.exports = {
         text: utils.texts.moderation,
         iconURL: utils.footers.moderation,
       });
+
+    console.log(
+      `${utils.consoleTags.app} ${interaction.user.username} cleared ${amount} messages in ${channel.name}.`
+    );
 
     await interaction.reply({
       embeds: [embed],

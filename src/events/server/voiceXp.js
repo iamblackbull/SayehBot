@@ -1,6 +1,7 @@
 const { Events } = require("discord.js");
 const { calculateXP } = require("../../utils/level/handleXPRate");
 const { handleVoiceXp } = require("../../utils/level/handleLevel");
+const { consoleTags } = require("../../utils/main/mainUtils");
 const Levels = require("discord-xp");
 
 Levels.setURL(process.env.DBTOKEN);
@@ -17,26 +18,32 @@ module.exports = {
 
     if (newState.channelId && newState.channelId !== oldState.channelId) {
       voiceChannelEntryTimestamps.set(userId, Date.now());
+
+      console.log(
+        `${consoleTags.app} ${newState.member.user.username} joined a voice channel.`
+      );
     } else if (
       !newState.channelId &&
       newState.channelId !== oldState.channelId
     ) {
       const entryTimestamp = voiceChannelEntryTimestamps.get(userId);
 
-      if (entryTimestamp) {
-        const amount = Math.floor(
-          (Date.now() - entryTimestamp) / (10 * 60 * 1000)
-        );
+      if (!entryTimestamp) return;
 
-        voiceChannelEntryTimestamps.delete(userId);
+      const amount = Math.floor((Date.now() - entryTimestamp) / 600_000);
 
-        if (amount <= 0) return;
+      voiceChannelEntryTimestamps.delete(userId);
 
-        const { finalXp } = calculateXP(newState, user);
-        const xpEarned = amount * finalXp;
+      if (amount <= 0) return;
 
-        await handleVoiceXp(newState, xpEarned);
-      }
+      const { finalXp } = calculateXP(newState, user);
+      const xpEarned = amount * finalXp;
+
+      await handleVoiceXp(newState, xpEarned);
+
+      console.log(
+        `${consoleTags.app} ${newState.member.user.username} left a voice channel and received ${xpEarned} XP.`
+      );
     }
   },
 };

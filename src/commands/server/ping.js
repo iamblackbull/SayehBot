@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { getPing } = require("../../utils/tools/getPing");
+const { getPing } = require("../../utils/client/getPing");
 const errorHandler = require("../../utils/main/handleErrors");
 const { pageReact } = require("../../utils/main/handleReaction");
 const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
@@ -8,11 +8,9 @@ const utils = require("../../utils/main/mainUtils");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("ping")
-    .setDescription("Get info about latency and ping.")
+    .setDescription(`${utils.tags.updated} Get info about latency of the bot`)
     .addStringOption((option) =>
-      option
-        .setName("host")
-        .setDescription("Input an host name or ip to get ping of.")
+      option.setName("host").setDescription("Input an host name or ip")
     ),
 
   async execute(interaction, client) {
@@ -22,7 +20,6 @@ module.exports = {
 
     let success = false;
     const host = interaction.options.getString("host") || "4.2.2.4";
-
     const pingResult = await getPing(host);
 
     if (pingResult <= 2) {

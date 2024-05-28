@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const errorHandler = require("../../utils/main/handleErrors");
-const { colors, footers, texts } = require("../../utils/main/mainUtils");
+const utils = require("../../utils/main/mainUtils");
 const { getKeystoneUpgradeSymbol } = require("../../utils/api/wowKeystone");
 const { createGameButtons } = require("../../utils/main/createButtons");
 const { bookmark } = require("../../utils/api/handleBookmark");
@@ -13,23 +13,23 @@ const RIO = new noderiowrapper();
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("wow")
-    .setDescription("Get World of Warcraft stats.")
+    .setDescription("Get World of Warcraft stats")
     .addStringOption((option) =>
       option
         .setName("character")
-        .setDescription("Input a character name.")
+        .setDescription("Input a character name")
         .setRequired(true)
     )
     .addStringOption((option) =>
       option
         .setName("realm")
-        .setDescription("Input realm name.")
+        .setDescription("Input a realm name")
         .setRequired(true)
     )
     .addStringOption((option) =>
       option
         .setName("region")
-        .setDescription("Select your region.")
+        .setDescription("Select your region")
         .setRequired(true)
         .addChoices(
           {
@@ -43,7 +43,7 @@ module.exports = {
         )
     ),
 
-  async execute(interaction, client) {
+  async execute(interaction) {
     await interaction.deferReply({
       fetchReply: true,
     });
@@ -85,7 +85,7 @@ module.exports = {
           .setTitle(`**${name}-${realm}**`)
           .setURL(profile_url)
           .setThumbnail(thumbnail_url)
-          .setColor(colors.wow);
+          .setColor(utils.colors.wow);
 
         const firstItems = [
           {
@@ -143,8 +143,8 @@ module.exports = {
         const totalPages = 2;
 
         embed.setFooter({
-          iconURL: footers.wow,
-          text: `${texts.wow} | Page ${page + 1} of ${totalPages}`,
+          iconURL: utils.footers.wow,
+          text: `${utils.texts.wow} | Page ${page + 1} of ${totalPages}`,
         });
 
         const recentRunUrl = mythic_plus_recent_runs[0]?.url || false;
@@ -218,8 +218,8 @@ module.exports = {
           } else return;
 
           embed.setFooter({
-            iconURL: footers.wow,
-            text: `${texts.wow} | Page ${page + 1} of ${totalPages}`,
+            iconURL: utils.footers.wow,
+            text: `${utils.texts.wow} | Page ${page + 1} of ${totalPages}`,
           });
 
           await interaction.editReply({
@@ -228,7 +228,10 @@ module.exports = {
         });
       })
       .catch(async (error) => {
-        console.error("Error while fetching World of Warcraft data:", error);
+        console.error(
+          `${utils.consoleTags.error} While fetching World of Warcraft data: `,
+          error
+        );
 
         if (error.message.includes("item_level_equipped")) {
           await errorHandler.handleNoResultError(interaction);

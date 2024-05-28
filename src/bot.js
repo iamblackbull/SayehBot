@@ -15,6 +15,7 @@ const {
   cooldowns,
   ytdlOptions,
 } = require("./utils/player/queueUtils");
+const { consoleTags } = require("./utils/main/mainUtils");
 
 const client = new Client({
   intents: [
@@ -49,10 +50,13 @@ client.player = new Player(client, {
 client.player.extractors.loadDefault();
 
 executing.on("unhandledRejection", (reason) => {
-  console.log("Unhandled Rejection with reason:\n", reason);
+  console.error(
+    `${consoleTags.error} Unhandled Rejection with reason: `,
+    reason
+  );
 });
 executing.on("uncaughtException", (reason) => {
-  console.log("Uncaugh Exception with reason:\n", reason);
+  console.error(`${consoleTags.error} Uncaugh Exception with reason: `, reason);
 });
 
 client.commands = new Collection();

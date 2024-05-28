@@ -4,15 +4,12 @@ const { texts, colors, footers } = require("../../utils/main/mainUtils");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("avatar")
-    .setDescription("Returns user avatar")
-    .addUserOption((option) => {
-      return option
-        .setName("user")
-        .setDescription("Pick any member")
-        .setRequired(false);
-    }),
+    .setDescription("Get a user avatar")
+    .addUserOption((option) =>
+      option.setName("user").setDescription("Pick a member").setRequired(false)
+    ),
 
-  async execute(interaction, client) {
+  async execute(interaction) {
     const user = interaction.options.getUser("user") || interaction.user;
     const avatar = user.displayAvatarURL({ size: 1024, dynamic: true });
 

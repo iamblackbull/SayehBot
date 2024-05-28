@@ -1,13 +1,13 @@
 const { SlashCommandBuilder } = require("discord.js");
-const embedCreator = require("../../utils/player/createMusicEmbed");
 const errorHandler = require("../../utils/main/handleErrors");
-const buttonCreator = require("../../utils/main/createButtons");
+const { createTrackEmbed } = require("../../utils/player/createMusicEmbed");
+const { createButtons } = require("../../utils/main/createButtons");
 const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("replay")
-    .setDescription("Replay the currently playing track back from the top.")
+    .setDescription("Replay the current track back from the top")
     .setDMPermission(false),
 
   async execute(interaction, client) {
@@ -37,14 +37,14 @@ module.exports = {
         await queue.node.seek(0);
 
         ////////////// original response //////////////
-        const { embed, nowPlaying } = embedCreator.createTrackEmbed(
+        const { embed, nowPlaying } = createTrackEmbed(
           interaction,
           queue,
           false,
           song
         );
 
-        const button = buttonCreator.createButtons(nowPlaying);
+        const button = createButtons(nowPlaying);
 
         await interaction.editReply({ embeds: [embed], components: [button] });
         success = true;

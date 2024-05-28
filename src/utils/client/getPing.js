@@ -1,4 +1,4 @@
-async function getPing(host) {
+export async function getPing(host) {
   const { exec } = require("child_process");
 
   return new Promise((resolve, reject) => {
@@ -24,7 +24,3 @@ async function getPing(host) {
     });
   });
 }
-
-module.exports = {
-  getPing,
-};

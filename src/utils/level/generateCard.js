@@ -3,6 +3,7 @@ const { colors, fonts } = require("./cardUtils");
 const Canvas = require("canvas");
 const path = require("path");
 const Levels = require("discord-xp");
+
 Levels.setURL(DBTOKEN);
 
 async function generateCard(target, member, user) {
@@ -15,7 +16,7 @@ async function generateCard(target, member, user) {
   const barWidth = 600;
 
   const background = await Canvas.loadImage(
-    path.join(__dirname, "../../Images/rankImage.png")
+    path.join(__dirname, "../../images/rankImage.png")
   );
 
   const profile = await Canvas.loadImage(
@@ -145,7 +146,7 @@ async function generateWelcomeCard(target, memberCount) {
   const welcomeCard = welcomeCanvas.getContext("2d");
 
   const welcomeBackground = await Canvas.loadImage(
-    path.join(__dirname, "../../Images/welcomeImage.png")
+    path.join(__dirname, "../../images/welcomeImage.png")
   );
 
   const welcomeProfile = await Canvas.loadImage(

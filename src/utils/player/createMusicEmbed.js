@@ -138,7 +138,7 @@ function createTrackEmbed(interaction, queue, result, song) {
     }
   } else if (interaction?.customId) {
     author = {
-      name: interaction.user.username,
+      name: interaction.user.globalName,
       iconURL: interaction.user.displayAvatarURL({ size: 1024, dynamic: true }),
     };
 
@@ -248,7 +248,7 @@ async function createPauseEmbed(interaction, queue) {
   let author = undefined;
   if (interaction.customId) {
     author = {
-      name: interaction.user.username,
+      name: interaction.user.globalName,
       iconURL: interaction.user.displayAvatarURL({ size: 1024, dynamic: true }),
     };
   }
@@ -423,7 +423,7 @@ function createFavoriteEmbed(song, favoriteMode, favoriteLength) {
 }
 
 function createPlayFavoriteEmbed(owner, queue, song, target, length) {
-  const user = owner.username;
+  const user = owner.globalName;
   const name = target
     ? `${user}'s Favorites (Track ${target})`
     : `${user}'s Favorites`;
@@ -479,7 +479,7 @@ function createPlayFavoriteEmbed(owner, queue, song, target, length) {
 }
 
 function createViewFavoriteEmbed(owner, object, target, page, totalPages) {
-  const user = owner.username;
+  const user = owner.globalName;
   const name = target
     ? `${user}'s Favorites (Track ${target})`
     : `${user}'s Favorites (${object.length} Tracks)`;
@@ -525,7 +525,7 @@ function createViewFavoriteEmbed(owner, object, target, page, totalPages) {
 }
 
 function createDeleteWarningFavoriteEmbed(owner, song, target) {
-  const user = owner.username;
+  const user = owner.globalName;
   const name = target
     ? `${user}'s Favorites (Track ${target})`
     : `${user}'s Favorites`;

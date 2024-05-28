@@ -1,8 +1,4 @@
-const {
-  EmbedBuilder,
-  ActionRowBuilder,
-  ClientApplication,
-} = require("discord.js");
+const { EmbedBuilder, ActionRowBuilder } = require("discord.js");
 const { mongoose } = require("mongoose");
 const streamModel = require("../../database/streamModel");
 const { getUserProfile, createItems } = require("../api/handleStream");
@@ -10,6 +6,9 @@ const { createUrlButton } = require("../../utils/main/createButtons");
 const presenceHandler = require("../../utils/main/handlePresence");
 const utils = require("../main/mainUtils");
 const eventsModel = require("../../database/eventsModel");
+const { consoleTags } = require("./mainUtils");
+
+const notifiedChannels = new Set();
 
 const STREAMERS = {
   sayeh: {
@@ -49,7 +48,7 @@ function resetStreamerData(streamer) {
 async function sendStreamNotification(client, data) {
   if (mongoose.connection.readyState !== 1) return;
 
-  const guild = await ClientApplication.guilds.fetch(process.env.guildID);
+  const guild = await client.guilds.fetch(process.env.guildID);
   const channel = await guild.channels.fetch(process.env.streamChannelID);
   if (!guild || !channel) return;
 
@@ -111,7 +110,10 @@ async function sendStreamNotification(client, data) {
   const { urlButton } = createUrlButton(utils.labels.stream, url);
   const button = new ActionRowBuilder().addComponents(urlButton);
 
-  console.log(`[Application Logs]: ${user_name}'s twitch notification sent.`);
+  if (notifiedChannels.has(user_login)) return;
+  notifiedChannels.add(user_login);
+
+  console.log(`${consoleTags.app} ${user_name}'s twitch notification sent.`);
 
   const msg = await channel.send({
     content: announcement,
@@ -127,9 +129,13 @@ async function sendStreamNotification(client, data) {
         embeds: [embed],
         components: [button],
       },
-      2 * 1000
+      2_000
     );
   });
+
+  setTimeout(() => {
+    notifiedChannels.delete(user_login);
+  }, 600_000);
 }
 
 async function updateStreamNotification(client, data) {
@@ -175,9 +181,7 @@ async function updateStreamNotification(client, data) {
     content: announcement,
   });
 
-  console.log(
-    `[Application Logs]: ${user_name}'s twitch notification updated.`
-  );
+  console.log(`${consoleTags.app} ${user_name}'s twitch notification updated.`);
 }
 
 async function endStreamNotification(client, channel) {
@@ -222,7 +226,7 @@ async function endStreamNotification(client, channel) {
   });
 
   console.log(
-    `[Application Logs]: ${channel}'s twitch notification edited to offline mode.`
+    `${consoleTags.app} ${channel}'s twitch notification edited to offline mode.`
   );
 
   resetStreamerData(login);

@@ -1,13 +1,13 @@
 const { SlashCommandBuilder } = require("discord.js");
-const embedCreator = require("../../utils/player/createMusicEmbed");
 const errorHandler = require("../../utils/main/handleErrors");
-const buttonCreator = require("../../utils/main/createButtons");
+const { createSongEmbed } = require("../../utils/player/createMusicEmbed");
+const { createButtons } = require("../../utils/main/createButtons");
 const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("song")
-    .setDescription("Get info about the current track.")
+    .setName("current")
+    .setDescription("Get info about the current track")
     .setDMPermission(false),
 
   async execute(interaction, client) {
@@ -32,8 +32,8 @@ module.exports = {
         });
 
         ////////////// original response //////////////
-        const embed = embedCreator.createSongEmbed(queue, interaction);
-        const button = buttonCreator.createButtons(true);
+        const embed = createSongEmbed(queue, interaction);
+        const button = createButtons(true);
 
         await interaction.editReply({
           embeds: [embed],

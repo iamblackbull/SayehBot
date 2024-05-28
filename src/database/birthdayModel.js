@@ -10,4 +10,4 @@ const birthdaySchema = new mongoose.Schema({
     Age: String,
 })
 
-module.exports = mongoose.model('birthday', birthdaySchema);
+module.exports = mongoose.model("birthday", birthdaySchema);

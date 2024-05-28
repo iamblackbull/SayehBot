@@ -1,10 +1,7 @@
-const chalk = require("chalk");
-
 module.exports = {
   name: "err",
-  execute() {
-    console.log(
-      chalk.yellow(`An error occured with the Database connection:\n${err}`)
-    );
+
+  execute(error) {
+    console.error("[Database Status] Connection failed: ", error);
   },
 };

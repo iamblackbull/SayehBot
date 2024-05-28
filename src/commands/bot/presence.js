@@ -14,11 +14,11 @@ const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("presence")
-    .setDescription("Set the presence of the bot")
+    .setDescription(`${utils.tags.mod} Customize the presence of the bot`)
     .addStringOption((option) =>
       option
         .setName("type")
-        .setDescription("Select the type of the presence")
+        .setDescription("Choose the type of the presence")
         .setRequired(true)
         .addChoices(
           {
@@ -89,7 +89,7 @@ module.exports = {
           fetchReply: true,
         });
 
-        const { options } = interaction;
+        const { options, guild, user } = interaction;
         const type = options.get("type").value;
         const name = options.getString("name");
         const status = options.get("status").value;
@@ -115,13 +115,13 @@ module.exports = {
         success = true;
 
         let presenceList = await presenceModel.findOne({
-          GuildId: interaction.guild.id,
+          GuildId: guild.id,
         });
 
         if (!presenceList) {
           presenceList = new presenceModel({
-            GuildId: interaction.guild.id,
-            Author: interaction.user.globalName,
+            GuildId: guild.id,
+            Author: user.globalName,
             Name: name,
             Type: typeNum,
             Status: status,
@@ -131,10 +131,10 @@ module.exports = {
         } else {
           presenceList = await presenceModel.updateOne(
             {
-              GuildId: interaction.guild.id,
+              GuildId: guild.id,
             },
             {
-              Author: interaction.user.globalName,
+              Author: user.globalName,
               Name: name,
               Type: typeNum,
               Status: status,
@@ -143,7 +143,7 @@ module.exports = {
         }
 
         console.log(
-          `${interaction.user.username} updated bot's presence: ${typeNum} - ${name} - ${status}`
+          `${utils.consoleTags.app} ${user.username} updated bot's presence: ${typeNum} - ${name} - ${status}`
         );
       }
     }

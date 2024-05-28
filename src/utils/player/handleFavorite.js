@@ -1,22 +1,23 @@
 const { ComponentType } = require("discord.js");
 const { mongoose } = require("mongoose");
-const favorite = require("../../database/favoriteModel");
+const favoriteModel = require("../../database/favoriteModel");
 const { titles, favoriteSizes } = require("./musicUtils");
 const queueCreator = require("./createQueue");
 const embedCreator = require("./createMusicEmbed");
 const playerDataHandler = require("./handlePlayerData");
 const buttonCreator = require("../main/createButtons");
 const deletionHandler = require("../main/handleDeletion");
+const { consoleTags } = require("../main/mainUtils");
 
 async function updateFavoriteList(user, song) {
   let favoriteMode;
 
-  let favoriteList = await favorite.findOne({
+  let favoriteList = await favoriteModel.findOne({
     User: user.id,
   });
 
   if (!favoriteList) {
-    favoriteList = new favorite({
+    favoriteList = new favoriteModel({
       User: user.id,
       Playlist: [
         {
@@ -60,17 +61,17 @@ async function updateFavoriteList(user, song) {
   switch (favoriteMode) {
     case "add":
       console.log(
-        `${user.username} just added a track to their favorite playlist.`
+        `${consoleTags.app} ${user.username} just added a track to their favorite playlist.`
       );
       break;
     case "remove":
       console.log(
-        `${user.username} just removed a track from their favorite playlist.`
+        `${consoleTags.app} ${user.username} just removed a track from their favorite playlist.`
       );
       break;
     case "full":
       console.log(
-        `${user.username} tried to add a track to their favorite playlist, but it was full.`
+        `${consoleTags.app} ${user.username} tried to add a track to their favorite playlist, but it was full.`
       );
       break;
   }
@@ -109,10 +110,9 @@ async function handleDeletion(
     })
 
     .then(async (messageComponentInteraction) => {
-      if (
-        messageComponentInteraction.customId === "continue" &&
-        messageComponentInteraction.user.id === favoriteList.User
-      ) {
+      const { customId, user } = messageComponentInteraction;
+
+      if (customId === "continue" && user.id === favoriteList.User) {
         if (target) {
           const favoriteSongs = favoriteList.Playlist;
           const songIndex = favoriteSongs.findIndex(
@@ -130,11 +130,11 @@ async function handleDeletion(
             );
 
           console.log(
-            `${messageComponentInteraction.user.username} just removed track #${target} from their favorite playlist.`
+            `${consoleTags.app} ${user.username} just removed track #${target} from their favorite playlist.`
           );
         } else {
           await favorite.findOneAndDelete({
-            User: messageComponentInteraction.user.id,
+            User: user.id,
           });
 
           embed
@@ -142,13 +142,10 @@ async function handleDeletion(
             .setDescription("Your favorite playlist has been cleared.");
 
           console.log(
-            `${messageComponentInteraction.user.username} just cleared their favorite playlist.`
+            `${consoleTags.app} ${user.username} just cleared their favorite playlist.`
           );
         }
-      } else if (
-        messageComponentInteraction.customId === "cancel" &&
-        messageComponentInteraction.user.id === favoriteList.User
-      ) {
+      } else if (customId === "cancel" && user.id === favoriteList.User) {
         embed
           .setTitle(titles.actioncancelled)
           .setDescription("Deletion process has been cancelled.");
@@ -163,11 +160,11 @@ async function handleDeletion(
     .catch((error) => {
       if (error.code === "InteractionCollectorError") {
         console.log(
-          `Interaction response timed out for ${interaction.commandName} delete command.`
+          `${consoleTags.warning} Interaction response timed out for ${interaction.commandName} delete command.`
         );
       } else {
-        console.log(
-          `Something went wrong while awaiting interaction response for ${interaction.commandName} delete command.`
+        console.error(
+          `${consoleTags.error} While awaiting interaction response for ${interaction.commandName} delete command.`
         );
       }
     });
@@ -250,11 +247,11 @@ async function handleButtons(favoriteEmbed, client, interaction, song) {
     .catch((error) => {
       if (error.code === "InteractionCollectorError") {
         console.log(
-          `Interaction response timed out for ${interaction.commandName} buttons.`
+          `${consoleTags.warning} Interaction response timed out for ${interaction.commandName} buttons.`
         );
       } else {
-        console.log(
-          `Something went wrong while awaiting interaction response for ${interaction.commandName} buttons.`
+        console.error(
+          `${consoleTags.error} While awaiting interaction response for ${interaction.commandName} buttons.`
         );
       }
     });

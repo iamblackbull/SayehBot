@@ -1,8 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { footers } = require("../../utils/player/musicUtils");
-const lyricsSplitter = require("../../utils/player/splitLyrics");
-const reactHandler = require("../../utils/main/handleReaction");
-const errorHandler = require("../../utils/main/handleErrors");
+const { splitLyrics } = require("../../utils/player/splitLyrics");
+const { pageReact } = require("../../utils/main/handleReaction");
+const { handleNoResultError } = require("../../utils/main/handleErrors");
 const deletionHandler = require("../../utils/main/handleDeletion");
 const Genius = require("genius-lyrics");
 
@@ -11,15 +11,15 @@ const genius = new Genius.Client();
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("lyrics")
-    .setDescription("Get lyrics of a song from Genius.")
+    .setDescription("Get lyrics of a song from Genius")
     .addStringOption((option) =>
       option
         .setName("query")
-        .setDescription("Input a song name.")
+        .setDescription("Input a song name")
         .setRequired(true)
     ),
 
-  async execute(interaction, client) {
+  async execute(interaction) {
     ////////////// base variables //////////////
     const lyricsEmbed = await interaction.deferReply({
       fetchReply: true,
@@ -47,12 +47,12 @@ module.exports = {
           .setColor(0x256fc4)
           .setFooter({
             iconURL: footers.genius,
-            text: `Genius`,
+            text: "Genius",
           });
 
         if (lyrics.length > 1200) {
           ////////////// split lyrics //////////////
-          const chunks = lyricsSplitter.splitLyrics(lyrics, 1000);
+          const chunks = splitLyrics(lyrics, 1000);
 
           let totalPages = chunks.length;
           let page = 0;
@@ -69,7 +69,7 @@ module.exports = {
           });
 
           ////////////// page switching collector //////////////
-          const collector = reactHandler.pageReact(interaction, lyricsEmbed);
+          const collector = pageReact(interaction, lyricsEmbed);
 
           collector.on("collect", async (reaction, user) => {
             if (user.bot) return;
@@ -104,7 +104,7 @@ module.exports = {
         success = true;
       })
       .catch((error) => {
-        errorHandler.handleNoResultError(interaction);
+        handleNoResultError(interaction);
       });
 
     deletionHandler.handleInteractionDeletion(interaction, success);

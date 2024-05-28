@@ -10,7 +10,7 @@ const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("profile")
-    .setDescription("Update the bot's avatar or banner")
+    .setDescription(`${utils.tags.mod} Customize the bot's avatar or banner`)
     .addStringOption((option) =>
       option
         .setName("type")
@@ -42,9 +42,9 @@ module.exports = {
     });
 
     let success = false;
-
-    const type = interaction.options.get("type").value;
-    const file = interaction.options.getAttachment("file");
+    const { options, user } = interaction;
+    const type = options.get("type").value;
+    const file = options.getAttachment("file");
 
     if (!utils.formats.includes(file.contentType)) {
       await errorHandler.handleFileFormatError(interaction);
@@ -66,7 +66,9 @@ module.exports = {
             iconURL: utils.footers.bot,
           });
 
-        console.log(`${interaction.user.username} updated bot's ${type}.`);
+        console.log(
+          `${utils.consoleTags.app} ${user.username} updated bot's ${type}.`
+        );
 
         success = true;
 
@@ -74,7 +76,10 @@ module.exports = {
           embeds: [embed],
         });
       } catch (error) {
-        console.error("Error while updating bot's profile: ", error);
+        console.error(
+          `${utils.consoleTags.error} While updating bot's profile: `,
+          error
+        );
 
         if (error.message.includes("File cannot be larger")) {
           await errorHandler.handleLargeFileError(interaction);

@@ -6,7 +6,7 @@ const {
 const { mongoose } = require("mongoose");
 const errorHandler = require("../../utils/main/handleErrors");
 const wowModel = require("../../database/wowModel");
-const { colors, footers, texts } = require("../../utils/main/mainUtils");
+const utils = require("../../utils/main/mainUtils");
 const { getKeystoneUpgradeSymbol } = require("../../utils/api/wowKeystone");
 const { createGameButtons } = require("../../utils/main/createButtons");
 const { bookmark } = require("../../utils/api/handleBookmark");
@@ -73,7 +73,7 @@ module.exports = {
               .setTitle(`**${name}-${realm}**`)
               .setURL(profile_url)
               .setThumbnail(thumbnail_url)
-              .setColor(colors.wow);
+              .setColor(utils.colors.wow);
 
             const firstItems = [
               {
@@ -133,8 +133,8 @@ module.exports = {
             const totalPages = 2;
 
             embed.setFooter({
-              iconURL: footers.wow,
-              text: `${texts.wow} | Page ${page + 1} of ${totalPages}`,
+              iconURL: utils.footers.wow,
+              text: `${utils.texts.wow} | Page ${page + 1} of ${totalPages}`,
             });
 
             const recentRunUrl = mythic_plus_recent_runs[0]?.url || false;
@@ -208,8 +208,8 @@ module.exports = {
               } else return;
 
               embed.setFooter({
-                iconURL: footers.wow,
-                text: `${texts.wow} | Page ${page + 1} of ${totalPages}`,
+                iconURL: utils.footers.wow,
+                text: `${utils.texts.wow} | Page ${page + 1} of ${totalPages}`,
               });
 
               await interaction.editReply({
@@ -219,7 +219,7 @@ module.exports = {
           })
           .catch(async (error) => {
             console.error(
-              "Error while fetching World of Warcraft data:",
+              `${utils.consoleTags.error} While fetching World of Warcraft data: `,
               error
             );
 

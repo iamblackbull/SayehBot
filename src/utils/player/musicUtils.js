@@ -26,11 +26,11 @@ const titles = {
 };
 
 const colors = {
-  youtube: 0xff0000,
-  spotify: 0x1db954,
-  soundcloud: 0xff5500,
-  applemusic: 0xf94c57,
-  music: 0x256fc4,
+  youtube: "#ff0000",
+  spotify: "#1db954",
+  soundcloud: "#ff5500",
+  applemusic: "#f94c57",
+  music: "#256fc4",
 };
 
 const buttons = {

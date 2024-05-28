@@ -2,7 +2,8 @@ const { Events } = require("discord.js");
 
 module.exports = {
   name: Events.ShardError,
+
   execute() {
-    console.log("[Discord API Status]: Shards connection failed.");
+    console.error("[Discord API Status] Shard connection failed.");
   },
 };

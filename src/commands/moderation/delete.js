@@ -9,22 +9,20 @@ const errorHandler = require("../../utils/main/handleErrors");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("delete")
-    .setDescription("Delete a message by their message-id.")
-    .addStringOption((options) => {
-      return options
+    .setDescription(`${utils.tags.mod} Delete a specific message in a channel`)
+    .addStringOption((options) =>
+      options
         .setName("message-id")
-        .setDescription("Input the message-id to delete.")
-        .setRequired(true);
-    })
-    .addChannelOption((options) => {
-      return options
-        .setName("channel")
-        .setDescription("Choose the message channel to delete.");
-    })
+        .setDescription("Input the message-id")
+        .setRequired(true)
+    )
+    .addChannelOption((options) =>
+      options.setName("channel").setDescription("Choose the message channel")
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .setDMPermission(false),
 
-  async execute(interaction, client) {
+  async execute(interaction) {
     const messageId = interaction.options.getInteger("message-id");
     const channel =
       interaction.options.getChannel("channel") || interaction.channel;
@@ -46,6 +44,10 @@ module.exports = {
         text: utils.texts.moderation,
         iconURL: utils.footers.moderation,
       });
+
+    console.log(
+      `${utils.consoleTags.app} ${interaction.user.username} deleted a messages in ${channel.name}.`
+    );
 
     await interaction.reply({
       embeds: [embed],

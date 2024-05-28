@@ -6,7 +6,7 @@ const {
 const { mongoose } = require("mongoose");
 const errorHandler = require("../../utils/main/handleErrors");
 const overwatchModel = require("../../database/overwatchModel");
-const { colors, footers, texts } = require("../../utils/main/mainUtils");
+const utils = require("../../utils/main/mainUtils");
 const { findStatIndex } = require("../../utils/api/overwatchIndex");
 const { createGameButtons } = require("../../utils/main/createButtons");
 const { bookmark } = require("../../utils/api/handleBookmark");
@@ -41,7 +41,10 @@ module.exports = {
 
         overwatch.getStats("pc", "eu", tag, async (error, result) => {
           if (error) {
-            console.error("Error while fetching Overwatch data: ", error);
+            console.error(
+              `${utils.consoleTags.error} While fetching Overwatch data: `,
+              error
+            );
 
             if (error.message.toLowerCase().includes("profile")) {
               await errorHandler.handleNoResultError(interaction);
@@ -61,7 +64,7 @@ module.exports = {
               .setTitle("**Quickplay**")
               .setURL(url)
               .setThumbnail(top_heroes.quickplay.played[0].img)
-              .setColor(colors.overwatch);
+              .setColor(utils.colors.overwatch);
 
             const statMapping = [
               { name: "Games Played", category: game },
@@ -150,8 +153,10 @@ module.exports = {
             const totalPages = pages.length;
 
             embed.setFooter({
-              text: `${texts.overwatch} | Page ${page + 1} of ${totalPages}`,
-              iconURL: footers.overwatch,
+              text: `${utils.texts.overwatch} | Page ${
+                page + 1
+              } of ${totalPages}`,
+              iconURL: utils.footers.overwatch,
             });
 
             const button = createGameButtons("ow", false, false);
@@ -179,8 +184,10 @@ module.exports = {
               } else return;
 
               embed.setFields().setFooter({
-                text: `${texts.overwatch} | Page ${page + 1} of ${totalPages}`,
-                iconURL: footers.overwatch,
+                text: `${utils.texts.overwatch} | Page ${
+                  page + 1
+                } of ${totalPages}`,
+                iconURL: utils.footers.overwatch,
               });
 
               pages[page].forEach((stat) => {

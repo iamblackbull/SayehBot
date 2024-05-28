@@ -1,26 +1,19 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const osu = require("node-os-utils");
+const { getSystemUsage } = require("../../utils/client/handleSystemUsage");
+const utils = require("../../utils/main/mainUtils");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("system")
-    .setDescription("Get info about host server usage."),
-  async execute(interaction, client) {
-    const cpuUsage = await osu.cpu.usage();
-    const memInfo = await osu.mem.info();
+    .setDescription("Get info about the bot's host server usage"),
 
-    const freeMemory = memInfo.freeMemMb;
-    const totalMemory = memInfo.totalMemMb;
-    const usedMemory = totalMemory - freeMemory;
-
-    const cpuPercent = cpuUsage.toFixed(2);
-    const memPercent = ((usedMemory / totalMemory) * 100).toFixed(2);
-    const totalMemoryGB = (totalMemory / 1024).toFixed(2);
+  async execute(interaction) {
+    const { cpuPercent, memPercent, totalMemoryGB } = await getSystemUsage();
 
     const embed = new EmbedBuilder()
-      .setTitle(`💻 System`)
-      .setColor(0x25bfc4)
-      .setThumbnail("https://i.imgur.com/UD49B9U.png")
+      .setTitle(utils.titles.system)
+      .setColor(utils.colors.default)
+      .setThumbnail(utils.thumbnails.system)
       .addFields(
         {
           name: "CPU",
@@ -32,16 +25,15 @@ module.exports = {
           value: `${memPercent}% (${totalMemoryGB} GB)`,
           inline: true,
         }
-      );
+      )
+      .setFooter({
+        text: utils.texts.tools,
+        iconURL: utils.footers.tools,
+      });
 
     await interaction.reply({
       embeds: [embed],
+      ephemeral: true,
     });
-
-    setTimeout(() => {
-      interaction.deleteReply().catch((e) => {
-        console.log(`Failed to delete ${interaction.commandName} interaction.`);
-      });
-    }, 1 * 60 * 1000);
   },
 };

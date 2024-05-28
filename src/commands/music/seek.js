@@ -6,18 +6,18 @@ const deletionHandler = require("../../utils/main/handleDeletion");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("seek")
-    .setDescription("Seek to a specific duration in the current track.")
+    .setDescription("Seek to a specific moment in the current track")
     .addIntegerOption((options) =>
       options
         .setName("minutes")
-        .setDescription("Input a amount of minutes to seek.")
+        .setDescription("Input the minutes of the moment")
         .setMinValue(1)
         .setRequired(true)
     )
     .addIntegerOption((options) =>
       options
         .setName("seconds")
-        .setDescription("Input a amount of seconds to seek.")
+        .setDescription("Input the seconds of the moment")
         .setMinValue(1)
         .setMaxValue(59)
         .setRequired(false)

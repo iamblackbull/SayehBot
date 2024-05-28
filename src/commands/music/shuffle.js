@@ -1,13 +1,13 @@
 const { SlashCommandBuilder } = require("discord.js");
+const errorHandler = require("../../utils/main/handleErrors");
 const { createShuffleEmbed } = require("../../utils/player/createMusicEmbed");
 const { shuffleReact } = require("../../utils/main/handleReaction");
-const errorHandler = require("../../utils/main/handleErrors");
 const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("shuffle")
-    .setDescription("Shuffle the current queue.")
+    .setDescription("Shuffle the current queue")
     .setDMPermission(false),
 
   async execute(interaction, client) {
@@ -32,7 +32,7 @@ module.exports = {
           fetchReply: true,
         });
 
-        const reminder = `Use ${interaction.commandId} again or react below to reshuffle.`;
+        const reminder = `Use </${interaction.commandName}:${interaction.commandId}> again or react below to reshuffle.`;
         let description = `Queue of **${queue.tracks.data.length} tracks** has been shuffled!\n${reminder}`;
 
         let embed = createShuffleEmbed(description);

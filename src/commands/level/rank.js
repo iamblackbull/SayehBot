@@ -5,21 +5,19 @@ const { generateCard } = require("../../utils/level/generateCard");
 const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 const { mongoose } = require("mongoose");
 const Levels = require("discord-xp");
+
 Levels.setURL(DBTOKEN);
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("rank")
-    .setDescription("Returns user rank")
-    .addUserOption((option) => {
-      return option
-        .setName("user")
-        .setDescription("Pick any member")
-        .setRequired(false);
-    })
+    .setDescription("Get a user rank card")
+    .addUserOption((option) =>
+      option.setName("user").setDescription("Pick a member").setRequired(false)
+    )
     .setDMPermission(false),
 
-  async execute(interaction, client) {
+  async execute(interaction) {
     const target = interaction.options.getUser("user") || interaction.user;
     const memberTarget = interaction.guild.members.cache.get(target.id);
     const user = await Levels.fetch(target.id, interaction.guild.id, true);

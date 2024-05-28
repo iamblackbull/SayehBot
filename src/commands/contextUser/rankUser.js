@@ -18,7 +18,7 @@ module.exports = {
     .setType(ApplicationCommandType.User)
     .setDMPermission(false),
 
-  async execute(interaction, client) {
+  async execute(interaction) {
     const target = interaction.targetUser;
     const memberTarget = interaction.guild.members.cache.get(target.id);
     const user = await Levels.fetch(target.id, interaction.guild.id, true);

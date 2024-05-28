@@ -4,7 +4,6 @@ const warnModel = require("../../database/warnModel");
 const utils = require("../../utils/main/mainUtils");
 
 let importedClient;
-
 function getWarnClient(client) {
   importedClient = client;
 }
@@ -51,7 +50,9 @@ async function applyPenalty(UserId) {
   try {
     if (target) await target.send({ embeds: [embed] });
   } catch (error) {
-    console.error("Failed to send direct message to warned target.");
+    console.log(
+      `${utils.consoleTags.warning} Failed to send direct message to warned target.`
+    );
   }
 
   try {
@@ -59,11 +60,17 @@ async function applyPenalty(UserId) {
   } catch (error) {
     if (error.code == 10026)
       console.error(
-        "New warning detected but failed to perform action on the target."
+        `${utils.consoleTags.warning} New warning detected but failed to perform action on the target.`
       );
     else if (error.code == 10007)
-      console.error("New warning detected but failed to find the target.");
-    else console.error("Unknown error while checking warn records: ", error);
+      console.error(
+        `${utils.consoleTags.warning} New warning detected but failed to find the target.`
+      );
+    else
+      console.error(
+        `${utils.consoleTags.error} Unknown error while checking warn records: `,
+        error
+      );
   }
 }
 

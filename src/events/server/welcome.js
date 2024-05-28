@@ -3,6 +3,7 @@ const { welcomeRoleID, guildID } = process.env;
 const eventsModel = require("../../database/eventsModel");
 const { getChannelId } = require("../../commands/server/setwelcome");
 const { generateWelcomeCard } = require("../../utils/level/generateCard");
+const { consoleTags } = require("../../utils/main/mainUtils");
 
 const welcomeMessageSent = new Set();
 
@@ -42,9 +43,7 @@ module.exports = {
 
     const content = `Zalaaam ${user}, Welcome to **${guild.name}**'s server! ${specialContent}`;
 
-    console.log(
-      `${user.username} (Member #${memberCount}) just joined the server.`
-    );
+    console.log(`${consoleTags.app} ${user.username} joined the server.`);
 
     const msg = await channel.send({
       content: content,

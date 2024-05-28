@@ -10,7 +10,7 @@ module.exports = {
     .setName("get avatar")
     .setType(ApplicationCommandType.User),
 
-  async execute(interaction, client) {
+  async execute(interaction) {
     const user = interaction.user;
     const avatar = user.displayAvatarURL({ size: 1024, dynamic: true });
 

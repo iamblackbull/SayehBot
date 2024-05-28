@@ -1,17 +1,20 @@
 const { SlashCommandBuilder, PermissionsBitField } = require("discord.js");
-const responseCreator = require("../../utils/player/createResponse");
-const playerDataHandler = require("../../utils/player/handlePlayerData");
 const errorHandler = require("../../utils/main/handleErrors");
-const queueCreator = require("../../utils/player/createQueue");
-const embedCreator = require("../../utils/player/createMusicEmbed");
-const searchHandler = require("../../utils/player/handleSearch");
-const buttonCreator = require("../../utils/main/createButtons");
+const { response } = require("../../utils/player/createResponse");
+const { handleData } = require("../../utils/player/handlePlayerData");
+const { createQueue } = require("../../utils/player/createQueue");
+const { createTrackEmbed } = require("../../utils/player/createMusicEmbed");
+const { search } = require("../../utils/player/handleSearch");
+const { createButtons } = require("../../utils/main/createButtons");
+const { consoleTags } = require("../../utils/main/mainUtils");
 const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("play")
-    .setDescription("Play from YouTube / Spotify / Soundcloud / Apple Music.")
+    .setDescription(
+      "Play a track (YouTube / Spotify / Soundcloud / Apple Music)"
+    )
     .addStringOption((option) =>
       option
         .setName("query")
@@ -21,15 +24,15 @@ module.exports = {
     )
     .setDMPermission(false),
 
-  async autocompleteRun(interaction, client) {
+  async autocompleteRun(interaction) {
     ////////////// autocomplete response //////////////
     const query = interaction.options.getString("query", true);
     if (!query) return;
 
-    const result = await searchHandler.search(query);
+    const result = await search(query);
     if (!result.hasTracks()) return;
 
-    const respond = responseCreator.response(result);
+    const respond = response(result);
 
     try {
       await interaction.respond(respond);
@@ -53,14 +56,14 @@ module.exports = {
     } else {
       const query = interaction.options.getString("query", true);
 
-      const result = await searchHandler.search(query);
+      const result = await search(query);
 
       if (!result.hasTracks()) {
         errorHandler.handleNoResultError(interaction);
       } else {
         const queue =
           client.player.nodes.get(interaction.guildId) ||
-          (await queueCreator.createQueue(client, interaction, result));
+          (await createQueue(client, interaction, result));
 
         if (!queue.connection) {
           await queue.connect(interaction.member.voice.channel);
@@ -83,19 +86,19 @@ module.exports = {
             const target = result.playlist ? result.tracks : song;
             await queue.addTrack(target);
 
-            const { embed, nowPlaying } = embedCreator.createTrackEmbed(
+            const { embed, nowPlaying } = createTrackEmbed(
               interaction,
               queue,
               result,
               song
             );
 
-            await playerDataHandler.handleData(interaction, nowPlaying);
+            await handleData(interaction, nowPlaying);
 
             if (!queue.node.isPlaying() && !queue.node.isPaused())
               await queue.node.play();
 
-            const button = buttonCreator.createButtons(nowPlaying);
+            const button = createButtons(nowPlaying);
 
             await interaction.editReply({
               embeds: [embed],
@@ -121,7 +124,10 @@ module.exports = {
             } else {
               errorHandler.handleUnknownError(interaction);
 
-              console.log(error);
+              console.error(
+                `${consoleTags.error} While executing ${interaction.commandName} command: `,
+                error
+              );
             }
           }
         }

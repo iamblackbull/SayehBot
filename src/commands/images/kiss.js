@@ -1,27 +1,22 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { gifs, colors } = require("../../utils/main/mainUtils");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("kiss")
     .setDescription("Kiss someone")
-    .addUserOption((option) => {
-      return option
-        .setName("user")
-        .setDescription("Pick any member")
-        .setRequired(true);
-    }),
+    .addUserOption((option) =>
+      option.setName("user").setDescription("Pick a member").setRequired(true)
+    ),
 
-  async execute(interaction, client) {
-    const kissed = interaction.options.getUser("user");
+  async execute(interaction) {
+    const target = interaction.options.getUser("user");
 
     const embed = new EmbedBuilder()
-      .setTitle(`Kiss`)
-      .setImage(
-        `https://cdn.discordapp.com/attachments/946481937537699870/1135648014946549970/machBehet.gif`
-      )
-      .setDescription(`😍 **${interaction.user}** kissed **${kissed}** 💋`)
-      .setColor(0x25bfc4);
-      
+      .setDescription(`😍 **${interaction.user}** kissed **${target}** 💋`)
+      .setImage(gifs.kiss)
+      .setColor(colors.default);
+
     await interaction.reply({
       embeds: [embed],
     });

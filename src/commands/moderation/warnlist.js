@@ -14,12 +14,12 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("warnlist")
     .setDescription(
-      "View a list of users and the amount of times they were warned in this server."
+      `${utils.tags.mod} View a list of users and their warn records`
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .setDMPermission(false),
 
-  async execute(interaction, client) {
+  async execute(interaction) {
     let success = false;
     const { guild } = interaction;
 

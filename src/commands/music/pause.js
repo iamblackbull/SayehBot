@@ -1,13 +1,13 @@
 const { SlashCommandBuilder } = require("discord.js");
+const errorHandler = require("../../utils/main/handleErrors");
 const { createPauseEmbed } = require("../../utils/player/createMusicEmbed");
 const { createPauseButton } = require("../../utils/main/createButtons");
-const errorHandler = require("../../utils/main/handleErrors");
 const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("pause")
-    .setDescription("Toggle pause mode the current track.")
+    .setDescription("Toggle pause mode of the current track")
     .setDMPermission(false),
 
   async execute(interaction, client) {

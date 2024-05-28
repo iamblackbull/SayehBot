@@ -10,4 +10,4 @@ const welcomeSchema = new mongoose.Schema({
     channelId: reqString
 })
 
-module.exports = mongoose.model('welcome', welcomeSchema)
+module.exports = mongoose.model("welcome", welcomeSchema)

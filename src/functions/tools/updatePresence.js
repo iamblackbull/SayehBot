@@ -9,7 +9,6 @@ module.exports = (client) => {
     const streamList = await streamModel.findOne({
       IsLive: true,
     });
-
     if (streamList) return;
 
     await mainPresence(client);

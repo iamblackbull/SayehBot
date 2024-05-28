@@ -1,6 +1,5 @@
-const { Events } = require("discord.js");
-const { EmbedBuilder } = require("discord.js");
-const { titles, colors, thumbnails } = require("../../utils/main/mainUtils");
+const { EmbedBuilder, Events } = require("discord.js");
+const utils = require("../../utils/main/mainUtils");
 const { calculateXP } = require("../../utils/level/handleXPRate");
 const { handleInteractionXp } = require("../../utils/level/handleLevel");
 const Levels = require("discord-xp");
@@ -8,9 +7,9 @@ const Levels = require("discord-xp");
 Levels.setURL(process.env.DBTOKEN);
 
 const failedEmbed = new EmbedBuilder()
-  .setTitle(titles.error)
-  .setColor(colors.error)
-  .setThumbnail(thumbnails.error);
+  .setTitle(utils.titles.error)
+  .setColor(utils.colors.error)
+  .setThumbnail(utils.thumbnails.error);
 
 const notFoundError = "COMMAND_NOT_FOUND";
 
@@ -41,18 +40,25 @@ module.exports = {
       }
     } else if (interaction.isChatInputCommand()) {
       const { commands } = client;
-      const { commandName } = interaction;
+      const { commandName, user } = interaction;
       const command = commands.get(commandName);
       if (!command) return;
 
       try {
         await command.execute(interaction, client);
+
+        console.log(
+          `${utils.consoleTags.app} ${user.username} executed ${commandName} command.`
+        );
       } catch (error) {
         failedEmbed.setDescription(
           `Something went wrong while executing ${commandName} command.\nCode: ${error.code}`
         );
 
-        console.error(error);
+        console.error(
+          `${utils.consoleTags.error} While executing ${commandName} command.`,
+          error
+        );
 
         if (interaction.deferred || interaction.replied) {
           await interaction.editReply({
@@ -70,18 +76,25 @@ module.exports = {
       }
     } else if (interaction.isContextMenuCommand()) {
       const { commands } = client;
-      const { commandName } = interaction;
+      const { commandName, user } = interaction;
       const contextCommand = commands.get(commandName);
       if (!contextCommand) return;
 
       try {
         await contextCommand.execute(interaction, client);
+
+        console.log(
+          `${utils.consoleTags.app} ${user.username} executed ${commandName} context menu command.`
+        );
       } catch (error) {
         failedEmbed.setDescription(
-          `Something went wrong while executing ${commandName} Context Menu command.\nCode: ${error.code}`
+          `Something went wrong while executing ${commandName} context Menu command.\nCode: ${error.code}`
         );
 
-        console.error(error);
+        console.error(
+          `${utils.consoleTags.error} While executing ${commandName} context menu command.`,
+          error
+        );
 
         if (!interaction.reply) {
           await interaction.reply({
@@ -100,40 +113,44 @@ module.exports = {
       }
     } else if (interaction.isButton()) {
       const { buttons } = client;
-      const { customId } = interaction;
+      const { customId, user } = interaction;
       const button = buttons.get(customId);
 
       if (!button)
         return new Error(
-          `Something went wrong while executing ${customId} button command.\nCode: ${notFoundError}`
+          `${utils.consoleTags.error} While executing ${customId} button.\nCode: ${notFoundError}`
         );
 
       try {
         await button.execute(interaction, client);
-      } catch (error) {
-        console.log(error);
 
+        console.log(
+          `${utils.consoleTags.app} ${user.username} executed ${customId} button.`
+        );
+      } catch (error) {
         return new Error(
-          `Something went wrong while executing ${customId} button command.\nCode: ${error.code}`
+          `${utils.consoleTags.error} While executing ${customId} button.\nCode: ${error.code}`
         );
       }
     } else if (interaction.isModalSubmit()) {
       const { modals } = client;
-      const { customId } = interaction;
+      const { customId, user } = interaction;
       const modal = modals.get(customId);
 
       if (!modal)
         return new Error(
-          `Something went wrong while executing ${customId} modal command.\nCode: ${notFoundError}`
+          `${utils.consoleTags.error} While executing ${customId} modal.\nCode: ${notFoundError}`
         );
 
       try {
         await modal.execute(interaction, client);
-      } catch (error) {
-        console.log(error);
 
+        console.log(
+          `${utils.consoleTags.app} ${user.username} executed ${customId} modal.`
+        );
+      } catch (error) {
         return new Error(
-          `Something went wrong while executing ${customId} modal command.\nCode: ${error.code}`
+          `${utils.consoleTags.error} While executing ${customId} modal.\nCode: ${error.code}`
         );
       }
     }

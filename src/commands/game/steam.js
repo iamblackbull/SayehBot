@@ -5,31 +5,33 @@ const {
   ButtonStyle,
   ActionRowBuilder,
 } = require("discord.js");
-const { gameChannelID } = process.env;
+const utils = require("../../utils/main/mainUtils");
 const market = require("steam-market-pricing");
 const game = require("steam-searcher");
 const hltb = require("howlongtobeat");
+const { handleNoResultError } = require("../../utils/main/handleErrors");
+const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 
 const hltbService = new hltb.HowLongToBeatService();
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("steam")
-    .setDescription("Search in Steam.")
+    .setDescription("Search in Steam")
     .addSubcommand((subcommand) =>
       subcommand
         .setName("market")
-        .setDescription("Search for a price of an item in Steam market.")
+        .setDescription("Search for an item in Steam market")
         .addStringOption((option) =>
           option
             .setName("item")
-            .setDescription("Input the item name. (Suggestion: key / ticket)")
+            .setDescription("Input the item name (Suggestion: key / ticket)")
             .setRequired(true)
         )
         .addStringOption((option) =>
           option
             .setName("game")
-            .setDescription("Select the item's game.")
+            .setDescription("Select the item's game")
             .setRequired(true)
             .addChoices(
               {
@@ -49,7 +51,7 @@ module.exports = {
         .addStringOption((option) =>
           option
             .setName("currency")
-            .setDescription("Select your currency.")
+            .setDescription("Select your currency")
             .setRequired(true)
             .addChoices(
               {
@@ -78,21 +80,21 @@ module.exports = {
     .addSubcommand((subcommand) =>
       subcommand
         .setName("store")
-        .setDescription("Search for a game in Steam store.")
+        .setDescription("Search for a game in Steam store")
         .addStringOption((option) =>
           option
             .setName("input")
-            .setDescription("Input the game name.")
+            .setDescription("Input the game name")
             .setRequired(true)
         )
     ),
 
-  async execute(interaction, client) {
+  async execute(interaction) {
     await interaction.deferReply({
       fetchReply: true,
     });
-    let success = false;
 
+    let success = false;
     const { options } = interaction;
     const Sub = options.getSubcommand();
 
@@ -118,16 +120,16 @@ module.exports = {
           market
             .getItemPrice(appid, name, currency)
             .then(async (item) => {
-              let thumbnail;
+              let thumbnail = utils.thumbnails.market;
               switch (appid) {
                 case "730":
-                  thumbnail = `https://i.redd.it/yugctti7mek81.png`;
+                  thumbnail = utils.thumbnails.cs;
                   break;
                 case "570":
-                  thumbnail = `https://www.buysellvouchers.com/assets/924fc46b/images/pt/dota.png`;
+                  thumbnail = utils.thumbnails.dota;
                   break;
                 case "440":
-                  thumbnail = `https://aux2.iconspalace.com/uploads/429940364.png`;
+                  thumbnail = utils.thumbnails.tf2;
                   break;
               }
 
@@ -141,51 +143,40 @@ module.exports = {
                 ? (numericPrice * 0.85).toFixed(2)
                 : undefined;
 
-              let embed = new EmbedBuilder()
-                .setTitle(`${item.market_hash_name}`)
-                .setColor(0x0e0e57)
-                .setThumbnail(thumbnail)
-                .setFooter({
-                  iconURL: `https://cdn.freebiesupply.com/images/large/2x/steam-logo-transparent.png`,
-                  text: `Steam`,
-                })
+              const embed = new EmbedBuilder()
+                .setTitle(`**${item.market_hash_name}**`)
                 .addFields(
                   {
-                    name: `Lowest Price (Revenue)`,
-                    value: `${item.lowest_price} (${revenue})` || `-`,
+                    name: "Lowest Price (Revenue)",
+                    value: `${item.lowest_price} (${revenue})` || "-",
                     inline: true,
                   },
                   {
-                    name: `Median Price`,
-                    value: `${item.median_price}` || `-`,
+                    name: "Median Price",
+                    value: `${item.median_price}` || "-",
                     inline: true,
                   },
                   {
-                    name: `Volume`,
-                    value: `${item.volume}` || `-`,
+                    name: "Volume",
+                    value: `${item.volume}` || "-",
                     inline: true,
                   }
-                );
+                )
+                .setColor(utils.colors.steam)
+                .setThumbnail(thumbnail)
+                .setFooter({
+                  iconURL: utils.footers.steam,
+                  text: utils.texts.steam,
+                });
+
+              success = true;
 
               await interaction.editReply({
                 embeds: [embed],
               });
-              success = true;
             })
-            .catch(async (error) => {
-              const failedEmbed = new EmbedBuilder()
-                .setTitle(`No result`)
-                .setDescription(
-                  `Please make sure you input the exact item name.\nThis API is Case-sensitive and also searchs for the exact item name you input.\nTry again with </steam market:1100722765587284048>.`
-                )
-                .setColor(0xffea00)
-                .setThumbnail(
-                  `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
-                );
-
-              await interaction.editReply({
-                embeds: [failedEmbed],
-              });
+            .catch(async () => {
+              await handleNoResultError(interaction);
             });
         }
         break;
@@ -196,19 +187,7 @@ module.exports = {
 
           game.find({ search: `${name}` }, async function (err, result) {
             if (err) {
-              const failedEmbed = new EmbedBuilder()
-                .setTitle(`No result`)
-                .setDescription(
-                  `Please make sure you input the correct game name.\nTry again with </steam store:1100722765587284048>.`
-                )
-                .setColor(0xffea00)
-                .setThumbnail(
-                  `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
-                );
-
-              await interaction.editReply({
-                embeds: [failedEmbed],
-              });
+              await handleNoResultError(interaction);
             } else {
               const platform =
                 result.platforms.windows === true
@@ -250,71 +229,69 @@ module.exports = {
                 .search(result.name)
                 .then((response) => response[0]);
 
+              const url = `https://store.steampowered.com/app/${result.steam_appid}/${resultName}/`;
+
               const embed = new EmbedBuilder()
                 .setTitle(`**${result.name}**`)
-                .setURL(
-                  `https://store.steampowered.com/app/${result.steam_appid}/${resultName}/`
-                )
+                .setURL(url)
                 .setDescription(`${result.short_description}`)
                 .setThumbnail(`${result.capsule_image}`)
                 .addFields(
                   {
-                    name: `Developer`,
+                    name: "Developer",
                     value: `${developer}`,
                     inline: true,
                   },
                   {
-                    name: `Publisher`,
+                    name: "Publisher",
                     value: `${publisher}`,
                     inline: true,
                   },
                   {
-                    name: `Price`,
+                    name: "Price",
                     value: `${price}`,
                     inline: true,
                   },
                   {
-                    name: `Platform`,
+                    name: "Platform",
                     value: `${platform}`,
                     inline: true,
                   },
                   {
-                    name: `Metacritic Score`,
+                    name: "Metacritic Score",
                     value: `${meta}`,
                     inline: true,
                   },
                   {
-                    name: `Main Genre`,
+                    name: "Main Genre",
                     value: `${genre}`,
                     inline: true,
                   },
                   {
-                    name: `Release Date`,
+                    name: "Release Date",
                     value: `${releaseDate}`,
                     inline: true,
                   },
                   {
-                    name: `Main Story`,
+                    name: "Main Story",
                     value: `${hltb.gameplayMain} h`,
                     inline: true,
                   }
                 )
-                .setImage(`${result.screenshots[0].path_full}`)
-                .setColor(0x0e0e57)
+                .setImage(result.screenshots[0].path_full)
+                .setColor(utils.colors.steam)
                 .setFooter({
-                  iconURL: `https://cdn.freebiesupply.com/images/large/2x/steam-logo-transparent.png`,
-                  text: `Steam`,
+                  iconURL: utils.footers.steam,
+                  text: utils.texts.steam,
                 });
 
               const storeButton = new ButtonBuilder()
-                .setLabel(`Visit Store Page`)
-                .setURL(
-                  `https://store.steampowered.com/app/${result.steam_appid}/${resultName}/`
-                )
+                .setLabel("Visit Store Page")
+                .setURL(url)
                 .setStyle(ButtonStyle.Link);
 
               const crackButton = new ButtonBuilder()
-                .setLabel(`Crack Status`)
+                .setLabel("Crack Status")
                 .setURL(
                   `https://steamcrackedgames.com/games/${encodeURIComponent(
                     result.name.replace(/\s+/g, "-")
@@ -323,7 +300,7 @@ module.exports = {
                 .setStyle(ButtonStyle.Link);
 
               const hltbButton = new ButtonBuilder()
-                .setLabel(`How long to beat`)
+                .setLabel("How long to beat")
                 .setURL(`https://howlongtobeat.com/game/${hltb.id}`)
                 .setStyle(ButtonStyle.Link);
 
@@ -343,21 +320,13 @@ module.exports = {
         }
         break;
       default: {
-        console.log("Something went wrong while executing steam command...");
+        console.error(
+          `${utils.consoleTags.error} Something went wrong while executing ${interaction.commandName} command.`
+        );
       }
     }
 
-    const timeoutDuration = success ? 5 * 60 * 1000 : 2 * 60 * 1000;
-    const timeoutLog = success
-      ? `Failed to delete ${interaction.commandName} interaction.`
-      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
-    setTimeout(() => {
-      if (success && interaction.channel.id === gameChannelID) return;
-      else {
-        interaction.deleteReply().catch((e) => {
-          console.log(timeoutLog);
-        });
-      }
-    }, timeoutDuration);
+    const { gameChannelID } = process.env;
+    handleNonMusicalDeletion(interaction, success, gameChannelID, 10);
   },
 };

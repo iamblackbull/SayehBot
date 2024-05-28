@@ -12,4 +12,4 @@ const eventsSchema = new mongoose.Schema({
   Moderation: Boolean,
 });
 
-module.exports = mongoose.model("events", eventsSchema, "events");
+module.exports = mongoose.model("events", eventsSchema);

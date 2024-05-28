@@ -1,5 +1,6 @@
 const { useTimeline } = require("discord-player");
 const { musicChannelID } = process.env;
+const { consoleTags } = require("./mainUtils");
 
 function calculateTimer(interaction, id, success) {
   let timer = 2 * 60;
@@ -9,7 +10,7 @@ function calculateTimer(interaction, id, success) {
       interaction?.commandName !== "skip" &&
       interaction?.customId !== "skip-button"
     ) {
-      const timeline = useTimeline(interaction.guild.id);
+      const timeline = useTimeline(id);
 
       if (
         timeline !== null &&
@@ -33,7 +34,10 @@ function calculateTimer(interaction, id, success) {
           if (totalTimer == 0 || timer > 10 * 60) timer = 10 * 60;
           else if (timer < 1 * 60) timer = 1 * 60;
         } catch (error) {
-          console.log("Error while calculating track timer: ", error);
+          console.log(
+            `${consoleTags.error} While calculating track timer: `,
+            error
+          );
         }
       }
     }
@@ -60,8 +64,8 @@ function handleInteractionDeletion(interaction, success) {
   }
 
   const un = success ? "" : "un";
-  const timeoutLog = `Failed to delete ${un}successfull ${interaction.commandName} interaction.`;
-  const reactionLog = `Failed to remove reactions from ${un}successfull ${interaction.commandName} interaction.`;
+  const timeoutLog = `${consoleTags.warning} Failed to delete ${un}successfull ${interaction.commandName} interaction.`;
+  const reactionLog = `${consoleTags.warning} Failed to remove reactions from ${un}successfull ${interaction.commandName} interaction.`;
 
   setTimeout(async () => {
     if (success && interaction?.channel?.id === musicChannelID) {
@@ -84,7 +88,7 @@ async function handleMessageDelection(client, firstMsg, msg, success) {
   const timer = calculateTimer(false, msg.guild.id, success);
 
   const un = success ? "" : "un";
-  const timeoutLog = `Failed to delete ${un}successfull play message.`;
+  const timeoutLog = `${consoleTags.warning} Failed to delete ${un}successfull play message.`;
 
   setTimeout(async () => {
     if (success && msg?.channel?.id === musicChannelID) {
@@ -93,8 +97,6 @@ async function handleMessageDelection(client, firstMsg, msg, success) {
       try {
         await msg.delete();
         await firstMsg?.delete();
-
-        console.log("Deleted a play message.");
       } catch (e) {
         console.log(timeoutLog);
       }
@@ -107,7 +109,9 @@ function handleEventDelection(msg) {
 
   setTimeout(async () => {
     await msg?.delete().catch((e) => {
-      console.log("Failed to delete playStart event message.");
+      console.log(
+        `${consoleTags.warning} Failed to delete playStart event message.`
+      );
     });
   }, timer * 1000);
 }
@@ -116,7 +120,7 @@ function handleFollowUpDeletion(interaction, msg, success) {
   const timer = calculateTimer(interaction, interaction.guildId, success);
 
   const un = success ? "" : "un";
-  const timeoutLog = `Failed to delete ${un}successfull ${interaction.commandName} follow-up.`;
+  const timeoutLog = `${consoleTags.warning} Failed to delete ${un}successfull ${interaction.commandName} follow-up.`;
 
   setTimeout(async () => {
     if (success && interaction.channel?.id === musicChannelID)
@@ -133,7 +137,7 @@ function handleNonMusicalDeletion(interaction, success, channelId, minutes) {
   const timer = success ? minutes : 2;
 
   const un = success ? "" : "un";
-  const timeoutLog = `Failed to delete ${un}successfull ${interaction.commandName} interaction.`;
+  const timeoutLog = `${consoleTags.warning} Failed to delete ${un}successfull ${interaction.commandName} interaction.`;
 
   setTimeout(async () => {
     if (success && interaction.channel.id === channelId) return;

@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const scan = require("../../utils/api/scanUrlApi");
+const { scan } = require("../../utils/api/scanUrlApi");
 const { handleAPIError } = require("../../utils/main/handleErrors");
 const utils = require("../../utils/main/mainUtils");
 const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
@@ -7,12 +7,9 @@ const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("scanurl")
-    .setDescription("Scan a url for viruses")
+    .setDescription(`${utils.tags.new} Scan a url for viruses`)
     .addStringOption((option) =>
-      option
-        .setName("url")
-        .setDescription("Input url to scan")
-        .setRequired(true)
+      option.setName("url").setDescription("Input a url").setRequired(true)
     ),
 
   async execute(interaction) {

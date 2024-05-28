@@ -1,13 +1,14 @@
 const {
   ContextMenuCommandBuilder,
   ApplicationCommandType,
-  EmbedBuilder,
   ModalBuilder,
   ActionRowBuilder,
   TextInputBuilder,
   TextInputStyle,
 } = require("discord.js");
-const report = require("../../database/reportModel");
+const reportModel = require("../../database/reportModel");
+const { handleCaseOpenError } = require("../../utils/main/handleErrors");
+const { consoleTags } = require("../../utils/main/mainUtils");
 
 module.exports = {
   data: new ContextMenuCommandBuilder()
@@ -15,29 +16,33 @@ module.exports = {
     .setType(ApplicationCommandType.Message)
     .setDMPermission(false),
 
-  async execute(interaction, client) {
-    const modal = new ModalBuilder()
-      .setCustomId("report-modal")
-      .setTitle(`Report Message`);
+  async execute(interaction) {
+    const { channel, targetId, user } = interaction;
+    const targetMessage = await channel.messages.fetch(targetId);
 
-    const reportInput = new TextInputBuilder()
-      .setCustomId("reportInput")
-      .setLabel(`Why you want to report this message?`)
-      .setRequired(true)
-      .setStyle(TextInputStyle.Paragraph);
-
-    const msg = await interaction.channel.messages.fetch(interaction.targetId);
-
-    let reportList = await report.findOne({
-      ReporterId: interaction.user.id,
-      TargetId: msg.author.id,
-      Message: msg.content,
-      MessageId: msg.id,
-      IsCaseOpen: true,
+    let reportList = await reportModel.findOne({
+      ReporterId: user.id,
+      TargetId: targetMessage.author.id,
+      MessageId: targetMessage.id,
+      ChannelId: targetMessage.channel.id,
+      IsCaseClosed: false,
     });
 
-    if (!reportList) {
+    if (reportList) {
+      await handleCaseOpenError(interaction, reportList.CaseId);
+    } else {
+      const modal = new ModalBuilder()
+        .setCustomId("report-modal")
+        .setTitle("Report Message");
+
+      const reportInput = new TextInputBuilder()
+        .setCustomId("reportInput")
+        .setLabel("Why do you want to report this message?")
+        .setRequired(true)
+        .setStyle(TextInputStyle.Paragraph);
+
       modal.addComponents(new ActionRowBuilder().addComponents(reportInput));
+
       await interaction.showModal(modal);
 
       const filter = (interaction) => interaction.customId === "report-modal";
@@ -50,16 +55,17 @@ module.exports = {
         .then(async (interaction) => {
           const id = new Date().getTime().toString();
 
-          reportList = new report({
+          reportList = new reportModel({
             CaseId: id,
-            CaseMessageId: null,
             ReporterId: interaction.user.id,
             ReporterName: interaction.user.username,
-            TargetId: msg.author.id,
-            TargetName: msg.author.username,
-            Message: msg.content,
-            MessageId: msg.id,
-            IsCaseOpen: true,
+            TargetId: targetMessage.author.id,
+            TargetName: targetMessage.author.username,
+            Message: targetMessage.content,
+            Reason: interaction.fields.getTextInputValue("reportInput"),
+            MessageId: targetMessage.id,
+            ChannelId: targetMessage.channel.id,
+            IsCaseClosed: false,
             IsModsNotified: false,
             IsReporterNotified: false,
           });
@@ -67,29 +73,9 @@ module.exports = {
         })
         .catch((e) =>
           console.log(
-            "Modal collector of Report message did not recieve any interactions before ending."
+            `${consoleTags.warning} Report message modal collector did not recieve any interactions before ending.`
           )
         );
-    } else {
-      const failedEmbed = new EmbedBuilder()
-        .setTitle(`**Action Failed**`)
-        .setDescription(
-          `You have already reported this message. You will be notifed as soon as a moderator responed to your report.`
-        )
-        .addFields({
-          name: `Case ID`,
-          value: `${reportList.CaseId}`,
-          inline: true,
-        })
-        .setColor(0xffea00)
-        .setThumbnail(
-          `https://assets.stickpng.com/images/5a81af7d9123fa7bcc9b0793.png`
-        );
-
-      interaction.reply({
-        embeds: [failedEmbed],
-        ephemeral: true,
-      });
     }
   },
 };

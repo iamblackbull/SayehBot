@@ -16,11 +16,11 @@ Levels.setURL(process.env.DBTOKEN);
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("xp")
-    .setDescription("Manage user level and XP")
+    .setDescription(`${utils.tags.mod} Manage user level and XP`)
     .addStringOption((option) =>
       option
         .setName("action")
-        .setDescription("Choose action")
+        .setDescription("Select an action to perform")
         .setRequired(true)
         .addChoices(
           {
@@ -36,7 +36,7 @@ module.exports = {
     .addStringOption((option) =>
       option
         .setName("unit")
-        .setDescription("Choose unit")
+        .setDescription("Select unit")
         .setRequired(true)
         .addChoices(
           {
@@ -52,7 +52,7 @@ module.exports = {
     .addIntegerOption((option) =>
       option
         .setName("amount")
-        .setDescription("Amount of level / XP")
+        .setDescription("Input the amount")
         .setRequired(true)
     )
     .addUserOption((option) =>
@@ -65,11 +65,11 @@ module.exports = {
     let success = false;
 
     const { options, guild } = interaction;
-    const user = options.getUser("user");
+    const target = options.getUser("user");
     const action = options.get("action").value;
     const unit = options.get("unit").value;
     const amount = options.getInteger("amount");
-    const userLevel = await Levels.fetch(user.id, guild.id, true);
+    const userLevel = await Levels.fetch(target.id, guild.id, true);
 
     const eventsList = await eventsModel.findOne({
       guildId: guild.id,
@@ -79,7 +79,7 @@ module.exports = {
     if (mongoose.connection.readyState !== 1) {
       errorHandler.handleDatabaseError(interaction);
     } else if (userLevel <= 0) {
-      errorHandler.handleXpError(interaction, user);
+      errorHandler.handleXpError(interaction, target);
     } else if (!eventsList) {
       errorHandler.handleDisabledError(interaction);
     } else {
@@ -97,7 +97,7 @@ module.exports = {
       const embed = new EmbedBuilder()
         .setTitle(utils.titles.level)
         .setDescription(
-          `**${amount} ${updatedUnit}** ${updatedAction} ${user}.`
+          `**${amount} ${updatedUnit}** ${updatedAction} ${target}.`
         )
         .setColor(utils.colors.default);
 

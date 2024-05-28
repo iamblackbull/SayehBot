@@ -1,4 +1,5 @@
 const intervals = require("../../utils/client/intervals");
+const { consoleTags } = require("../../utils/main/mainUtils");
 
 module.exports = {
   name: "reconnecting",
@@ -6,12 +7,12 @@ module.exports = {
   async execute(client) {
     intervals.clearIntervals();
 
-    console.log("[Application Logs]: SayehBot is reconnecting to Discord...");
+    console.log(`${consoleTags.warning} SayehBot is reconnecting to Discord...`);
 
     client.on("connect", () => {
       intervals.setIntervals(client);
 
-      console.log("[Application Logs]: SayehBot is reconnected to Discord.");
+      console.log(`${consoleTags.app} SayehBot is reconnected to Discord.`);
     });
   },
 };

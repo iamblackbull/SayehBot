@@ -1,6 +1,6 @@
 const { Events } = require("discord.js");
-const { leaveChannelID } = process.env;
 const eventsModel = require("../../database/eventsModel");
+const { consoleTags } = require("../../utils/main/mainUtils");
 
 const leaveMessageSent = new Set();
 
@@ -9,7 +9,9 @@ module.exports = {
 
   async execute(member) {
     const { guild, user } = member;
-    const channel = guild.channels.cache.get(leaveChannelID);
+
+    const channel = guild.channels.cache.get(process.env.leaveChannelID);
+    if (!channel) return;
 
     const eventsList = await eventsModel.findOne({
       guildId: guild.id,
@@ -20,7 +22,7 @@ module.exports = {
     if (leaveMessageSent.has(member.id)) return;
     leaveMessageSent.add(member.id);
 
-    console.log(`${user.username} left the server.`);
+    console.log(`${consoleTags.app} ${user.username} left the server.`);
 
     setTimeout(async () => {
       await channel.send({

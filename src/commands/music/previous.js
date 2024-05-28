@@ -3,21 +3,20 @@ const {
   PermissionsBitField,
   PermissionFlagsBits,
 } = require("discord.js");
+const errorHandler = require("../../utils/main/handleErrors");
 const { createVoteEmbed } = require("../../utils/player/createMusicEmbed");
 const { previous } = require("../../utils/player/handleSkip");
-const errorHandler = require("../../utils/main/handleErrors");
 const { voteReact } = require("../../utils/main/handleReaction");
 const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("previous")
-    .setDescription("Skip to previous track in the current queue."),
+    .setDescription("Go back to the previous track in the current queue"),
 
   async execute(interaction, client) {
     ////////////// base variables //////////////
     const { guildId, member } = interaction;
-
     const queue = client.player.nodes.get(guildId);
     let success = false;
 

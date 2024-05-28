@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, AttachmentBuilder } = require("discord.js");
+const { tags } = require("../../utils/main/mainUtils");
 const { handleAPIError } = require("../../utils/main/handleErrors");
 const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 const axios = require("axios");
@@ -6,15 +7,15 @@ const axios = require("axios");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("qr")
-    .setDescription("Create a QR code.")
+    .setDescription(`${tags.new} Create a QR code`)
     .addStringOption((option) =>
       option
         .setName("query")
-        .setDescription("Input a query to create a QR code for.")
+        .setDescription("Input a text or url")
         .setRequired(true)
     ),
 
-  async execute(interaction, client) {
+  async execute(interaction) {
     let success = false;
 
     const query = interaction.options.getString("query", true);

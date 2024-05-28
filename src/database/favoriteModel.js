@@ -11,4 +11,4 @@ const favoriteSchema = new Schema({
   ],
 });
 
-module.exports = model("favorite", favoriteSchema, "favorites");
+module.exports = model("favorite", favoriteSchema);

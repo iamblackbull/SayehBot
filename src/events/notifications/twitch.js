@@ -1,5 +1,6 @@
 const { TwitchOnlineTracker } = require("@matsukky/twitchtracker");
 const notificationHandler = require("../../utils/main/handleNotifications");
+const { consoleTags } = require("../../utils/main/mainUtils");
 
 module.exports = {
   name: "twitch",
@@ -14,22 +15,27 @@ module.exports = {
       start: true,
     });
 
-    console.log("[Notification]: Twitch event listener is ready.");
+    console.log(`${consoleTags.notif} Twitch event listener is ready.`);
 
     tracker.on("live", (data) => {
-      console.log(`[Notification]: ${data.user_name} is now live on Twitch!`);
+      console.log(
+        `${consoleTags.notif} ${data.user_name} is now live on Twitch!`
+      );
 
       notificationHandler.sendStreamNotification(client, data);
     });
 
     tracker.on("offline", function (channel) {
-      console.log(`[Notification]: ${channel} has gone offline.`);
+      console.log(`${consoleTags.notif} ${channel} has gone offline.`);
 
       notificationHandler.endStreamNotification(client, channel);
     });
 
     tracker.on("error", (error) => {
-      console.error("[Notification]: Error on twitch event listener: ", error);
+      console.error(
+        `${consoleTags.error} While executing twitch event listener: `,
+        error
+      );
     });
   },
 };

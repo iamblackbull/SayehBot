@@ -5,6 +5,7 @@ const { createMessageQueue } = require("../../utils/player/createQueue");
 const { createTrackEmbed } = require("../../utils/player/createMusicEmbed");
 const { search } = require("../../utils/player/handleSearch");
 const { createButtons } = require("../../utils/main/createButtons");
+const { consoleTags } = require("../../utils/main/mainUtils");
 const { handleMessageDelection } = require("../../utils/main/handleDeletion");
 
 module.exports = {
@@ -96,7 +97,10 @@ module.exports = {
             } else {
               msg = await errorHandler.handleUnknownErrorMessage(message);
 
-              console.log(error);
+              console.error(
+                `${consoleTags.error} While executing play message: `,
+                error
+              );
             }
           }
         }

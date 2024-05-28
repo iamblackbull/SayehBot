@@ -1,12 +1,12 @@
 const warnModel = require("../../database/warnModel");
 const eventsModel = require("../../database/eventsModel");
+const { consoleTags } = require("./mainUtils");
 
 async function warn(user, target, guildId) {
   const eventsList = await eventsModel.findOne({
     guildId: guildId,
     Moderation: true,
   });
-
   if (!eventsList) return;
 
   let warnSuccess = false;
@@ -43,7 +43,7 @@ async function warn(user, target, guildId) {
   }
 
   console.log(
-    `${user.username} warned ${target.username}. (Total Warnings: ${warns})`
+    `${consoleTags.app} ${user.username} warned ${target.username}. (Total Warnings: ${warns})`
   );
 
   warnSuccess = true;
@@ -57,7 +57,9 @@ async function clear(user, target, guildId) {
     UserId: target.id,
   });
 
-  console.log(`${user.username} cleared warning record of ${target.username}.`);
+  console.log(
+    `${consoleTags.app} ${user.username} cleared warning record of ${target.username}.`
+  );
 }
 
 module.exports = {

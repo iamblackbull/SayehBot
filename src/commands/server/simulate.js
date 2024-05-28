@@ -9,11 +9,11 @@ const utils = require("../../utils/main/mainUtils");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("simulate")
-    .setDescription("Simulate an event triggeration to test the bot.")
+    .setDescription(`${utils.tags.mod} Simulate an event triggeration`)
     .addStringOption((option) =>
       option
         .setName("event")
-        .setDescription("Select the event you want to trigger.")
+        .setDescription("Select an event")
         .setRequired(true)
         .addChoices(
           {

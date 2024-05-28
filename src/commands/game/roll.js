@@ -1,34 +1,35 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { DBTOKEN } = process.env;
 const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 const { handleRollXp } = require("../../utils/level/handleLevel");
 const utils = require("../../utils/main/mainUtils");
 const eventsModel = require("../../database/eventsModel");
 const Levels = require("discord-xp");
 
-Levels.setURL(DBTOKEN);
+Levels.setURL(process.env.DBTOKEN);
 const rollCooldown = new Set();
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("roll")
-    .setDescription("Roll a random number between 1 - 100 or custom amounts.")
+    .setDescription(
+      `${utils.tags.updated} Roll a random number between 1 - 100 or custom amounts`
+    )
     .setDMPermission(false)
     .addIntegerOption((option) =>
       option
         .setName("min")
-        .setDescription("Set a custom minimum amount. (default: 1)")
+        .setDescription("Set a custom minimum amount (default: 1)")
         .setMinValue(0)
     )
     .addIntegerOption((option) =>
       option
         .setName("max")
-        .setDescription("Set a custom maximum amount. (default: 100)")
+        .setDescription("Set a custom maximum amount (default: 100)")
         .setMinValue(1)
     )
     .addIntegerOption((option) =>
       option
-        .setName("bet")
+        .setName("guess")
         .setDescription(
           "Guess right your upcoming roll to win 20,000 XP! (1 - 100 only)"
         )
@@ -39,7 +40,7 @@ module.exports = {
   async execute(interaction) {
     const min = interaction.options.getInteger("min") || 1;
     const max = interaction.options.getInteger("max") || 100;
-    const bet = interaction.options.getInteger("bet") || false;
+    const guess = interaction.options.getInteger("guess") || false;
 
     let custom = true;
     if (min === 1 && max === 100) custom = false;
@@ -50,7 +51,7 @@ module.exports = {
       roll = max;
 
       console.log(
-        "Roll was bigger than the max number and it was forced to max number."
+        `${utils.consoleTags.warning} Roll was bigger than the max number and it was forced to max number.`
       );
     }
 
@@ -58,7 +59,7 @@ module.exports = {
       roll = min;
 
       console.log(
-        "Roll was smaller than the min number and it was forced to min number."
+        `${utils.consoleTags.warning} Roll was smaller than the min number and it was forced to min number.`
       );
     }
 
@@ -69,7 +70,7 @@ module.exports = {
     handleNonMusicalDeletion(interaction, true, undefined, 2);
 
     if (custom) return;
-    if (user.xp > 10000) return;
+    if (user.xp > 10_000) return;
     if (user.level !== 60) return;
 
     const eventsList = await eventsModel.findOne({
@@ -138,9 +139,9 @@ module.exports = {
       }
     }
 
-    if (bet && roll === bet) {
+    if (guess && roll == guess) {
       type = 1;
-      amount = 20000;
+      amount = 20_000;
     }
 
     const XP = parseInt(amount);
@@ -169,6 +170,6 @@ module.exports = {
 
     setTimeout(() => {
       rollCooldown.delete(interaction.user.id);
-    }, 5 * 60 * 1000);
+    }, 30_000);
   },
 };

@@ -1,12 +1,13 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
-const embedCreator = require("../../utils/player/createMusicEmbed");
+const { tags } = require("../../utils/main/mainUtils");
 const errorHandler = require("../../utils/main/handleErrors");
+const { createLeaveEmbed } = require("../../utils/player/createMusicEmbed");
 const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("leave")
-    .setDescription("Disconnect the bot and delete the current queue.")
+    .setDescription(`${tags.mod} Disconnect the bot`)
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .setDMPermission(false),
 
@@ -30,7 +31,7 @@ module.exports = {
         ////////////// delete queue and leave //////////////
         await queue.delete();
 
-        const embed = embedCreator.createLeaveEmbed();
+        const embed = createLeaveEmbed();
 
         await interaction.reply({ embeds: [embed] });
         success = true;

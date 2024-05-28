@@ -10,7 +10,6 @@ module.exports = (client) => {
     const streamList = await streamModel.findOne({
       IsLive: true,
     });
-
     if (!streamList) return;
 
     const { result } = await streamHandler.getStreamData(streamList.Streamer);

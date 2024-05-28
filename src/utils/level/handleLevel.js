@@ -1,13 +1,17 @@
 const { DBTOKEN, rankChannelID } = process.env;
 const eventsModel = require("../../database/eventsModel");
+const { consoleTags } = require("../../utils/main/mainUtils");
 const Levels = require("discord-xp");
+
 Levels.setURL(DBTOKEN);
 
 async function checkLevelUp(hasLevelUp, target, guild) {
   if (hasLevelUp) {
     const user = await Levels.fetch(target.id, guild);
 
-    console.log(`${target.username} just advanced to Level ${user.level}.`);
+    console.log(
+      `${consoleTags.app} ${target.username} just advanced to Level ${user.level}.`
+    );
 
     const channel = message.guild.channels.cache.get(rankChannelID);
 
@@ -23,7 +27,9 @@ async function checkLevelDown(hasLevelDown, target, guild) {
   if (hasLevelDown) {
     const user = await Levels.fetch(target.id, guild);
 
-    console.log(`${target.username} just retreated to Level ${user.level}.`);
+    console.log(
+      `${consoleTags.app} ${target.username} just retreated to Level ${user.level}.`
+    );
 
     const channel = message.guild.channels.cache.get(rankChannelID);
 
@@ -50,7 +56,7 @@ async function handleMessageXp(message, xp) {
 
   await checkLevelUp(hasLevelUp, message.author, message.guild.id);
 
-  console.log(`${message.author.username} gained ${xp} XP.`);
+  console.log(`${consoleTags.app} ${message.author.username} gained ${xp} XP.`);
 }
 
 async function handleInteractionXp(interaction, xp) {
@@ -68,7 +74,9 @@ async function handleInteractionXp(interaction, xp) {
 
   await checkLevelUp(hasLevelUp, interaction.user, interaction.guild.id);
 
-  console.log(`${interaction.user.username} gained ${xp} XP.`);
+  console.log(
+    `${consoleTags.app} ${interaction.user.username} gained ${xp} XP.`
+  );
 }
 
 async function handleVoiceXp(state, xp) {
@@ -82,7 +90,9 @@ async function handleVoiceXp(state, xp) {
 
   await checkLevelUp(hasLevelUp, state.member.user, state.guild.id);
 
-  console.log(`${state.member.user.username} gained ${xp} XP.`);
+  console.log(
+    `${consoleTags.app} ${state.member.user.username} gained ${xp} XP.`
+  );
 }
 
 async function handleInteractionCommand(interaction, amount, action, unit) {
@@ -131,7 +141,7 @@ async function handleInteractionCommand(interaction, amount, action, unit) {
   }
 
   console.log(
-    `${amount} ${unit} ${action} ${user} by ${interaction.user.username}.`
+    `${consoleTags.app} ${amount} ${unit} ${action} ${user} by ${interaction.user.username}.`
   );
 
   return { action, unit };
@@ -165,7 +175,7 @@ async function handleRollXp(interaction, user, XP, type) {
   }
 
   console.log(
-    `${interaction.user.username} ${mode} ${XP} XP by rolling ${roll}.`
+    `${consoleTags.app} ${interaction.user.username} ${mode} ${XP} XP by rolling ${roll}.`
   );
 }
 

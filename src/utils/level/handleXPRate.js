@@ -11,6 +11,7 @@ export async function calculateXP(input, user) {
   do {
     firstXp = getRandomXp();
   } while (firstXp === cacheXp);
+  cacheXp = firstXp;
 
   const rawXp = parseInt(firstXp * 2);
   let finalXp = parseInt(rawXp);
@@ -24,13 +25,13 @@ export async function calculateXP(input, user) {
 
   if (user.level < 60 || !user.level || user.level !== undefined) {
     for (const [role, multiplier] of roleMultipliers) {
-      if (input.roles.cache.has(role)) {
+      if (input.member.roles.cache.has(role)) {
         boost = multiplier;
         break;
       }
     }
 
-    if (input.roles.cache.has(boostRole)) {
+    if (input.member.roles.cache.has(boostRole)) {
       boost = boost ? boost + 0.5 : 1.5;
     }
 

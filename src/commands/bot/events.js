@@ -13,11 +13,11 @@ const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("events")
-    .setDescription("Enable or disable available events of the bot.")
+    .setDescription(`${utils.tags.mod} Manage available events`)
     .addStringOption((option) =>
       option
         .setName("type")
-        .setDescription("Select the event you want to manage.")
+        .setDescription("Select the event you want to manage")
         .setRequired(true)
         .addChoices(
           {
@@ -61,9 +61,7 @@ module.exports = {
     .addStringOption((option) =>
       option
         .setName("action")
-        .setDescription(
-          "Select which action you want to perform on your selected event."
-        )
+        .setDescription("Select an action to perform")
         .setRequired(true)
         .addChoices(
           {
@@ -80,6 +78,8 @@ module.exports = {
     .setDMPermission(false),
 
   async execute(interaction) {
+    let success = false;
+
     if (mongoose.connection.readyState !== 1) {
       handleDatabaseError(interaction);
     } else {
@@ -87,11 +87,10 @@ module.exports = {
         fetchReply: true,
       });
 
-      let success = false;
-
-      const type = interaction.options.get("type").value;
-      const enable =
-        interaction.options.get("action").value === "enable" ? true : false;
+      const { options, guildId, user } = interaction;
+      const type = options.get("type").value;
+      const action = options.get("action").value;
+      const enable = action === "enable" ? true : false;
 
       let update;
       switch (type) {
@@ -140,7 +139,7 @@ module.exports = {
       if (update) {
         await eventsModel.findOneAndUpdate(
           {
-            guildId: interaction.guildId,
+            guildId,
           },
           update,
           {
@@ -160,6 +159,10 @@ module.exports = {
           text: utils.texts.bot,
           iconURL: utils.footers.bot,
         });
+
+      console.log(
+        `${utils.consoleTags.app} ${user.username} ${action}d ${type}.`
+      );
 
       await interaction.editReply({
         embeds: [embed],

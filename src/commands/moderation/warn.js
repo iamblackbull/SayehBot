@@ -13,13 +13,10 @@ const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("warn")
-    .setDescription("Warn a user.")
-    .addUserOption((option) => {
-      return option
-        .setName("user")
-        .setDescription("Pick any member to warn.")
-        .setRequired(true);
-    })
+    .setDescription(`${utils.tags.mod} Warn a user`)
+    .addUserOption((option) =>
+      option.setName("user").setDescription("Pick a member").setRequired(true)
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .setDMPermission(false),
 

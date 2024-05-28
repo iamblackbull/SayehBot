@@ -1,15 +1,14 @@
 const { birthdayChannelID, guildID } = process.env;
-const { ActivityType } = require("discord.js");
-const birthday = require("../../database/birthdayModel");
+const birthdayModel = require("../../database/birthdayModel");
 const checkBirthday = require("../../database/checkBirthdayModel");
 const eventsModel = require("../../database/eventsModel");
+const { consoleTags } = require("../../utils/main/mainUtils");
 
 module.exports = (client) => {
   client.remindBirthday = async () => {
-    const guild = await client.guilds.fetch(guildID).catch(console.error);
-    const channel = await guild.channels
-      .fetch(birthdayChannelID)
-      .catch(console.error);
+    const guild = await client.guilds.fetch(guildID);
+    const channel = await guild.channels.fetch(birthdayChannelID);
+    if (!guild || !channel) return;
 
     const date = new Date();
     const currentMonth = date.getMonth() + 1;
@@ -41,14 +40,16 @@ module.exports = (client) => {
           { Date: reminder, IsTodayChecked: true }
         );
 
-        const birthdayProfile = await birthday.findOne({ Birthday: reminder });
+        const birthdayProfile = await birthdayModel.findOne({
+          Birthday: reminder,
+        });
 
         if (!birthdayProfile) return;
         else {
           const user = birthdayProfile.User;
           const age = parseInt(birthdayProfile.Age) + 1;
 
-          await birthday.updateOne({ User: user }, { Age: `${age}` });
+          await birthdayModel.updateOne({ User: user }, { Age: `${age}` });
 
           const eventsList = await eventsModel.findOne({
             guildId: guild.id,
@@ -59,16 +60,6 @@ module.exports = (client) => {
           let content;
           if (user === "481094367407374348") {
             content = `🎈 🎂 👑 Today is **Our Queen**'s birthday! Happy birthday **<@${birthdayProfile.User}>**! (Age **${age}**) 👑 🥳 🎉`;
-
-            client.user.setPresence({
-              activities: [
-                {
-                  name: "Sayeh's birthday 🎂",
-                  type: ActivityType.Watching,
-                },
-              ],
-              status: "online",
-            });
           } else {
             content = `🎈 🎂 Today is **<@${birthdayProfile.User}>**'s birthday! (Age **${age}**) Happy birthday! 🥳 🎉`;
           }
@@ -80,7 +71,7 @@ module.exports = (client) => {
             .catch(console.error);
 
           console.log(
-            `Today is ${birthdayProfile.User}'s birthday! (Age ${age}).`
+            `${consoleTags.app} Today is ${birthdayProfile.User}'s birthday! (Age ${age}).`
           );
         }
       }

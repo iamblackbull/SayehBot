@@ -1,6 +1,7 @@
 const { REST } = require("@discordjs/rest");
 const { Routes } = require("discord.js");
 const fs = require("fs");
+const { consoleTags } = require("../../utils/main/mainUtils");
 
 module.exports = (client) => {
   client.handleCommands = async () => {
@@ -26,15 +27,15 @@ module.exports = (client) => {
     const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
     try {
-      console.log("[Application Commands]: Refreshing....");
+      console.log("[Application Commands] Refreshing....");
 
       await rest.put(Routes.applicationCommands(clientID), {
         body: client.commandArray,
       });
 
-      console.log("[Application Commands]: Successfully refreshed..");
+      console.log("[Application Commands] Successfully refreshed.");
     } catch (error) {
-      console.error("[Error]: Error while refreshing commands: ", error);
+      console.error(`${consoleTags.error} While refreshing commands: `, error);
     }
   };
 };

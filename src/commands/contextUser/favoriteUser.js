@@ -23,7 +23,7 @@ module.exports = {
     let success = false;
     const owner = interaction.targetUser;
 
-    let favoriteList = await favoriteModel.findOne({
+    const favoriteList = await favoriteModel.findOne({
       User: owner.id,
     });
 
