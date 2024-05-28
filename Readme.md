@@ -17,11 +17,11 @@
   > - **NOTE:** .env is a secured format and the file is hidden. If you use `ls` command where the file is located, you cannot see the file in the list.
 
 ## 5. Install node.js
-to install manually:
+to install manually :
 - `curl -fsSL https://deb.nodesource.com/setup_16.x | bash - &&\`
 - `apt-get install -y nodejs`
 
-or install nvm:
+or install nvm :
 - `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash`
 - `nvm install node` or `nvm install [version]`
 
@@ -41,12 +41,12 @@ or install nvm:
 - `npm i @distube/ytdl-core`
 
 ## 9. Install fonts
-
-- ### Bubblegum :
+Bubblegum installation :
   - Go to this directory: `~/../usr/share/fonts/truetype/`
   - Create a folder with `mkdir bubblegum`
   - Go back to root and copy the .ttf file to the directory with `cp Bubblegum.ttf ~/../usr/share/fonts/truetype/bubblegum`
-- ### Space Font :
+
+Space Font installation :
   - Go to this directory: `~/../usr/share/fonts/truetype/`
   - Create a folder with `mkdir space`
   - Go back to root and copy the .ttf file to the directory with `cp Space Silhouette Font.ttf ~/../usr/share/fonts/truetype/space`
@@ -54,7 +54,6 @@ or install nvm:
 > Now you can run the bot by simply using `node .` in the main folder or using pm2 :
 
 # PM2 Installation Guide
-
 - Install with `npm install pm2 -g`
 - Run pm2 with `pm2 start ./src/bot.js`
 - Stop pm2 with `pm2 stop bot` (Later start it again with `pm2 start bot`)
@@ -62,10 +61,7 @@ or install nvm:
 - Get pm2 status with `pm2 status`
 - Completely reset pm2 with `rm -rf ~/.pm2`
 
-#
-
 # Fix comman issues
-
 > **NOTE**: After performing any changes or edites, you should restart the bot to apply them.
 
 - ### Duplicated messages or spamming
@@ -102,10 +98,7 @@ or install nvm:
   - `lsb_release -a` for ubuntu (Recommended: 20.04.6) 
   - `ffmpeg -version` (Recommended: 4.2.7-0ubuntu0.1)
 
-#
-
 # Other useful Ubuntu commands
-
 - ### The `rm` command
   - To delete a single file use `rm [file]`
   - To delete all files in a directory use `rm -i [directory]/*`
