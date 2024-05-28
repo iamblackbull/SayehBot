@@ -6,7 +6,7 @@ const wowModel = require("../../database/wowModel");
 const owModel = require("../../database/overwatchModel");
 const { consoleTags } = require("../../utils/main/mainUtils");
 
-export async function bookmark(interaction, reply) {
+async function bookmark(interaction, reply) {
   const { options } = interaction;
 
   reply
@@ -83,3 +83,7 @@ export async function bookmark(interaction, reply) {
       );
     });
 }
+
+module.exports = {
+  bookmark,
+};

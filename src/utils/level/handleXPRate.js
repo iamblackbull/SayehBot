@@ -5,7 +5,7 @@ function getRandomXp() {
   return Math.floor(Math.random() * 50 + 15); /// 30 ta 100
 }
 
-export async function calculateXP(input, user) {
+async function calculateXP(input, user) {
   let firstXp;
 
   do {
@@ -40,3 +40,7 @@ export async function calculateXP(input, user) {
 
   return { finalXp };
 }
+
+module.exports = {
+  calculateXP,
+};

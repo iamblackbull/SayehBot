@@ -1,6 +1,6 @@
 const osu = require("node-os-utils");
 
-export async function getSystemUsage() {
+async function getSystemUsage() {
   const cpuUsage = await osu.cpu.usage();
   const memInfo = await osu.mem.info();
   const freeMemory = memInfo.freeMemMb;
@@ -12,3 +12,7 @@ export async function getSystemUsage() {
 
   return { cpuPercent, memPercent, totalMemoryGB };
 }
+
+module.exports = {
+  getSystemUsage,
+};

@@ -1,4 +1,4 @@
-export function getKeystoneUpgradeSymbol(numUpgrades) {
+function getKeystoneUpgradeSymbol(numUpgrades) {
   switch (numUpgrades) {
     case 1:
       return "+";
@@ -12,3 +12,7 @@ export function getKeystoneUpgradeSymbol(numUpgrades) {
       return "";
   }
 }
+
+module.exports = {
+  getKeystoneUpgradeSymbol,
+};

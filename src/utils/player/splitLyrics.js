@@ -1,4 +1,4 @@
-export function splitLyrics(lyrics, chunkSize) {
+function splitLyrics(lyrics, chunkSize) {
   const sentences = lyrics.split(/(?<=[.!?])\s+/);
 
   let currentChunk = "";
@@ -19,3 +19,7 @@ export function splitLyrics(lyrics, chunkSize) {
 
   return chunks;
 }
+
+module.exports = {
+  splitLyrics,
+};

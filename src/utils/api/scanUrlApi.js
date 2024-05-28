@@ -1,7 +1,7 @@
 const axios = require("axios");
 const { consoleTags } = require("../../utils/main/mainUtils");
 
-export async function scan(url) {
+async function scan(url) {
   let virus = false;
   let result = "";
 
@@ -40,3 +40,7 @@ export async function scan(url) {
 
   return { virus, result };
 }
+
+module.exports = {
+  scan,
+};

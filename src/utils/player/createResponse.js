@@ -1,6 +1,6 @@
 const { setDurationLabel } = require("./createMusicEmbed");
 
-export function response(result) {
+function response(result) {
   if (result.playlist) return;
 
   const respond = result.tracks.slice(0, 5).map((song) => ({
@@ -12,3 +12,7 @@ export function response(result) {
 
   return respond;
 }
+
+module.exports = {
+  response,
+};

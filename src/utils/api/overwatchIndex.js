@@ -1,4 +1,4 @@
-export function findStatIndex(statsArray, statName) {
+function findStatIndex(statsArray, statName) {
   for (let i = 0; i < statsArray.length; i++) {
     if (statsArray[i].title === statName) {
       return i;
@@ -6,3 +6,7 @@ export function findStatIndex(statsArray, statName) {
   }
   return -1;
 }
+
+module.exports = {
+  findStatIndex,
+};
