@@ -33,7 +33,7 @@ const titles = {
 };
 
 const presences = {
-  mian: "Chilling Panda 🐼💤",
+  main: "Chilling Panda 🐼💤",
   stream: "on Twitch 📺",
   video: "New Video on YouTube! 📺",
 };
@@ -196,7 +196,7 @@ const bannedWords = [
 const formats = ["image/png", "image/gif", "image/jpeg"];
 const formatsLabel = ".png, .gif, .jpeg, .jpg";
 
-const modes = { enabled: "Enabled ✔", disabled: "Disabled ❌" };
+const modes = { enabled: "Enabled ✅", disabled: "Disabled ❌" };
 
 const tags = {
   new: "[New]",

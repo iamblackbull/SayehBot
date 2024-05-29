@@ -52,7 +52,7 @@ async function warn(user, target, guildId) {
 }
 
 async function clear(user, target, guildId) {
-  await warnModel.findOneAndRemove({
+  await warnModel.findOneAndDelete({
     guildId: guildId,
     UserId: target.id,
   });

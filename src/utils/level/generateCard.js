@@ -16,7 +16,7 @@ async function generateCard(target, member, user) {
   const barWidth = 600;
 
   const background = await Canvas.loadImage(
-    path.join(__dirname, "../../images/rankImage.png")
+    path.join(__dirname, "../../images/rankImage3.png")
   );
 
   const profile = await Canvas.loadImage(
@@ -146,7 +146,7 @@ async function generateWelcomeCard(target, memberCount) {
   const welcomeCard = welcomeCanvas.getContext("2d");
 
   const welcomeBackground = await Canvas.loadImage(
-    path.join(__dirname, "../../images/welcomeImage.png")
+    path.join(__dirname, "../../images/welcomeImage3.png")
   );
 
   const welcomeProfile = await Canvas.loadImage(

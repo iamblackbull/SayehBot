@@ -49,7 +49,7 @@ module.exports = {
         .setDescription("Input the name of the presence")
         .setRequired(true)
     )
-    .addStringOption((option) => {
+    .addStringOption((option) =>
       option
         .setName("status")
         .setDescription("Choose the status of the bot")
@@ -67,8 +67,8 @@ module.exports = {
             name: "Do Not Disturb",
             value: "dnd",
           }
-        );
-    })
+        )
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .setDMPermission(false),
 

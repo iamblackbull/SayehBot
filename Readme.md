@@ -17,13 +17,14 @@
   > - **NOTE:** .env is a secured format and the file is hidden. If you use `ls` command where the file is located, you cannot see the file in the list.
 
 ## 5. Install node.js
-to install manually :
+Install nvm : (Recommended)
+- `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash`
+- `nvm install node` or `nvm install [version]`
+
+OR install manually :
 - `curl -fsSL https://deb.nodesource.com/setup_16.x | bash - &&\`
 - `apt-get install -y nodejs`
 
-or install nvm :
-- `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash`
-- `nvm install node` or `nvm install [version]`
 
 ## 6. Install ffmpeg
 `apt install ffmpeg`
@@ -32,7 +33,7 @@ or install nvm :
 `apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev`
 
 ## 8. Install primary packages
-- `npm i discord.js @discordjs/opus@0.8.0 @discordjs/rest @discordjs/voice@0.11.0 discord-api-types dotenv`
+- `npm i discord.js @discordjs/opus@0.8.0 @discordjs/rest @discordjs/voice@0.11.0 discord-api-types dotenv @web-scrobbler/metadata-filter`
 
 - `npm i axios canvas@2.11.2 discord-giveaways@6.0.1 discord-xp@1.1.16 moment-timezone@0.5.37 mongoose ms@2.1.3 nasa-apod@0.2.0 node-fetch@3.2.10 node-twitch@0.4.7 rss-parser@3.12.0 node-pre-gyp node-opus opusscript@0.0.8 noderiowrapper@1.1.1 steam-market-pricing@2.0.0 oxr@1.1.4 movier@3.0.1 genius-lyrics@4.4.3 steam-searcher@1.0.4 howlongtobeat node-os-utils overwatch-api @matsukky/twitchtracker googleapis`
 
@@ -51,7 +52,8 @@ Space Font installation :
   - Create a folder with `mkdir space`
   - Go back to root and copy the .ttf file to the directory with `cp Space Silhouette Font.ttf ~/../usr/share/fonts/truetype/space`
 
-> Now you can run the bot by simply using `node .` in the main folder or using pm2 :
+
+### Now you can run the bot by simply using `node .` in the main folder or using pm2 :
 
 # PM2 Installation Guide
 - Install with `npm install pm2 -g`
@@ -79,7 +81,7 @@ Space Font installation :
     - If the problem is still there, it might be a temporary problem from api side but refreshing token might fix the problem. 
   - If the error was a **TOKEN** problem, It means that the token has been expired. In that case, do as follows:
     - Refresh twitch bot OAuth token [here](https://twitchtokengenerator.com/).
-    > **Recommended:** If you have refresh access token, use it to refresh the token. It can be retrieved from .env file.
+    - **Recommended:** If you have refresh access token, use it to refresh the token. It can be retrieved from .env file.
     - If you want to reset your tokens completely, I suggest you to tick all the scopes available. But the currently required scopes are **user_read** and **channel_editor**.
     - Replace the new tokens in the .env file.
     - Restart the bot.

@@ -41,7 +41,7 @@ async function bookmark(interaction, reply) {
           );
         } else if (customId === "ow") {
           const username = options.getString("username");
-          const tag = `${username}}-${options.getInteger("tag")}`;
+          const tag = `${username}-${options.getInteger("tag")}`;
 
           await owModel.findOneAndUpdate(
             {
@@ -73,7 +73,7 @@ async function bookmark(interaction, reply) {
         });
 
         console.log(
-          `${consoleTags.app} ${user.userrname} just saved their game profile in the database.`
+          `${consoleTags.app} ${user.username} just saved their game profile in the database.`
         );
       }
     })

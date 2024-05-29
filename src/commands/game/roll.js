@@ -31,7 +31,7 @@ module.exports = {
       option
         .setName("guess")
         .setDescription(
-          "Guess right your upcoming roll to win 20,000 XP! (1 - 100 only)"
+          "Guess right your upcoming roll to win 10,000 XP! (1 - 100 only)"
         )
         .setMinValue(1)
         .setMaxValue(100)
@@ -43,7 +43,7 @@ module.exports = {
     const guess = interaction.options.getInteger("guess") || false;
 
     let custom = true;
-    if (min === 1 && max === 100) custom = false;
+    if (min == 1 && max == 100) custom = false;
 
     const roll = Math.floor(Math.random() * max) + min;
 
@@ -69,21 +69,21 @@ module.exports = {
 
     handleNonMusicalDeletion(interaction, true, undefined, 2);
 
-    if (custom) return;
-    if (user.xp > 10_000) return;
-    if (user.level !== 60) return;
-
     const eventsList = await eventsModel.findOne({
       guildId: interaction.guild.id,
       Level: true,
     });
     if (!eventsList) return;
 
-    if (rollCooldown.has(interaction.user.id)) return;
-    rollCooldown.add(interaction.user.id);
-
     const target = interaction.user;
     const user = await Levels.fetch(target.id, interaction.guild.id, true);
+
+    if (custom) return;
+    if (user.xp < 10_000) return;
+    if (user.level >= 60) return;
+
+    if (rollCooldown.has(interaction.user.id)) return;
+    rollCooldown.add(interaction.user.id);
 
     let type; /// 0 = loser, 1 = winner, 2 = none
     let amount; /// 4 to 20,000
@@ -91,27 +91,27 @@ module.exports = {
     switch (roll) {
       case 1:
         type = 0;
-        amount = 100 * 100; /// 10,000
+        amount = 100 * 10; /// 1,000
         break;
       case 7:
         type = 1;
-        amount = roll * 700; /// 1400
+        amount = roll * 70; /// 410
         break;
       case 13:
         type = 0;
-        amount = roll * 130; /// 1690
+        amount = roll * 13; /// 169
         break;
       case 69:
         type = 1;
-        amount = roll * 69; /// 4761
+        amount = roll * 69; /// 4,761
         break;
       case 85:
         type = 1;
-        amount = roll * 85; /// 7225
+        amount = roll * 85; /// 7,225
         break;
       case 100:
         type = 1;
-        amount = roll * 100; /// 10,000
+        amount = roll * 10; /// 1,000
         break;
 
       default:
@@ -141,12 +141,12 @@ module.exports = {
 
     if (guess && roll == guess) {
       type = 1;
-      amount = 20_000;
+      amount = 10_000;
     }
 
     const XP = parseInt(amount);
 
-    await handleRollXp(interaction, user, XP, type);
+    await handleRollXp(interaction, user, XP, type, roll);
 
     const title =
       type === 1 ? utils.titles.gamble_winner : utils.titles.gamble_loser;

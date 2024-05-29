@@ -36,13 +36,13 @@ module.exports = {
 
       if (amount <= 0) return;
 
-      const { finalXp } = calculateXP(newState, user);
+      const { finalXp } = await calculateXP(newState, user);
       const xpEarned = amount * finalXp;
 
       await handleVoiceXp(newState, xpEarned);
 
       console.log(
-        `${consoleTags.app} ${newState.member.user.username} left a voice channel and received ${xpEarned} XP.`
+        `${consoleTags.app} ${newState.member.user.username} left a voice channel.`
       );
     }
   },

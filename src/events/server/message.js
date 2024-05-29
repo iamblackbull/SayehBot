@@ -95,7 +95,7 @@ module.exports = {
       if (channel.id === process.env.selfpromoChannelID) return;
 
       const user = await Levels.fetch(author.id, guild.id);
-      const { finalXp } = calculateXP(message, user);
+      const { finalXp } = await calculateXP(message, user);
 
       await handleMessageXp(message, finalXp);
     }

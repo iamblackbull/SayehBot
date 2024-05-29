@@ -1,4 +1,9 @@
-const { PermissionFlagsBits, EmbedBuilder } = require("discord.js");
+const {
+  ContextMenuCommandBuilder,
+  ApplicationCommandType,
+  PermissionFlagsBits,
+  EmbedBuilder,
+} = require("discord.js");
 const { mongoose } = require("mongoose");
 const errorHandler = require("../../utils/main/handleErrors");
 const { warn } = require("../../utils/main/warnTarget");

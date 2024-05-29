@@ -17,12 +17,13 @@ module.exports = {
   name: Events.InteractionCreate,
 
   async execute(interaction, client) {
-    if (interaction.commandName !== "roll") {
+    if (interaction.commandName !== "roll" && !interaction.isAutocomplete()) {
       const user = await Levels.fetch(
         interaction.user.id,
         interaction.guild.id
       );
-      const { finalXp } = calculateXP(interaction, user);
+
+      const { finalXp } = await calculateXP(interaction, user);
 
       await handleInteractionXp(interaction, finalXp);
     }

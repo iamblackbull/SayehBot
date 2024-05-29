@@ -9,7 +9,7 @@ module.exports = {
 
   async execute(oldMember, newMember, client) {
     const eventsList = await eventsModel.findOne({
-      guildId: guild.id,
+      guildId: newMember.guild.id,
       MemberUpdate: true,
     });
     if (!eventsList) return;
@@ -21,7 +21,6 @@ module.exports = {
       const { id, user } = newMember;
 
       if (boostMessageSent.has(id)) return;
-
       boostMessageSent.add(id);
 
       client.channels.cache

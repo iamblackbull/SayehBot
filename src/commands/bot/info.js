@@ -68,33 +68,33 @@ module.exports = {
                       > discord.js: \`${discordJsVersion}\`
                       > discord-player: \`${playerVersion}\``;
 
-      const uptime = `### Uptime:
-                      > ${uptimeString}`;
+      const uptime = `### Uptime:\n
+                      ${uptimeString}`;
 
       const { enabled, disabled } = utils.modes;
       const eventsDescription = `### Events:
-                              > Welcome: ${
+                              > **Welcome** : ${
                                 eventsString.memberAdd ? enabled : disabled
                               }
-                              > Leave: ${
+                              > **Leave** : ${
                                 eventsString.memberRemove ? enabled : disabled
                               }
-                              > Boost: ${
+                              > **Boost** : ${
                                 eventsString.memberUpdate ? enabled : disabled
                               }
-                              > Birthday: ${
+                              > **Birthday** : ${
                                 eventsString.birthday ? enabled : disabled
                               }
-                              > Stream: ${
+                              > **Stream** : ${
                                 eventsString.stream ? enabled : disabled
                               }
-                              > Video: ${
+                              > **Video** : ${
                                 eventsString.video ? enabled : disabled
                               }
-                              > Level: ${
+                              > **Level** : ${
                                 eventsString.level ? enabled : disabled
                               }
-                              > Moderation: ${
+                              > **Moderation** : ${
                                 eventsString.moderation ? enabled : disabled
                               }`;
 

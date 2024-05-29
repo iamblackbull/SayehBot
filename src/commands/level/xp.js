@@ -63,7 +63,6 @@ module.exports = {
 
   async execute(interaction) {
     let success = false;
-
     const { options, guild } = interaction;
     const target = options.getUser("user");
     const action = options.get("action").value;
@@ -87,7 +86,7 @@ module.exports = {
         fetchReply: true,
       });
 
-      const { updatedAction, updatedUnit } = await handleInteractionCommand(
+      const { Action, Unit } = await handleInteractionCommand(
         interaction,
         amount,
         action,
@@ -96,9 +95,7 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setTitle(utils.titles.level)
-        .setDescription(
-          `**${amount} ${updatedUnit}** ${updatedAction} ${target}.`
-        )
+        .setDescription(`**${amount} ${Unit}** ${Action} ${target}.`)
         .setColor(utils.colors.default);
 
       await interaction.editReply({

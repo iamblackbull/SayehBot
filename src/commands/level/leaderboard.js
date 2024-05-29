@@ -37,11 +37,9 @@ module.exports = {
 
       const leaderboardString = leaderboard
         .map((user) => {
-          return `**${user.position}.** ${user.globalName.toUpperCase()} \`[${
-            user.level
-          }]\``;
+          return `**${user.position}.** ${user.username} \`[${user.level}]\``;
         })
-        .join("\n\n");
+        .join("\n");
 
       const embed = new EmbedBuilder()
         .setTitle(utils.titles.leaderboard)

@@ -230,6 +230,10 @@ module.exports = {
                 .then((response) => response[0]);
 
               const url = `https://store.steampowered.com/app/${result.steam_appid}/${resultName}/`;
+              const gameplay = hltb?.gameplayMain ?? "--";
+              const hltbUrl = hltb
+                ? `https://howlongtobeat.com/game/${hltb.id}`
+                : "https://howlongtobeat.com";
 
               const embed = new EmbedBuilder()
                 .setTitle(`**${result.name}**`)
@@ -274,7 +278,7 @@ module.exports = {
                   },
                   {
                     name: "Main Story",
-                    value: `${hltb.gameplayMain} h`,
+                    value: `${gameplay} h`,
                     inline: true,
                   }
                 )
@@ -301,7 +305,7 @@ module.exports = {
 
               const hltbButton = new ButtonBuilder()
                 .setLabel("How long to beat")
-                .setURL(`https://howlongtobeat.com/game/${hltb.id}`)
+                .setURL(hltbUrl)
                 .setStyle(ButtonStyle.Link);
 
               const button = new ActionRowBuilder()

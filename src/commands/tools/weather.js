@@ -127,7 +127,7 @@ module.exports = {
         },
         {
           name: "cloud",
-          color: utils.olors.cloud_weather,
+          color: utils.colors.cloud_weather,
         },
         {
           name: "snow",

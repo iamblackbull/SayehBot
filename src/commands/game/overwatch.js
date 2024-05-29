@@ -113,10 +113,6 @@ module.exports = {
             value: `${top_heroes.quickplay.eliminations_per_life[0].hero} (${top_heroes.quickplay.eliminations_per_life[0].eliminations_per_life})`,
           },
           {
-            name: "Most weapon accuracy",
-            value: `${top_heroes.quickplay.weapon_accuracy[0].hero} (${top_heroes.quickplay.weapon_accuracy[0].weapon_accuracy})`,
-          },
-          {
             name: "Most games won",
             value: `${top_heroes.quickplay.games_won[0].hero} (${top_heroes.quickplay.games_won[0].games_won})`,
           },

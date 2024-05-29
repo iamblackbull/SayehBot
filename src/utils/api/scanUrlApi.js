@@ -21,7 +21,7 @@ async function scan(url) {
       )}:F>`;
 
       let scanResult;
-      if (data.positives > 0) {
+      if (data.positives > 1) {
         scanResult = "This website is not safe!";
         virus = true;
       } else scanResult = "This website is safe to use.";

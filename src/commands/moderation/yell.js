@@ -8,7 +8,7 @@ const utils = require("../../utils/main/mainUtils");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("yell")
-    .setDescription(`${utils.tags.mod} Yell at @everyone in a channel`)
+    .setDescription(`${utils.tags.mod} Yell at everyone in a channel`)
     .addChannelOption((option) =>
       option
         .setName("channel")

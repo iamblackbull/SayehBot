@@ -21,7 +21,7 @@ module.exports = {
         ephemeral: true,
       });
 
-      const warnRecord = await warnModel.find({
+      const warnRecord = await warnModel.findOne({
         guildId: guild.id,
         UserId: user.id,
       });

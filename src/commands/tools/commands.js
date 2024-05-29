@@ -13,18 +13,24 @@ module.exports = {
     .setDescription(`${utils.tags.new} Get a list of available commands`),
 
   async execute(interaction, client) {
+    const reply = await interaction.deferReply({
+      fetchReply: true,
+    });
+
     const commands = await client.application.commands.fetch();
     const slashCommands = commands.filter(
       (command) => command.type === ApplicationCommandType.ChatInput
     );
 
-    const totalCommands = slashCommands.length;
+    const slashCommandsArray = Array.from(slashCommands.values());
+
+    const totalCommands = slashCommandsArray.length;
     let page = 0;
     const totalPages = Math.ceil(totalCommands / 10);
 
-    const commandList = slashCommands
+    const commandList = slashCommandsArray
       .slice(page * 10, page * 10 + 10)
-      .map((command) => `- \`**/${command.name}**\` : ${command.description}`)
+      .map((command) => `- **\`/${command.name}\`** : ${command.description}`)
       .join("\n");
 
     const embed = new EmbedBuilder()
@@ -36,7 +42,7 @@ module.exports = {
         text: `Page ${page + 1} of ${totalPages} (${totalCommands} Commands)`,
       });
 
-    const reply = await interaction.reply({
+    await interaction.editReply({
       embeds: [embed],
     });
 
@@ -54,12 +60,15 @@ module.exports = {
         --page;
       } else return;
 
-      const updatedCommandList = slashCommands
+      const updatedCommandList = slashCommandsArray
         .slice(page * 10, page * 10 + 10)
-        .map((command) => `- \`**/${command.name}**\` : ${command.description}`)
+        .map((command) => `- **\`/${command.name}\`** : ${command.description}`)
         .join("\n");
 
-      embed.setDescription(updatedCommandList);
+      embed.setDescription(updatedCommandList).setFooter({
+        iconURL: utils.footers.page,
+        text: `Page ${page + 1} of ${totalPages} (${totalCommands} Commands)`,
+      });
 
       interaction.editReply({
         embeds: [embed],

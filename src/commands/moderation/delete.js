@@ -23,7 +23,7 @@ module.exports = {
     .setDMPermission(false),
 
   async execute(interaction) {
-    const messageId = interaction.options.getInteger("message-id");
+    const messageId = interaction.options.getString("message-id");
     const channel =
       interaction.options.getChannel("channel") || interaction.channel;
 
