@@ -39,7 +39,7 @@ OR install manually :
 - for description, type and enter: `Official Sayeh's discord server bot`
 - for main file, type and enter: `./src/bot.js`
 - for test command, type and enter: `node .`
-- You can skip the rest by entering until the file is created and done.
+- You can skip the rest by pressing enter until the file is created and done.
 
 ## 9. Install Packages
 - `npm i discord.js @discordjs/opus@0.8.0 @discordjs/rest @discordjs/voice@0.11.0 discord-api-types dotenv @web-scrobbler/metadata-filter`
