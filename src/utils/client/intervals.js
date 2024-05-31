@@ -1,3 +1,4 @@
+const { consoleTags } = require("../main/mainUtils");
 let birthdayInterval,
   videoInterval,
   presenceInterval,
@@ -11,7 +12,7 @@ function setIntervals(client) {
   streamInterval = setInterval(client.updateStream, 30_000);
   systemInterval = setInterval(client.checkSystem, 10_000);
 
-  console.log("[Application Logs]: Intervals have been set.");
+  console.log(`${consoleTags.app} Intervals have been set.`);
 }
 
 function clearIntervals() {
@@ -21,7 +22,7 @@ function clearIntervals() {
   clearInterval(streamInterval);
   clearInterval(systemInterval);
 
-  console.log("[Application Logs]: Intervals have been cleared.");
+  console.log(`${consoleTags.app} Intervals have been cleared.`);
 }
 
 module.exports = {

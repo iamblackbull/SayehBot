@@ -21,7 +21,7 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .setDMPermission(false),
 
-  async execute(interaction) {
+  async execute(interaction, client) {
     const CaseId = interaction.options.getString("case-id");
     const reportList = await reportModel.findOne({
       CaseId,
@@ -52,7 +52,7 @@ module.exports = {
       const reason = `**Reason**\n\`\`\`${reportList.Reason}\`\`\`\n**Message**\n\`\`\`${reportList.Message}\`\`\``;
       const description = `${closedCaseCheck}\n${reporterNotifiedCheck}\n\n${reason}`;
 
-      const guild = await importedClient.guilds.fetch(process.env.guildID);
+      const guild = await client.guilds.fetch(process.env.guildID);
       const reporter = await guild.members.fetch(reportList.ReporterId);
       const target = await guild.members.fetch(reportList.TargetId);
       const action = reportList.Action ?? "none";

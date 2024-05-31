@@ -2,7 +2,7 @@ const { subRole1, subRole2, subRole3, boostRole } = process.env;
 let cacheXp = 0;
 
 function getRandomXp() {
-  return Math.floor(Math.random() * 50 + 15); /// 30 ta 100
+  return Math.floor(Math.random() * 50 + 15); /// 15 to 50
 }
 
 async function calculateXP(input, user) {
@@ -13,8 +13,7 @@ async function calculateXP(input, user) {
   } while (firstXp === cacheXp);
   cacheXp = firstXp;
 
-  const rawXp = parseInt(firstXp * 2);
-  let finalXp = parseInt(rawXp);
+  let finalXp = parseInt(firstXp);
   let boost = false;
 
   const roleMultipliers = new Map([
@@ -35,7 +34,7 @@ async function calculateXP(input, user) {
       boost = boost ? boost + 0.5 : 1.5;
     }
 
-    if (boost) finalXp = parseInt(rawXp * boost);
+    if (boost) finalXp = parseInt(firstXp * boost);
   }
 
   return { finalXp };

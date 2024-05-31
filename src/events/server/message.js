@@ -76,6 +76,11 @@ module.exports = {
 
       ban = true;
       reason = "text";
+    } else if (content.toLowerCase().includes("@everyone")) {
+      if (hasPermission) return;
+
+      ban = true;
+      reason = "unauthorized use of @everyone";
     }
 
     const eventsList = await eventsModel.findOne({

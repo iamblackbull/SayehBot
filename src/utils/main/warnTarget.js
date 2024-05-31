@@ -1,5 +1,6 @@
 const warnModel = require("../../database/warnModel");
 const eventsModel = require("../../database/eventsModel");
+const { applyPenalty } = require("./warnPenalty");
 const { consoleTags } = require("./mainUtils");
 
 async function warn(user, target, guildId) {
@@ -28,7 +29,7 @@ async function warn(user, target, guildId) {
 
     await warnList.save().catch(console.error);
   } else {
-    warns = warnList.Warns++;
+    warns = warnList.Warns + 1;
 
     warnList = await warnModel.updateOne(
       {
@@ -41,6 +42,8 @@ async function warn(user, target, guildId) {
       }
     );
   }
+
+  await applyPenalty(target.id);
 
   console.log(
     `${consoleTags.app} ${user.username} warned ${target.username}. (Total Warnings: ${warns})`

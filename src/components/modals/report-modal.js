@@ -1,5 +1,6 @@
 const { EmbedBuilder } = require("discord.js");
 const reportModel = require("../../database/reportModel");
+const { notifyModeratos } = require("../../utils/main/handleReports");
 const utils = require("../../utils/main/mainUtils");
 
 module.exports = {
@@ -39,6 +40,8 @@ module.exports = {
         embeds: [successEmbed],
         ephemeral: true,
       });
+
+      await notifyModeratos(reportList);
 
       console.log(
         `${utils.consoleTags.app} ${interaction.user.username} just reported ${target}. (Case ID: ${reportList.CaseId})`

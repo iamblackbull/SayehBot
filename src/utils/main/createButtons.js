@@ -106,7 +106,7 @@ function createUrlButton(label, url) {
     .setURL(url)
     .setStyle(ButtonStyle.Link);
 
-  return urlButton;
+  return { urlButton };
 }
 
 function createGameButtons(customId, recentRunUrl, bestRunUrl) {

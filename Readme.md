@@ -4,10 +4,10 @@
 ## 1. Update Server
 `apt update && apt upgrade -y`
 
-## 2. Install Unzip Package
+## 2. Install unzip Package
 `apt install unzip`
 
-## 3. Upload bot zip files and fonts
+## 3. Upload bot zip file and fonts
 - `wget [url]` or upload the zip file with WinSCP
 - `unzip [file name]`
 
@@ -29,19 +29,30 @@ OR install manually :
 ## 6. Install ffmpeg
 `apt install ffmpeg`
 
-## 7. Install build-essential
+## 7. Install development libraries
 `apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev`
 
-## 8. Install primary packages
+## 8. Create package.json file
+- In the main folder, use this command: `npm init`
+- for name, type and enter: `sayehbot`
+- for version, type and enter: `1.7.0`
+- for description, type and enter: `Official Sayeh's discord server bot`
+- for main file, type and enter: `./src/bot.js`
+- for test command, type and enter: `node .`
+- You can skip the rest by entering until the file is created and done.
+
+## 9. Install Packages
 - `npm i discord.js @discordjs/opus@0.8.0 @discordjs/rest @discordjs/voice@0.11.0 discord-api-types dotenv @web-scrobbler/metadata-filter`
 
-- `npm i axios canvas@2.11.2 discord-giveaways@6.0.1 discord-xp@1.1.16 moment-timezone@0.5.37 mongoose ms@2.1.3 nasa-apod@0.2.0 node-fetch@3.2.10 node-twitch@0.4.7 rss-parser@3.12.0 node-pre-gyp node-opus opusscript@0.0.8 noderiowrapper@1.1.1 steam-market-pricing@2.0.0 oxr@1.1.4 movier@3.0.1 genius-lyrics@4.4.3 steam-searcher@1.0.4 howlongtobeat node-os-utils overwatch-api @matsukky/twitchtracker googleapis`
+- `npm i axios canvas@2.11.2 discord-giveaways@6.0.1 discord-xp@1.1.16 moment-timezone@0.5.37 mongoose ms@2.1.3 nasa-apod@0.2.0 node-fetch@3.2.10 node-twitch@0.4.7`
+
+- `npm i rss-parser@3.12.0 node-pre-gyp node-opus opusscript@0.0.8 noderiowrapper@1.1.1 steam-market-pricing@2.0.0 oxr@1.1.4 movier@3.0.1 genius-lyrics@4.4.3 steam-searcher@1.0.4 howlongtobeat node-os-utils overwatch-api @matsukky/twitchtracker googleapis`
 
 - `npm i ffmpeg-static libsodium-wrappers@0.7.10 discord-player`
 
 - `npm i @distube/ytdl-core`
 
-## 9. Install fonts
+## 10. Install Fonts
 Bubblegum installation :
   - Go to this directory: `~/../usr/share/fonts/truetype/`
   - Create a folder with `mkdir bubblegum`
@@ -53,7 +64,7 @@ Space Font installation :
   - Go back to root and copy the .ttf file to the directory with `cp Space Silhouette Font.ttf ~/../usr/share/fonts/truetype/space`
 
 
-### Now you can run the bot by simply using `node .` in the main folder or using pm2 :
+> Now you can run the bot using `node .` in the main folder or using pm2.
 
 # PM2 Installation Guide
 - Install with `npm install pm2 -g`
@@ -82,7 +93,7 @@ Space Font installation :
   - If the error was a **TOKEN** problem, It means that the token has been expired. In that case, do as follows:
     - Refresh twitch bot OAuth token [here](https://twitchtokengenerator.com/).
     - **Recommended:** If you have refresh access token, use it to refresh the token. It can be retrieved from .env file.
-    - If you want to reset your tokens completely, I suggest you to tick all the scopes available. But the currently required scopes are **user_read** and **channel_editor**.
+    - If you want to reset your tokens completely, I suggest you to select all the scopes available. But the currently required scopes are **user_read** and **channel_editor**.
     - Replace the new tokens in the .env file.
     - Restart the bot.
 
@@ -100,7 +111,7 @@ Space Font installation :
   - `lsb_release -a` for ubuntu (Recommended: 20.04.6) 
   - `ffmpeg -version` (Recommended: 4.2.7-0ubuntu0.1)
 
-# Other useful Ubuntu commands
+# Other useful ubuntu commands
 - ### The `rm` command
   - To delete a single file use `rm [file]`
   - To delete all files in a directory use `rm -i [directory]/*`

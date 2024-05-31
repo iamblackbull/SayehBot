@@ -14,9 +14,9 @@ module.exports = {
     });
 
     const userInteractions =
-      "`get avatar` , `get rank` , `get overwatch stats` , `get wow stats` , `play favorite`";
+      "**`get avatar`** , **`get rank`** , **`get overwatch stats`** , **`get wow stats`** , **`play favorite`**";
 
-    const messageInteractions = "`report message` , `warn author`";
+    const messageInteractions = "**`report message`** , **`warn author`**";
 
     const helpPages = [
       `### 🖱 User Interaction :
@@ -32,7 +32,7 @@ module.exports = {
       \nYou will gain XP by sending message, using commands and begin active in voice channels. Use **\`/rank\`** , **\`/leaderboard\`** for more information.
       \n\n### 🚀 Boost :
       \nYou will be granted XP boost by subscribing to Sayeh's twitch channel or boosting this server. The amount of this boost depends on the tier of your subscription:
-      \n- Sayeh twitch sub tier **1** : **20 %** XP BOOST
+      \n- Sayeh twitch sub tier **1** : **25 %** XP BOOST
       \n- Sayeh twitch sub tier **2** : **50 %** XP BOOST
       \n- Sayeh twitch sub tier **3** : **100 %** XP BOOST
       \n- Server boost : **+ 50 %** Additional XP BOOST

@@ -4,6 +4,7 @@ const eventsModel = require("../../database/eventsModel");
 const videoModel = require("../../database/videoModel");
 const utils = require("../../utils/main/mainUtils");
 const { createUrlButton } = require("../../utils/main/createButtons");
+const { videoPresence } = require("../../utils/main/handlePresence");
 const { consoleTags } = require("../../utils/main/mainUtils");
 const Parser = require("rss-parser");
 
@@ -92,6 +93,8 @@ module.exports = (client) => {
 
       const url =
         page === "Sayeh" ? utils.urls.youtube_sayeh : utils.urls.youtube_hamid;
+
+      videoPresence(client);
 
       const embed = new EmbedBuilder()
         .setAuthor({

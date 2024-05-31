@@ -45,7 +45,7 @@ module.exports = {
     let custom = true;
     if (min == 1 && max == 100) custom = false;
 
-    const roll = Math.floor(Math.random() * max) + min;
+    let roll = Math.floor(Math.random() * max) + min;
 
     if (roll > max) {
       roll = max;

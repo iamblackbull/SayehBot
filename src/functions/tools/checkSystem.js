@@ -8,20 +8,20 @@ module.exports = (client) => {
   client.checkSystem = async () => {
     const { cpuPercent, memPercent } = await getSystemUsage();
 
-    if (cpuPercent >= 90 || memPercent >= 90) {
-      const now = Date.now();
+    if (memPercent < 90) return;
 
-      if (now - lastLogTime <= cooldown) return;
-      lastLogTime = now;
+    const now = Date.now();
 
-      const developer = await client.users.fetch(process.env.developerID);
-      if (!developer) return;
+    if (now - lastLogTime <= cooldown) return;
+    lastLogTime = now;
 
-      const content = `CPU: **${cpuPercent} %** | RAM: **${memPercent} %**`;
+    const developer = await client.users.fetch(process.env.developerID);
+    if (!developer) return;
 
-      await developer.send(content);
+    const content = `CPU: **${cpuPercent} %** | RAM: **${memPercent} %**`;
 
-      console.log(`${consoleTags.warning} ${content}`);
-    }
+    await developer.send(content);
+
+    console.log(`${consoleTags.warning} ${content}`);
   };
 };

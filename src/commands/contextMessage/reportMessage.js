@@ -68,6 +68,7 @@ module.exports = {
             IsCaseClosed: false,
             IsModsNotified: false,
             IsReporterNotified: false,
+            Action: "none",
           });
           await reportList.save().catch(console.error);
         })

@@ -30,7 +30,7 @@ module.exports = {
 
       if (!entryTimestamp) return;
 
-      const amount = Math.floor((Date.now() - entryTimestamp) / 600_000);
+      const amount = Math.floor((Date.now() - entryTimestamp) / 1_800_000);
 
       voiceChannelEntryTimestamps.delete(userId);
 

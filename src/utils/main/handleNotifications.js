@@ -68,7 +68,7 @@ async function sendStreamNotification(client, data) {
   });
 
   if (!streamList) {
-    streamList = new stream({
+    streamList = new streamModel({
       guild: guild.id,
       Streamer: user_login,
       IsLive: false,
@@ -77,6 +77,16 @@ async function sendStreamNotification(client, data) {
   }
 
   if (streamList.IsLive) return;
+
+  await streamModel.updateOne(
+    {
+      guild: guild.id,
+      Streamer: user_login,
+    },
+    {
+      IsLive: true,
+    }
+  );
 
   presenceHandler.streamPresence(client, title, user_name);
 
@@ -101,8 +111,8 @@ async function sendStreamNotification(client, data) {
     .setColor(utils.colors.twitch)
     .setTimestamp(Date.now())
     .setFooter({
-      text: utils.footers.twitch,
-      iconURL: utils.texts.twitch,
+      text: utils.texts.twitch,
+      iconURL: utils.footers.twitch,
     });
 
   const announcement = `Hey ${utils.tag}\n**${user_name}** is now LIVE on Twitch! 😍🔔\n\n## ${title}\n\n${url}`;
@@ -124,14 +134,11 @@ async function sendStreamNotification(client, data) {
   }
 
   setTimeout(async () => {
-    await msg?.edit(
-      {
-        embeds: [embed],
-        components: [button],
-      },
-      2_000
-    );
-  });
+    await msg.edit({
+      embeds: [embed],
+      components: [button],
+    });
+  }, 2_000);
 
   setTimeout(() => {
     notifiedChannels.delete(user_login);
@@ -158,8 +165,8 @@ async function updateStreamNotification(client, data) {
   if (!streamer.embed) return;
 
   let update = false;
-  if (streamer.data.game_name != game_name) update = true;
-  if (streamer.data.title != title) update = true;
+  if (streamer.streamData.game_name != game_name) update = true;
+  if (streamer.streamData.title != title) update = true;
 
   if (!update) return;
 

@@ -25,8 +25,8 @@ module.exports = {
       PermissionFlagsBits.ManageMessages
     );
 
-    const targetMember = await guild.members.fetch(targetId);
-    const targatHasPermission = targetMember.permissions.has(
+    const msg = await channel.messages.fetch(targetId);
+    const targatHasPermission = msg.member.permissions.has(
       PermissionFlagsBits.ManageMessages
     );
 
@@ -40,8 +40,6 @@ module.exports = {
       await interaction.deferReply({
         fetchReply: true,
       });
-
-      const msg = await channel.messages.fetch(targetId);
 
       const { warnSuccess, warns } = await warn(user, msg.author, guild.id);
 

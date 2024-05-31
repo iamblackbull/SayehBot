@@ -61,7 +61,7 @@ const texts = {
   website: "Website",
 };
 
-const tag = "@everyone";
+const tag = "everyone";
 
 const colors = {
   default: "#25bfc4",

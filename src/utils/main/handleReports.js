@@ -7,6 +7,45 @@ function getReportClient(client) {
   importedClient = client;
 }
 
+async function notifyReporter(doc) {
+  const reporter = await importedClient.users.fetch(doc.ReporterId);
+  if (!reporter) return;
+
+  const embed = new EmbedBuilder()
+    .setTitle(utils.titles.reportcase_close)
+    .setDescription(
+      `A moderator responded to your report and your case has been closed.\n\n## Action Taken:\n${doc.Action}`
+    )
+    .setColor(utils.colors.default)
+    .setThumbnail(utils.thumbnails.case)
+    .addFields({
+      name: "Case ID",
+      value: `${doc.CaseId}`,
+      inline: true,
+    })
+    .setFooter({
+      text: utils.texts.moderation,
+      iconURL: utils.footers.moderation,
+    });
+
+  try {
+    await reporter.send({ embeds: [embed] });
+
+    console.log(
+      `${utils.consoleTags.app} Report case message has been sent to the original reporter.`
+    );
+
+    await reportModel.updateOne(
+      { CaseId: doc.CaseId },
+      { IsReporterNotified: true }
+    );
+  } catch (error) {
+    console.log(
+      `${utils.consoleTags.warning} Failed to send direct message to reporter.`
+    );
+  }
+}
+
 async function notifyModeratos(doc) {
   const guild = await importedClient.guilds.fetch(process.env.guildID);
   const channel = await guild.channels.fetch(process.env.modChannelID);
@@ -34,6 +73,14 @@ async function notifyModeratos(doc) {
       iconURL: utils.footers.moderation,
     });
 
+  console.log(
+    `${utils.consoleTags.app} Report case message has been sent to moderators. (Case ID: ${doc.CaseId})`
+  );
+
+  const msg = await channel.send({
+    embeds: [embed],
+  });
+
   await reportModel.updateOne(
     {
       CaseId: doc.CaseId,
@@ -43,14 +90,6 @@ async function notifyModeratos(doc) {
       IsModsNotified: true,
     }
   );
-
-  console.log(
-    `${utils.consoleTags.app} Report case message has been sent to moderators. (Case ID: ${doc.CaseId})`
-  );
-
-  const msg = await channel.send({
-    embeds: [embed],
-  });
 
   const emojis = ["🚮", "🚫", "✅"];
   emojis.forEach((emoji) => msg.react(emoji));
@@ -65,10 +104,15 @@ async function notifyModeratos(doc) {
     if (user.bot) return;
 
     if (reaction.emoji.name == emojis[0]) {
+      msg.reactions.remove(emojis[0]).catch(console.error);
+
       const targetChannel = await guild.channels.fetch(doc.ChannelId);
       await targetChannel.messages.delete(doc.MessageId).catch(console.error);
 
-      const Action = doc.Action + "\nmessage deleted";
+      const Action =
+        doc.action === "none"
+          ? "message deleted"
+          : `${doc.Action} , message deleted`;
 
       await reportModel.updateOne(
         { CaseId: doc.CaseId },
@@ -83,11 +127,16 @@ async function notifyModeratos(doc) {
 
       description += deleteDescription;
     } else if (reaction.emoji.name == emojis[1]) {
+      msg.reactions.remove(emojis[1]).catch(console.error);
+
       const reason = `${user.username} banned reported user ${doc.TargetName}. (Case ID: ${doc.CaseId})`;
 
       await guild.members.ban(doc.TargetId, { reason }).catch(console.error);
 
-      const Action = doc.Action + "\ntarget banned";
+      const Action =
+        doc.action === "none"
+          ? "target banned"
+          : `${doc.Action} , target banned`;
 
       await reportModel.updateOne(
         { CaseId: doc.CaseId },
@@ -104,7 +153,8 @@ async function notifyModeratos(doc) {
     } else {
       msg.reactions.removeAll().catch(console.error);
 
-      const Action = doc.Action + "\ncase closed";
+      const Action =
+        doc.action === "none" ? "case closed" : `${doc.Action} , case closed`;
 
       await reportModel.updateOne(
         { CaseId: doc.CaseId },
@@ -113,6 +163,8 @@ async function notifyModeratos(doc) {
 
       embed.setTitle(utils.titles.reportcase_close);
       description = `${user} closed this report case.`;
+
+      await notifyReporter(doc);
 
       console.log(
         `${utils.consoleTags.app} ${user.username} closed a report case. (Case ID: ${doc.CaseId})`
@@ -127,49 +179,7 @@ async function notifyModeratos(doc) {
   });
 }
 
-async function notifyReporter(CaseId) {
-  const reportList = await reportModel.findOne({
-    CaseId,
-  });
-  if (!reportList) return;
-
-  const reporter = await importedClient.users.fetch(reportList.ReporterId);
-  if (!reporter) return;
-
-  const embed = new EmbedBuilder()
-    .setTitle(utils.titles.reportcase_close)
-    .setDescription(
-      `A moderator responded to your report and your case has been closed.\n\n## Action Taken:\n${reportList.Action}`
-    )
-    .setColor(utils.colors.default)
-    .setThumbnail(utils.thumbnails.case)
-    .addFields({
-      name: "Case ID",
-      value: `${reportList.CaseId}`,
-      inline: true,
-    })
-    .setFooter({
-      text: utils.texts.moderation,
-      iconURL: utils.footers.moderation,
-    });
-
-  try {
-    await reporter.send({ embeds: [embed] });
-
-    console.log(
-      `${utils.consoleTags.app} Report case message has been sent to the original reporter.`
-    );
-
-    await reportModel.updateOne({ CaseId }, { IsReporterNotified: true });
-  } catch (error) {
-    console.log(
-      `${utils.consoleTags.warning} Failed to send direct message to reporter.`
-    );
-  }
-}
-
 module.exports = {
   getReportClient,
   notifyModeratos,
-  notifyReporter,
 };

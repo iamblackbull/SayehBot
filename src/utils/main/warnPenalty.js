@@ -9,7 +9,7 @@ function getWarnClient(client) {
 }
 
 async function applyPenalty(UserId) {
-  if (mongoose.connection.readyState == 1) return;
+  if (mongoose.connection.readyState != 1) return;
 
   const warnList = await warnModel.findOne({
     UserId,
@@ -37,7 +37,7 @@ async function applyPenalty(UserId) {
     .setDescription(
       `You have been warned **${warns}** time(s)! Please watch your behavior.
         \n\n## Current Warning Penalty:
-        \n- Warn Penalty: **${penalty.label}**
+        \n- ${penalty.label}
         \n${nextPenalty}`
     )
     .setThumbnail(utils.thumbnails.warning)
@@ -55,22 +55,33 @@ async function applyPenalty(UserId) {
     );
   }
 
-  try {
-    member.timeout(penalty.timer, reason);
-  } catch (error) {
-    if (error.code == 10026)
-      console.error(
-        `${utils.consoleTags.warning} New warning detected but failed to perform action on the target.`
-      );
-    else if (error.code == 10007)
-      console.error(
-        `${utils.consoleTags.warning} New warning detected but failed to find the target.`
-      );
-    else
-      console.error(
-        `${utils.consoleTags.error} Unknown error while checking warn records: `,
-        error
-      );
+  await warnModel.updateOne(
+    {
+      UserId,
+    },
+    {
+      isApplied: true,
+    }
+  );
+
+  if (warnList.Warns > 1) {
+    try {
+      member.timeout(penalty.timer, reason);
+    } catch (error) {
+      if (error.code == 10026)
+        console.error(
+          `${utils.consoleTags.warning} New warning detected but failed to perform action on the target.`
+        );
+      else if (error.code == 10007)
+        console.error(
+          `${utils.consoleTags.warning} New warning detected but failed to find the target.`
+        );
+      else
+        console.error(
+          `${utils.consoleTags.error} Unknown error while checking warn records: `,
+          error
+        );
+    }
   }
 }
 

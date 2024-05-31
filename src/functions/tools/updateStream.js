@@ -16,6 +16,6 @@ module.exports = (client) => {
 
     if (result === undefined || result.type !== "live") return;
 
-    notificationHandler.updateStreamNotification(result);
+    notificationHandler.updateStreamNotification(client, result);
   };
 };

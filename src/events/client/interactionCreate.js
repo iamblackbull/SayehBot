@@ -17,7 +17,11 @@ module.exports = {
   name: Events.InteractionCreate,
 
   async execute(interaction, client) {
-    if (interaction.commandName !== "roll" && !interaction.isAutocomplete()) {
+    if (
+      interaction.commandName !== "roll" &&
+      !interaction.isAutocomplete() &&
+      interaction.guild
+    ) {
       const user = await Levels.fetch(
         interaction.user.id,
         interaction.guild.id

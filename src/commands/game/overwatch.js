@@ -185,8 +185,8 @@ module.exports = {
           await interaction.editReply({ embeds: [embed] });
         });
       }
-    });
 
-    handleNonMusicalDeletion(interaction, success, undefined, 10);
+      handleNonMusicalDeletion(interaction, success, undefined, 10);
+    });
   },
 };
