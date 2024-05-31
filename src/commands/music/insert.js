@@ -1,33 +1,30 @@
 const { SlashCommandBuilder } = require("discord.js");
-const playerDataHandler = require("../../utils/handlePlayerData");
-const responseCreator = require("../../utils/createResponse");
-const errorHandler = require("../../utils/handleErrors");
-const queueCreator = require("../../utils/createQueue");
-const embedCreator = require("../../utils/createEmbed");
-const buttonCreator = require("../../utils/createButtons");
-const searchHandler = require("../../utils/handleSearch");
-const deletionHandler = require("../../utils/handleDeletion");
-const { titles } = require("../../utils/musicUtils");
+const errorHandler = require("../../utils/main/handleErrors");
+const { titles } = require("../../utils/player/musicUtils");
+const { handleData } = require("../../utils/player/handlePlayerData");
+const { response } = require("../../utils/player/createResponse");
+const { createQueue } = require("../../utils/player/createQueue");
+const { createTrackEmbed } = require("../../utils/player/createMusicEmbed");
+const { search } = require("../../utils/player/handleSearch");
+const { createButtons } = require("../../utils/main/createButtons");
+const { consoleTags } = require("../../utils/main/mainUtils");
+const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("insert")
-    .setDescription(
-      "Insert a track in a certain position in the current queue."
-    )
+    .setDescription("Insert a track in a certain position in the current queue")
     .addStringOption((option) =>
       option
         .setName("query")
-        .setDescription(
-          "Input a track from YouTube / Spotify / Soundcloud / Apple Music."
-        )
+        .setDescription("Input a track name or url")
         .setRequired(true)
         .setAutocomplete(true)
     )
     .addIntegerOption((option) =>
       option
         .setName("position")
-        .setDescription("Input a queue position to insert the track in.")
+        .setDescription("Input a queue position to insert the track in")
         .setMinValue(1)
         .setRequired(true)
     )
@@ -38,10 +35,10 @@ module.exports = {
     const query = interaction.options.getString("query", true);
     if (!query) return;
 
-    const result = await searchHandler.search(query);
+    const result = await search(query);
     if (!result.hasTracks()) return;
 
-    const respond = responseCreator.response(result);
+    const respond = response(result);
 
     try {
       await interaction.respond(respond);
@@ -59,14 +56,14 @@ module.exports = {
     } else {
       const query = interaction.options.getString("query", true);
 
-      const result = await searchHandler.search(query);
+      const result = await search(query);
 
       if (!result.hasTracks()) {
         errorHandler.handleNoResultError(interaction);
       } else {
         const queue =
           client.player.nodes.get(interaction.guildId) ||
-          (await queueCreator.createQueue(client, interaction, result));
+          (await createQueue(client, interaction, result));
 
         if (!queue.connection) {
           await queue.connect(interaction.member.voice.channel);
@@ -85,8 +82,8 @@ module.exports = {
           });
 
           let target = interaction.options.getInteger("position");
-          if (target > queue.tracks.data.size) {
-            target = queue.tracks.data.size + 1;
+          if (target > queue.tracks.size) {
+            target = queue.tracks.size + 1;
           }
 
           const song = result.tracks[0];
@@ -94,7 +91,7 @@ module.exports = {
           try {
             await queue.insertTrack(song, target - 1);
 
-            const { embed, nowPlaying } = embedCreator.createTrackEmbed(
+            const { embed, nowPlaying } = createTrackEmbed(
               interaction,
               queue,
               result,
@@ -105,12 +102,12 @@ module.exports = {
               embed.setTitle(`**${titles.track} ${target}**`);
             }
 
-            await playerDataHandler.handleData(interaction, nowPlaying);
+            await handleData(interaction, nowPlaying);
 
             if (!queue.node.isPlaying() && !queue.node.isPaused())
               await queue.node.play();
 
-            const button = buttonCreator.createButtons(nowPlaying);
+            const button = createButtons(nowPlaying);
 
             await interaction.editReply({
               embeds: [embed],
@@ -136,7 +133,10 @@ module.exports = {
             } else {
               errorHandler.handleUnknownError(interaction);
 
-              console.log(error);
+              console.error(
+                `${consoleTags.error} While executing ${interaction.commandName} command: `,
+                error
+              );
             }
           }
         }

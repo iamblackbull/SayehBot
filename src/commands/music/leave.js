@@ -1,18 +1,19 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
-const embedCreator = require("../../utils/createEmbed");
-const errorHandler = require("../../utils/handleErrors");
-const deletionHandler = require("../../utils/handleDeletion");
+const { tags } = require("../../utils/main/mainUtils");
+const errorHandler = require("../../utils/main/handleErrors");
+const { createLeaveEmbed } = require("../../utils/player/createMusicEmbed");
+const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("leave")
-    .setDescription("Disconnect the bot and delete the current queue.")
+    .setDescription(`${tags.mod} Disconnect the bot`)
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .setDMPermission(false),
 
   async execute(interaction, client) {
     ////////////// base variables //////////////
-    let queue = client.player.nodes.get(interaction.guildId);
+    const queue = client.player.nodes.get(interaction.guildId);
     let success = false;
 
     if (!interaction.member.voice.channel) {
@@ -30,7 +31,7 @@ module.exports = {
         ////////////// delete queue and leave //////////////
         await queue.delete();
 
-        const embed = embedCreator.createLeaveEmbed();
+        const embed = createLeaveEmbed();
 
         await interaction.reply({ embeds: [embed] });
         success = true;

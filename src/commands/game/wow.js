@@ -1,29 +1,29 @@
-const {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  ComponentType,
-} = require("discord.js");
-const wow = require("../../schemas/wow-schema");
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const errorHandler = require("../../utils/main/handleErrors");
+const utils = require("../../utils/main/mainUtils");
+const { getKeystoneUpgradeSymbol } = require("../../utils/api/wowKeystone");
+const { createGameButtons } = require("../../utils/main/createButtons");
+const { bookmark } = require("../../utils/api/handleBookmark");
+const { pageReact } = require("../../utils/main/handleReaction");
+const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 const noderiowrapper = require("noderiowrapper");
+
 const RIO = new noderiowrapper();
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("wow")
-    .setDescription("Returns World of Warcraft data")
+    .setDescription("Get World of Warcraft stats")
     .addStringOption((option) =>
       option
         .setName("character")
-        .setDescription("Input Character name")
+        .setDescription("Input a character name")
         .setRequired(true)
     )
     .addStringOption((option) =>
       option
         .setName("realm")
-        .setDescription("Input Realm name")
+        .setDescription("Input a realm name")
         .setRequired(true)
     )
     .addStringOption((option) =>
@@ -43,8 +43,8 @@ module.exports = {
         )
     ),
 
-  async execute(interaction, client) {
-    const wowEmbed = await interaction.deferReply({
+  async execute(interaction) {
+    await interaction.deferReply({
       fetchReply: true,
     });
 
@@ -52,15 +52,7 @@ module.exports = {
 
     const character = interaction.options.getString("character");
     const realm = interaction.options.getString("realm");
-
-    switch (interaction.options.get("region").value) {
-      case "eu":
-        region = "eu";
-        break;
-      case "us":
-        region = "us";
-        break;
-    }
+    const region = interaction.options.getString("region");
 
     RIO.Character.gear = true;
     RIO.Character.guild = true;
@@ -71,122 +63,113 @@ module.exports = {
     RIO.Character.mythic_plus_scores_by_season =
       RIO.Character._mythic_plus_scores_by_season_current;
 
-    RIO.Character.getProfile(`${region}`, `${realm}`, `${character}`)
-      .then((result) => {
-        let recentRun;
-        switch (result.mythic_plus_recent_runs[0].num_keystone_upgrades) {
-          case 1:
-            recentRun = `+`;
-            break;
-          case 2:
-            recentRun = `++`;
-            break;
-          case 3:
-            recentRun = `+++`;
-            break;
-          case 0:
-            recentRun = ``;
-            break;
-          case -1:
-            recentRun = `-`;
-            break;
-        }
+    RIO.Character.getProfile(region, realm, character)
+      .then(async (result) => {
+        const {
+          name,
+          realm,
+          profile_url,
+          thumbnail_url,
+          active_spec_name,
+          faction,
+          gear,
+          achievement_points,
+          mythic_plus_scores_by_season,
+          raid_progression,
+          mythic_plus_ranks,
+          mythic_plus_recent_runs,
+          mythic_plus_best_runs,
+        } = result;
 
-        let bestRun;
-        switch (result.mythic_plus_best_runs[0].num_keystone_upgrades) {
-          case 1:
-            bestRun = `+`;
-            break;
-          case 2:
-            bestRun = `++`;
-            break;
-          case 3:
-            bestRun = `+++`;
-            break;
-          case 0:
-            bestRun = ``;
-            break;
-          case -1:
-            bestRun = `-`;
-            break;
-        }
+        const embed = new EmbedBuilder()
+          .setTitle(`**${name}-${realm}**`)
+          .setURL(profile_url)
+          .setThumbnail(thumbnail_url)
+          .setColor(utils.colors.wow);
 
-        const page1 = [
+        const firstItems = [
           {
-            name: `Class`,
-            value: `${result.class}-${result.active_spec_name}`,
-            inline: true,
+            name: "Class",
+            value: `${result.class}-${active_spec_name}`,
+          },
+          { name: "Faction", value: faction },
+          { name: "iLVL", value: `${gear.item_level_equipped}` },
+          { name: "Achievement Points", value: `${achievement_points}` },
+          {
+            name: "M+ Rating",
+            value: `${parseInt(mythic_plus_scores_by_season[0].scores.all)}`,
           },
           {
-            name: `Faction`,
-            value: `${result.faction}`,
-            inline: true,
+            name: "Raid Progress",
+            value: raid_progression["amirdrassil-the-dreams-hope"].summary,
           },
           {
-            name: `iLVL`,
-            value: `${result.gear.item_level_equipped}`,
-            inline: true,
+            name: "Realm Class Rank",
+            value: `${mythic_plus_ranks.class.realm}`,
           },
           {
-            name: `Achievement Points`,
-            value: `${result.achievement_points}`,
-            inline: true,
+            name: "M+ Recent Run",
+            value: mythic_plus_recent_runs.length
+              ? `${mythic_plus_recent_runs[0].short_name} ${
+                  mythic_plus_recent_runs[0].mythic_level
+                }${getKeystoneUpgradeSymbol(
+                  mythic_plus_recent_runs[0].num_keystone_upgrades
+                )}`
+              : "N/A",
           },
           {
-            name: `M+ Rating`,
-            value: `${parseInt(
-              result.mythic_plus_scores_by_season[0].scores.all
-            )}`,
-            inline: true,
-          },
-          {
-            name: `Raid Progress`,
-            value: `${
-              result.raid_progression[`aberrus-the-shadowed-crucible`].summary
-            }`,
-            inline: true,
-          },
-          {
-            name: `Realm Class Rank`,
-            value: `${result.mythic_plus_ranks.class.realm}`,
-            inline: true,
-          },
-          {
-            name: `M+ Recent Run`,
-            value: `${result.mythic_plus_recent_runs[0].short_name} ${result.mythic_plus_recent_runs[0].mythic_level}${recentRun}`,
-            inline: true,
-          },
-          {
-            name: `M+ Best Run`,
-            value: `${result.mythic_plus_best_runs[0].short_name} ${result.mythic_plus_best_runs[0].mythic_level}${bestRun}`,
-            inline: true,
+            name: "M+ Best Run",
+            value: mythic_plus_best_runs.length
+              ? `${mythic_plus_best_runs[0].short_name} ${
+                  mythic_plus_best_runs[0].mythic_level
+                }${getKeystoneUpgradeSymbol(
+                  mythic_plus_best_runs[0].num_keystone_upgrades
+                )}`
+              : "N/A",
           },
         ];
 
-        let embed = new EmbedBuilder()
-          .setTitle(`**${result.name}-${result.realm}**`)
-          .setURL(`${result.profile_url}`)
-          .setThumbnail(`${result.thumbnail_url}`)
-          .addFields(page1)
-          .setColor(0xa89d32)
-          .setFooter({
-            iconURL: `https://i.pinimg.com/originals/cf/f4/a5/cff4a59d9390e8f836581e55828fb9ca.png`,
-            text: `World of Warcraft`,
-          });
+        firstItems.forEach((item) => {
+          const itemValue = item.value != 0 ? item.value : "N/A";
 
-        wowEmbed.react(`⬅`);
-        wowEmbed.react(`➡`);
-        const filter = (reaction, user) => {
-          [`⬅`, `➡`].includes(reaction.emoji.name) &&
-            user.id === interaction.user.id;
-        };
-        const collector = wowEmbed.createReactionCollector(filter);
+          embed.addFields({
+            name: item.name,
+            value: itemValue,
+            inline: true,
+          });
+        });
+
+        let page = 0;
+        const totalPages = 2;
+
+        embed.setFooter({
+          iconURL: utils.footers.wow,
+          text: `${utils.texts.wow} | Page ${page + 1} of ${totalPages}`,
+        });
+
+        const recentRunUrl = mythic_plus_recent_runs[0]?.url || false;
+        const bestRunUrl = mythic_plus_best_runs[0]?.url || false;
+        const button = createGameButtons("wow", recentRunUrl, bestRunUrl);
+
+        const wowEmbed = await interaction.editReply({
+          embeds: [embed],
+          components: [button],
+        });
+
+        success = true;
+
+        await bookmark(interaction, wowEmbed);
+
+        const collector = pageReact(interaction, wowEmbed);
+
         collector.on("collect", async (reaction, user) => {
           if (user.bot) return;
 
-          reaction.users.remove(reaction.users.cache.get(user.id));
+          await reaction.users.remove(user.id);
 
-          if (reaction.emoji.name === `➡`) {
+          if (reaction.emoji.name == "➡" && page < totalPages - 1) {
+            page++;
+
             const gearItems = [
               { name: "Head", slot: "head" },
               { name: "Neck", slot: "neck" },
@@ -206,145 +189,57 @@ module.exports = {
               { name: "Off Hand", slot: "offhand" },
             ];
 
+            embed.setFields();
+
             gearItems.forEach((item) => {
               const itemLevel =
-                result.gear.items[item.slot]?.item_level.toString() || "Empty";
-              embed.setFields({
+                gear.items[item.slot]?.item_level.toString() || "Empty";
+
+              embed.addFields({
                 name: item.name,
                 value: itemLevel,
                 inline: true,
               });
             });
+          } else if (reaction.emoji.name == "⬅" && page !== 0) {
+            --page;
 
-            await interaction.editReply({
-              embeds: [embed],
+            embed.setFields();
+
+            firstItems.forEach((item) => {
+              const itemValue = item.value != 0 ? item.value : "N/A";
+
+              embed.addFields({
+                name: item.name,
+                value: itemValue,
+                inline: true,
+              });
             });
-          } else {
-            embed.setFields(page1);
+          } else return;
 
-            await interaction.editReply({
-              embeds: [embed],
-            });
-          }
-        });
-
-        const recentButton = new ButtonBuilder()
-          .setLabel(`M+ Recent Run`)
-          .setURL(`${result.mythic_plus_recent_runs[0].url}`)
-          .setStyle(ButtonStyle.Link);
-        const bestButton = new ButtonBuilder()
-          .setLabel(`M+ Best Run`)
-          .setURL(`${result.mythic_plus_best_runs[0].url}`)
-          .setStyle(ButtonStyle.Link);
-        const saveButton = new ButtonBuilder()
-          .setCustomId(`wow`)
-          .setLabel(`Save`)
-          .setStyle(ButtonStyle.Success);
-        wowEmbed
-          .awaitMessageComponent({
-            componentType: ComponentType.Button,
-            time: 10 * 60 * 1000,
-          })
-          .then(async (interaction) => {
-            let wowList = await wow.findOne({
-              User: interaction.user.id,
-            });
-
-            const saveEmbed = new EmbedBuilder()
-              .setTitle(`Save Account`)
-              .setDescription(
-                "Your WOW Character have been saved to the database."
-              )
-              .setColor(0x25bfc4)
-              .setThumbnail(
-                `https://freeiconshop.com/wp-content/uploads/edd/link-open-flat.png`
-              )
-              .setFooter({
-                iconURL: `https://i.pinimg.com/originals/cf/f4/a5/cff4a59d9390e8f836581e55828fb9ca.png`,
-                text: `World of Warcraft`,
-              });
-
-            if (!wowList) {
-              wowList = new wow({
-                User: interaction.user.id,
-                WowCharacter: character,
-                WowRealm: realm,
-                WowRegion: region,
-              });
-              await wowList.save().catch(console.error);
-
-              await interaction.reply({
-                embeds: [saveEmbed],
-                ephemeral: true,
-              });
-
-              console.log(
-                `${interaction.user.username} just saved their WOW Character to the database.`
-              );
-            } else {
-              wowList = await wow.findOneAndDelete({
-                User: interaction.user.id,
-              });
-
-              const newWowList = new wow({
-                User: interaction.user.id,
-                WowCharacter: character,
-                WowRealm: realm,
-                WowRegion: region,
-              });
-              await newWowList.save().catch(console.error);
-
-              await interaction.reply({
-                embeds: [saveEmbed],
-                ephemeral: true,
-              });
-
-              console.log(
-                `${interaction.user.userrname} just edited their WOW Character in the database.`
-              );
-            }
-          })
-          .catch((e) => {
-            console.log(
-              `Save collector of WOW did not receive any interactions before ending.`
-            );
+          embed.setFooter({
+            iconURL: utils.footers.wow,
+            text: `${utils.texts.wow} | Page ${page + 1} of ${totalPages}`,
           });
 
-        interaction.editReply({
-          embeds: [embed],
-          components: [
-            new ActionRowBuilder()
-              .addComponents(recentButton)
-              .addComponents(bestButton)
-              .addComponents(saveButton),
-          ],
+          await interaction.editReply({
+            embeds: [embed],
+          });
         });
-        success = true;
       })
-      .catch((e) => {
-        let failedEmbed = new EmbedBuilder()
-          .setTitle(`**No Result**`)
-          .setDescription(
-            `Make sure you input the correct information or character may not be max level nor has played Dragonflight Season 2.\nTry again with </wow:1079842730752102553>`
-          )
-          .setColor(0xffea00)
-          .setThumbnail(
-            `https://cdn-icons-png.flaticon.com/512/6134/6134065.png`
-          );
+      .catch(async (error) => {
+        console.error(
+          `${utils.consoleTags.error} While fetching World of Warcraft data: `,
+          error
+        );
 
-        interaction.editReply({
-          embeds: [failedEmbed],
-        });
+        if (error.message.includes("item_level_equipped")) {
+          await errorHandler.handleNoResultError(interaction);
+        } else {
+          await errorHandler.handleAPIError(interaction);
+        }
       });
-      
-    const timeoutDuration = success ? 5 * 60 * 1000 : 2 * 60 * 1000;
-    const timeoutLog = success
-      ? `Failed to delete ${interaction.commandName} interaction.`
-      : `Failed to delete unsuccessfull ${interaction.commandName} interaction.`;
-    setTimeout(() => {
-      interaction.deleteReply().catch((e) => {
-        console.log(timeoutLog);
-      });
-    }, timeoutDuration);
+
+    handleNonMusicalDeletion(interaction, success, undefined, 10);
   },
 };

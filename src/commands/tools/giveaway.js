@@ -3,18 +3,17 @@
   SlashCommandBuilder,
   PermissionFlagsBits,
 } = require("discord.js");
-const chalk = require("chalk");
 const ms = require("ms");
+const utils = require("../../utils/main/mainUtils");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("giveaway")
-    .setDescription("Manage giveaways")
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
+    .setDescription(`${utils.tags.mod} Manage giveaways`)
     .addSubcommand((subcommand) =>
       subcommand
         .setName("start")
-        .setDescription("Start a giveaway")
+        .setDescription(`${utils.tags.mod} Start a giveaway`)
         .addStringOption((option) =>
           option
             .setName("duration")
@@ -42,7 +41,7 @@ module.exports = {
     .addSubcommand((subcommand) =>
       subcommand
         .setName("action")
-        .setDescription("Manage the current giveaway")
+        .setDescription(`${utils.tags.mod} Manage the current giveaway`)
         .addStringOption((option) =>
           option
             .setName("options")
@@ -74,31 +73,32 @@ module.exports = {
             .setRequired(true)
         )
     )
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
     .setDMPermission(false),
 
   async execute(interaction, client) {
     const { options } = interaction;
     const Sub = options.getSubcommand();
-
-    const errorEmbed = new EmbedBuilder().setColor(0xe01010);
-    const successEmbed = new EmbedBuilder().setColor(0x46eb34);
+    const errorEmbed = new EmbedBuilder().setColor(utils.colors.error);
+    const successEmbed = new EmbedBuilder().setColor(utils.colors.success);
 
     switch (Sub) {
       case "start":
         {
-          const gChannel = options.getChannel("channel") || interaction.channel;
+          const giveawayChannel =
+            options.getChannel("channel") || interaction.channel;
           const duration = options.getString("duration");
           const winnerCount = options.getInteger("winners");
           const prize = options.getString("prize");
 
           client.giveawaysManager
-            .start(gChannel, {
+            .start(giveawayChannel, {
               duration: ms(duration),
               winnerCount,
               prize,
               messages: {
                 giveaway: "🎉 **Giveaway has begun !** 🎉",
-                giveawayEnded: "Giveaway expired !",
+                giveawayEnded: "**Giveaway expired !**",
                 winMessage:
                   "🏆 Conratulations, {winners}! You won **{this.prize}** ! 🎉",
               },
@@ -113,7 +113,12 @@ module.exports = {
                 ephemeral: true,
               });
             })
-            .catch((err) => {
+            .catch((error) => {
+              console.error(
+                `${utils.consoleTags.error} While starting giveaway: `,
+                error
+              );
+
               errorEmbed.setDescription("An error occurred...");
 
               return interaction.reply({
@@ -142,7 +147,12 @@ module.exports = {
                       ephemeral: true,
                     });
                   })
-                  .catch((err) => {
+                  .catch((error) => {
+                    console.error(
+                      `${utils.consoleTags.error} While ending giveaway: `,
+                      error
+                    );
+
                     errorEmbed.setDescription("An error occurred...");
 
                     return interaction.reply({
@@ -152,6 +162,7 @@ module.exports = {
                   });
               }
               break;
+
             case "pause":
               {
                 client.giveawaysManager
@@ -164,7 +175,12 @@ module.exports = {
                       ephemeral: true,
                     });
                   })
-                  .catch((err) => {
+                  .catch((error) => {
+                    console.error(
+                      `${utils.consoleTags.error} While pausing giveaway: `,
+                      error
+                    );
+
                     errorEmbed.setDescription("An error occurred...");
 
                     return interaction.reply({
@@ -174,6 +190,7 @@ module.exports = {
                   });
               }
               break;
+
             case "unpause":
               {
                 client.giveawaysManager
@@ -186,7 +203,12 @@ module.exports = {
                       ephemeral: true,
                     });
                   })
-                  .catch((err) => {
+                  .catch((error) => {
+                    console.error(
+                      `${utils.consoleTags.error} While unpausing giveaway: `,
+                      error
+                    );
+
                     errorEmbed.setDescription("An error occurred...");
 
                     return interaction.reply({
@@ -196,6 +218,7 @@ module.exports = {
                   });
               }
               break;
+
             case "delete":
               {
                 client.giveawaysManager
@@ -210,7 +233,12 @@ module.exports = {
                       ephemeral: true,
                     });
                   })
-                  .catch((err) => {
+                  .catch((error) => {
+                    console.error(
+                      `${utils.consoleTags.error} While deleting giveaway: `,
+                      error
+                    );
+
                     errorEmbed.setDescription("An error occurred...");
 
                     return interaction.reply({
@@ -225,10 +253,8 @@ module.exports = {
         break;
 
       default: {
-        console.log(
-          chalk.yellow(
-            "Something went wrong while executing giveaway command..."
-          )
+        console.error(
+          `${utils.consoleTags.error} While executing ${interaction.commandName} command.`
         );
       }
     }

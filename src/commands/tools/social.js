@@ -5,60 +5,50 @@ const {
   ButtonBuilder,
   ButtonStyle,
 } = require("discord.js");
+const utils = require("../../utils/main/mainUtils");
+const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("social")
-    .setDescription("Returns Sayeh social links"),
+    .setDescription("Get info about Sayeh's social medias"),
 
-  async execute(interaction, client) {
-    let embed = new EmbedBuilder()
-      .setTitle(`Sayehgame.com`)
-      .setDescription(`Don't forget to follow Sayeh on social media!`)
+  async execute(interaction) {
+    const embed = new EmbedBuilder()
+      .setTitle(utils.titles.website)
+      .setDescription("Follow Sayeh on social media!")
       .setFields(
-        { name: `Twitch`, value: `/Sayeh`, inline: true },
-        { name: `Kick`, value: `/Sayeh`, inline: true },
-        { name: `YouTube`, value: `@Say3h`, inline: true },
-        { name: `Telegram`, value: `@sayeh_game`, inline: true },
-        { name: `Instagram`, value: `@sayeh_game`, inline: true },
-        { name: `Website`, value: `sayehgame.com`, inline: true },
+        { name: utils.texts.twitch, value: "Sayeh", inline: true },
+        { name: utils.texts.kick, value: "Sayeh", inline: true },
+        { name: utils.texts.youtube, value: "@Say3h", inline: true },
+        { name: utils.texts.telegram, value: "@sayeh_game", inline: true },
+        { name: utils.texts.instagram, value: "@sayeh_game", inline: true },
+        { name: utils.texts.website, value: "sayehgame.com", inline: true }
       )
-      .setColor(0x25bfc4)
-      .setURL(`https://sayehgame.com`)
-      .setThumbnail(
-        `https://cdn.discordapp.com/attachments/760838336205029416/1089626902832107590/934476feaab28c0f586b688264b50041.webp`
-      )
+      .setColor(utils.colors.default)
+      .setURL(utils.urls.website)
+      .setThumbnail(utils.thumbnails.twitch_sayeh)
       .setFooter({
-        iconURL: `https://www.pngkey.com/png/full/235-2350076_gmw-host-clipart-library-people-icon-png-white.png`,
-        text: `Socials `,
+        iconURL: utils.footers.tools,
+        text: utils.texts.tools,
       });
 
     const twitchButton = new ButtonBuilder()
-      .setLabel(`Twitch`)
-      .setURL(`https://twitch.tv/Sayeh`)
-      .setStyle(ButtonStyle.Link);
-    const kickButton = new ButtonBuilder()
-      .setLabel(`Kick`)
-      .setURL(`https://kick.com/sayeh`)
+      .setLabel(utils.texts.twitch)
+      .setURL(utils.urls.twitch_sayeh)
       .setStyle(ButtonStyle.Link);
     const youtubeButton = new ButtonBuilder()
-      .setLabel(`YouTube`)
-      .setURL(`https://youtube.com/c/Sayehh/?sub_confirmation=1`)
-      .setStyle(ButtonStyle.Link);
-    const telegramButton = new ButtonBuilder()
-      .setLabel("Telegram")
-      .setURL(`https://t.me/sayeh_game`)
+      .setLabel(utils.texts.youtube)
+      .setURL(utils.urls.youtube_sayeh)
       .setStyle(ButtonStyle.Link);
     const instagramButton = new ButtonBuilder()
-      .setLabel(`Instagram`)
-      .setURL(`https://www.instagram.com/sayeh_game`)
+      .setLabel(utils.texts.instagram)
+      .setURL(utils.urls.instagram)
       .setStyle(ButtonStyle.Link);
 
     const button = new ActionRowBuilder()
       .addComponents(twitchButton)
-      .addComponents(kickButton)
       .addComponents(youtubeButton)
-      .addComponents(telegramButton)
       .addComponents(instagramButton);
 
     await interaction.reply({
@@ -66,10 +56,6 @@ module.exports = {
       components: [button],
     });
 
-    setTimeout(() => {
-      interaction.deleteReply().catch((e) => {
-        console.log(`Failed to delete ${interaction.commandName} interaction.`);
-      });
-    }, 10 * 60 * 1000);
+    handleNonMusicalDeletion(interaction, true, undefined, 10);
   },
 };

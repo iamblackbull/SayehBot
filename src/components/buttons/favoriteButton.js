@@ -1,7 +1,7 @@
 const { mongoose } = require("mongoose");
-const embedCreator = require("../../utils/createEmbed");
-const favoriteHandler = require("../../utils/handleFavorite");
-const errorHandler = require("../../utils/handleErrors");
+const { handleDatabaseError } = require("../../utils/main/handleErrors");
+const { handleTrack } = require("../../utils/player/handleFavorite");
+const { createFavoriteEmbed } = require("../../utils/player/createMusicEmbed");
 
 module.exports = {
   data: {
@@ -11,7 +11,7 @@ module.exports = {
   async execute(interaction, client) {
     ////////////// return checks //////////////
     if (mongoose.connection.readyState !== 1) {
-      return errorHandler.handleDatabaseError(interaction);
+      return handleDatabaseError(interaction);
     }
 
     const queue = client.player.nodes.get(interaction.guildId);
@@ -26,16 +26,12 @@ module.exports = {
       ephemeral: true,
     });
 
-    const { favoriteMode, favoriteLength } = await favoriteHandler.handleTrack(
+    const { favoriteMode, favoriteLength } = await handleTrack(
       interaction,
       client
     );
 
-    const embed = embedCreator.createFavoriteEmbed(
-      song,
-      favoriteMode,
-      favoriteLength
-    );
+    const embed = createFavoriteEmbed(song, favoriteMode, favoriteLength);
 
     await interaction.editReply({
       embeds: [embed],

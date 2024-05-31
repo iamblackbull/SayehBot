@@ -1,66 +1,31 @@
-const { ActivityType } = require("discord.js");
-const date = new Date();
-const currentYear = date.getFullYear();
-const currentMonth = date.getMonth() + 1;
-const currentDate = date.getDate();
-
-let remindBirthdayInterval;
-let checkStreamSInterval;
-let checkStreamHInterval;
-let checkVideoInterval;
-
-function setIntervals(client) {
-  remindBirthdayInterval = setInterval(client.remindBirthday, 10 * 60 * 1000);
-  checkStreamSInterval = setInterval(client.checkStreamS, 10 * 60 * 1000);
-  checkStreamHInterval = setInterval(client.checkStreamH, 10 * 60 * 1000);
-  checkVideoInterval = setInterval(client.checkVideo, 10 * 60 * 1000);
-}
-
-function clearIntervals() {
-  clearInterval(remindBirthdayInterval);
-  clearInterval(checkStreamSInterval);
-  clearInterval(checkStreamHInterval);
-  clearInterval(checkVideoInterval);
-}
+const { Events } = require("discord.js");
+const { mainPresence } = require("../../utils/main/handlePresence");
+const intervals = require("../../utils/client/intervals");
+const { getWarnClient } = require("../../utils/main/warnPenalty");
+const { getReportClient } = require("../../utils/main/handleReports");
+const { consoleTags } = require("../../utils/main/mainUtils");
 
 module.exports = {
-  name: "ready",
+  name: Events.ClientReady,
   once: true,
+
   async execute(client) {
-    console.log(
-      `SayehBot is online!\nToday's date: ${currentYear}.${currentMonth}.${currentDate}`
-    );
+    await mainPresence(client);
 
-    setIntervals(client);
+    client.emit("twitch");
 
-    client.user.setPresence({
-      activities: [
-        {
-          name: "Sayeh's videos 👉👈",
-          type: ActivityType.Watching,
-        },
-      ],
-      status: "online",
-    });
+    getWarnClient(client);
+    getReportClient(client);
 
-    client.on("reconnecting", () => {
-      clearIntervals();
+    console.log(`${consoleTags.app} SayehBot is online.`);
 
-      console.log("SayehBot is reconnecting to Discord.");
+    intervals.setIntervals(client);
 
-      client.on("connect", () => {
-        setIntervals(client);
+    setInterval(() => {
+      intervals.clearIntervals();
+      intervals.setIntervals(client);
 
-        console.log("SayehBot is reconnected to Discord.");
-      });
-    });
+      console.log(`${consoleTags.app} Intervals have been refreshed.`);
+    }, 43_200_000);
   },
 };
-
-process.on("SIGINT", () => {
-  clearIntervals();
-
-  console.log("SayehBot is now offline!");
-
-  process.exit();
-});

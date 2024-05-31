@@ -1,6 +1,6 @@
-const embedCreator = require("../../utils/createEmbed");
-const buttonCreator = require("../../utils/createButtons");
-const deletionHandler = require("../../utils/handleDeletion");
+const { createPauseEmbed } = require("../../utils/player/createMusicEmbed");
+const { createPauseButton } = require("../../utils/main/createButtons");
+const deleteHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: {
@@ -21,8 +21,8 @@ module.exports = {
       return;
 
     ////////////// toggle pause mode of queue //////////////
-    const embed = await embedCreator.createPauseEmbed(interaction, queue);
-    const button = buttonCreator.createPauseButtons();
+    const embed = await createPauseEmbed(interaction, queue);
+    const button = createPauseButton();
 
     await interaction.reply({
       embeds: [embed],
@@ -31,6 +31,6 @@ module.exports = {
 
     success = true;
 
-    deletionHandler.handleInteractionDeletion(interaction, success);
+    deleteHandler.handleInteractionDeletion(interaction, success);
   },
 };

@@ -1,21 +1,22 @@
 const { SlashCommandBuilder, PermissionsBitField } = require("discord.js");
-const playerDataHandler = require("../../utils/handlePlayerData");
-const errorHandler = require("../../utils/handleErrors");
-const searchHandler = require("../../utils/handleSearch");
-const queueCreator = require("../../utils/createQueue");
-const embedCreator = require("../../utils/createEmbed");
-const buttonCreator = require("../../utils/createButtons");
-const reactHandler = require("../../utils/handleReaction");
-const deletionHandler = require("../../utils/handleDeletion");
+const { handleData } = require("../../utils/player/handlePlayerData");
+const { searchYouTube } = require("../../utils/player/handleSearch");
+const { createQueue } = require("../../utils/player/createQueue");
+const embedCreator = require("../../utils/player/createMusicEmbed");
+const errorHandler = require("../../utils/main/handleErrors");
+const { createButtons } = require("../../utils/main/createButtons");
+const { searchReact } = require("../../utils/main/handleReaction");
+const { consoleTags } = require("../../utils/main/mainUtils");
+const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("search")
-    .setDescription("Search in YouTube.")
+    .setDescription("Search in YouTube")
     .addStringOption((option) =>
       option
         .setName("query")
-        .setDescription("Input something to search about.")
+        .setDescription("Input a track name or url")
         .setRequired(true)
     )
     .setDMPermission(false),
@@ -34,7 +35,7 @@ module.exports = {
       errorHandler.handleVoiceChannelError(interaction);
     } else {
       const query = interaction.options.getString("query", true);
-      const result = await searchHandler.searchYouTube(query);
+      const result = await searchYouTube(query);
 
       if (!result.hasTracks()) {
         errorHandler.handleNoResultError(interaction);
@@ -55,16 +56,12 @@ module.exports = {
         success = true;
 
         ////////////// add result to queue collector //////////////
-        const collector = reactHandler.searchReact(
-          interaction,
-          searchEmbed,
-          isLink
-        );
+        const collector = searchReact(interaction, searchEmbed, isLink);
 
         collector.on("collect", async (reaction, user) => {
           const queue =
             client.player.nodes.get(interaction.guildId) ||
-            (await queueCreator.createQueue(client, interaction, result));
+            (await createQueue(client, interaction, result));
 
           if (user.bot) return;
           if (!interaction.member.voice.channel) return;
@@ -97,12 +94,12 @@ module.exports = {
               song
             );
 
-            await playerDataHandler.handleData(interaction, nowPlaying);
+            await handleData(interaction, nowPlaying);
 
             if (!queue.node.isPlaying() && !queue.node.isPaused())
               await queue.node.play();
 
-            const button = buttonCreator.createButtons(nowPlaying);
+            const button = createButtons(nowPlaying);
 
             const msg = await interaction.followUp({
               embeds: [embed],
@@ -128,7 +125,10 @@ module.exports = {
             } else {
               errorHandler.handleUnknownError(interaction);
 
-              console.log(error);
+              console.error(
+                `${consoleTags.error} While executing ${interaction.commandName} command: `,
+                error
+              );
             }
           }
         });

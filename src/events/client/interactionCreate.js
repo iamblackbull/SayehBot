@@ -1,16 +1,37 @@
-const { EmbedBuilder } = require("discord.js");
+const { EmbedBuilder, Events } = require("discord.js");
+const utils = require("../../utils/main/mainUtils");
+const { calculateXP } = require("../../utils/level/handleXPRate");
+const { handleInteractionXp } = require("../../utils/level/handleLevel");
+const Levels = require("discord-xp");
 
-let failedEmbed = new EmbedBuilder()
-  .setTitle(`Error`)
-  .setDescription(`Something went wrong while executing this command...`)
-  .setColor(0xe01010)
-  .setThumbnail(
-    `https://cdn.pixabay.com/photo/2015/06/09/16/12/error-803716_1280.png`
-  );
+Levels.setURL(process.env.DBTOKEN);
+
+const failedEmbed = new EmbedBuilder()
+  .setTitle(utils.titles.error)
+  .setColor(utils.colors.error)
+  .setThumbnail(utils.thumbnails.error);
+
+const notFoundError = "COMMAND_NOT_FOUND";
 
 module.exports = {
-  name: "interactionCreate",
+  name: Events.InteractionCreate,
+
   async execute(interaction, client) {
+    if (
+      interaction.commandName !== "roll" &&
+      !interaction.isAutocomplete() &&
+      interaction.guild
+    ) {
+      const user = await Levels.fetch(
+        interaction.user.id,
+        interaction.guild.id
+      );
+
+      const { finalXp } = await calculateXP(interaction, user);
+
+      await handleInteractionXp(interaction, finalXp);
+    }
+
     if (interaction.isAutocomplete()) {
       const { commands } = client;
       const { commandName } = interaction;
@@ -24,41 +45,62 @@ module.exports = {
       }
     } else if (interaction.isChatInputCommand()) {
       const { commands } = client;
-      const { commandName } = interaction;
+      const { commandName, user } = interaction;
       const command = commands.get(commandName);
       if (!command) return;
 
       try {
         await command.execute(interaction, client);
+
+        console.log(
+          `${utils.consoleTags.app} ${user.username} executed ${commandName} command.`
+        );
       } catch (error) {
-        console.error(error);
-        if (interaction.deferReply) {
+        failedEmbed.setDescription(
+          `Something went wrong while executing ${commandName} command.\nCode: ${error.code}`
+        );
+
+        console.error(
+          `${utils.consoleTags.error} While executing ${commandName} command.`,
+          error
+        );
+
+        if (interaction.deferred || interaction.replied) {
           await interaction.editReply({
             embeds: [failedEmbed],
           });
         } else {
           await interaction.reply({
             embeds: [failedEmbed],
-            ephemeral: true,
           });
         }
+
         setTimeout(() => {
           interaction.deleteReply().catch(console.error);
         }, 2 * 60 * 1000);
       }
     } else if (interaction.isContextMenuCommand()) {
       const { commands } = client;
-      const { commandName } = interaction;
+      const { commandName, user } = interaction;
       const contextCommand = commands.get(commandName);
       if (!contextCommand) return;
 
       try {
         await contextCommand.execute(interaction, client);
-      } catch (error) {
-        console.error(error);
-        failedEmbed.setDescription(
-          `Something went wrong while executing this Context Menu command...`
+
+        console.log(
+          `${utils.consoleTags.app} ${user.username} executed ${commandName} context menu command.`
         );
+      } catch (error) {
+        failedEmbed.setDescription(
+          `Something went wrong while executing ${commandName} context Menu command.\nCode: ${error.code}`
+        );
+
+        console.error(
+          `${utils.consoleTags.error} While executing ${commandName} context menu command.`,
+          error
+        );
+
         if (!interaction.reply) {
           await interaction.reply({
             embeds: [failedEmbed],
@@ -69,37 +111,52 @@ module.exports = {
             embeds: [failedEmbed],
           });
         }
+
         setTimeout(() => {
           interaction.deleteReply().catch(console.error);
         }, 2 * 60 * 1000);
       }
     } else if (interaction.isButton()) {
       const { buttons } = client;
-      const { customId } = interaction;
+      const { customId, user } = interaction;
       const button = buttons.get(customId);
+
       if (!button)
         return new Error(
-          `Something went wrong while executing this button command...`
+          `${utils.consoleTags.error} While executing ${customId} button.\nCode: ${notFoundError}`
         );
 
       try {
         await button.execute(interaction, client);
+
+        console.log(
+          `${utils.consoleTags.app} ${user.username} executed ${customId} button.`
+        );
       } catch (error) {
-        console.log(error);
+        return new Error(
+          `${utils.consoleTags.error} While executing ${customId} button.\nCode: ${error.code}`
+        );
       }
     } else if (interaction.isModalSubmit()) {
       const { modals } = client;
-      const { customId } = interaction;
+      const { customId, user } = interaction;
       const modal = modals.get(customId);
+
       if (!modal)
         return new Error(
-          `Something went wrong while executing this modal command...`
+          `${utils.consoleTags.error} While executing ${customId} modal.\nCode: ${notFoundError}`
         );
 
       try {
         await modal.execute(interaction, client);
+
+        console.log(
+          `${utils.consoleTags.app} ${user.username} executed ${customId} modal.`
+        );
       } catch (error) {
-        console.log(error);
+        return new Error(
+          `${utils.consoleTags.error} While executing ${customId} modal.\nCode: ${error.code}`
+        );
       }
     }
   },

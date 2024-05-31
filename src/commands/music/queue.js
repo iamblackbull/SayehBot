@@ -1,21 +1,13 @@
 const { SlashCommandBuilder } = require("discord.js");
-const embedCreator = require("../../utils/createEmbed");
-const reactHandler = require("../../utils/handleReaction");
-const errorHandler = require("../../utils/handleErrors");
-const deletionHandler = require("../../utils/handleDeletion");
+const errorHandler = require("../../utils/main/handleErrors");
+const { createQueueEmbed } = require("../../utils/player/createMusicEmbed");
+const { queueReact } = require("../../utils/main/handleReaction");
+const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("queue")
-    .setDescription("Get info about the current queue.")
-    .addNumberOption((option) =>
-      option
-        .setName("page")
-        .setDescription(
-          "Input a page number to see a specific page from the queue."
-        )
-        .setMinValue(1)
-    )
+    .setDescription("Get info about the current queue")
     .setDMPermission(false),
 
   async execute(interaction, client) {
@@ -41,13 +33,9 @@ module.exports = {
         });
 
         let totalPages = Math.ceil(queue.tracks.data.length / 10) || 1;
-        let page = (interaction.options.getNumber("page") || 1) - 1;
+        let page = 0;
 
-        if (interaction.options.getNumber("page") > totalPages) {
-          page = totalPages - 1;
-        }
-
-        const embed = embedCreator.createQueueEmbed(page, totalPages, queue);
+        const embed = createQueueEmbed(page, totalPages, queue);
 
         await interaction.editReply({
           embeds: [embed],
@@ -56,7 +44,7 @@ module.exports = {
         success = true;
 
         ////////////// page switching collector //////////////
-        const collector = reactHandler.queueReact(interaction, queueEmbed);
+        const collector = queueReact(interaction, queueEmbed);
 
         collector.on("collect", async (reaction, user) => {
           if (user.bot) return;
@@ -80,11 +68,7 @@ module.exports = {
 
           totalPages = Math.ceil(queue.tracks.data.length / 10) || 1;
 
-          const updatedEmbed = embedCreator.createQueueEmbed(
-            page,
-            totalPages,
-            queue
-          );
+          const updatedEmbed = createQueueEmbed(page, totalPages, queue);
 
           interaction.editReply({
             embeds: [updatedEmbed],

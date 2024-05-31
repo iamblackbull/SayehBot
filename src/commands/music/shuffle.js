@@ -1,13 +1,13 @@
 const { SlashCommandBuilder } = require("discord.js");
-const embedCreator = require("../../utils/createEmbed");
-const reactHandler = require("../../utils/handleReaction");
-const errorHandler = require("../../utils/handleErrors");
-const deletionHandler = require("../../utils/handleDeletion");
+const errorHandler = require("../../utils/main/handleErrors");
+const { createShuffleEmbed } = require("../../utils/player/createMusicEmbed");
+const { shuffleReact } = require("../../utils/main/handleReaction");
+const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("shuffle")
-    .setDescription("Shuffle the current queue.")
+    .setDescription("Shuffle the current queue")
     .setDMPermission(false),
 
   async execute(interaction, client) {
@@ -32,12 +32,10 @@ module.exports = {
           fetchReply: true,
         });
 
-        const reminder =
-          "Use </shuffle:1047903145218547863> again or react below to reshuffle.";
-
+        const reminder = `Use </${interaction.commandName}:${interaction.commandId}> again or react below to reshuffle.`;
         let description = `Queue of **${queue.tracks.data.length} tracks** has been shuffled!\n${reminder}`;
 
-        let embed = embedCreator.createShuffleEmbed(description);
+        let embed = createShuffleEmbed(description);
 
         ////////////// shuffle queue //////////////
         await queue.tracks.shuffle();
@@ -49,7 +47,7 @@ module.exports = {
         success = true;
 
         ////////////// shuffle interaction collector //////////////
-        const collector = reactHandler.shuffleReact(interaction, shuffleEmbed);
+        const collector = shuffleReact(interaction, shuffleEmbed);
 
         collector.on("collect", async (reaction, user) => {
           if (user.bot) return;
@@ -60,7 +58,7 @@ module.exports = {
 
           description = `Queue of **${queue.tracks.data.length} tracks** has been reshuffled!\n${reminder}`;
 
-          embed = embedCreator.createShuffleEmbed(description);
+          embed = createShuffleEmbed(description);
 
           await interaction.editReply({
             embeds: [embed],

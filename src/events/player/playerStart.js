@@ -1,7 +1,7 @@
-const playerDB = require("../../schemas/player-schema");
-const embedCreator = require("../../utils/createEmbed");
-const buttonCreator = require("../../utils/createButtons");
-const deletionHandler = require("../../utils/handleDeletion");
+const playerModel = require("../../database/playerModel");
+const { createTrackEmbed } = require("../../utils/player/createMusicEmbed");
+const { createButtons } = require("../../utils/main/createButtons");
+const { handleEventDelection } = require("../../utils/main/handleDeletion");
 
 module.exports = {
   name: "playerStart",
@@ -9,18 +9,18 @@ module.exports = {
 
   async execute(queue, song) {
     ////////////// return checks //////////////
-    const playerList = await playerDB.findOne({
+    const playerList = await playerModel.findOne({
       guildId: queue.metadata.guild,
     });
 
     if (playerList.isSkipped || playerList.isJustAdded) {
-      return await playerDB.updateOne(
+      return await playerModel.updateOne(
         { guildId: queue.metadata.guild },
         { isSkipped: false, isJustAdded: false }
       );
     }
 
-    if (queue.repeatMode !== 0) return;
+    if (queue.repeatMode !== 0 && queue.repeatMode < 3) return;
     if (!song.url || song.url === undefined || song.url === null) return;
     if (queue.metadata.track === undefined) return;
     if (queue.metadata.track.url === song.url) return;
@@ -29,20 +29,20 @@ module.exports = {
     if (!channel) return;
 
     ////////////// original response //////////////
-    const { embed, nowPlaying } = embedCreator.createTrackEmbed(
+    const { embed, nowPlaying } = createTrackEmbed(
       "playerStart",
       queue,
       false,
       song
     );
 
-    const button = buttonCreator.createButtons(nowPlaying);
+    const button = createButtons(nowPlaying);
 
     const msg = await channel.send({
       embeds: [embed],
       components: [button],
     });
 
-    deletionHandler.handleEventDelection(msg);
+    handleEventDelection(msg);
   },
 };

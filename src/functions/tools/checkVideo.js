@@ -1,115 +1,147 @@
-require("dotenv").config();
-const {
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-} = require("discord.js");
-const { youtubeChannelID, guildID } = process.env;
-const chalk = require("chalk");
-const Parser = require("rss-parser");
-const parser = new Parser();
+const { EmbedBuilder, ActionRowBuilder } = require("discord.js");
 const { mongoose } = require("mongoose");
-const video = require("../../schemas/video-schema");
+const eventsModel = require("../../database/eventsModel");
+const videoModel = require("../../database/videoModel");
+const utils = require("../../utils/main/mainUtils");
+const { createUrlButton } = require("../../utils/main/createButtons");
+const { videoPresence } = require("../../utils/main/handlePresence");
+const { consoleTags } = require("../../utils/main/mainUtils");
+const Parser = require("rss-parser");
 
+const parser = new Parser();
 const notifiedChannels = new Set();
 
 module.exports = (client) => {
   client.checkVideo = async () => {
     if (mongoose.connection.readyState !== 1) return;
 
+    const guild = await client.guilds.fetch(process.env.guildID);
+    const channel = await guild.channels.fetch(process.env.youtubeChannelID);
+    if (!guild || !channel) return;
+
+    const eventsList = await eventsModel.findOne({
+      guildId: guild.id,
+      Video: true,
+    });
+    if (!eventsList) return;
+
     try {
-      const data = await parser
-        .parseURL(
-          "https://youtube.com/feeds/videos.xml?channel_id=UCRyvm_KWqZxQio5EOES5NQw"
-        )
-        .catch(console.error);
+      const dataSayeh = await parser.parseURL(
+        `https://youtube.com/feeds/videos.xml?channel_id=${process.env.YOUTUBE_SAYEH_CHANNEL_ID}`
+      );
 
-      const guild = await client.guilds.fetch(guildID).catch(console.error);
+      const dataHamid = await parser.parseURL(
+        `https://youtube.com/feeds/videos.xml?channel_id=${process.env.YOUTUBE_HAMID_CHANNEL_ID}`
+      );
 
-      let videoList = await video.findOne({
+      let videoListSayeh = await videoModel.findOne({
         guild: guild.id,
+        Channel: "Sayeh",
       });
 
-      if (!videoList) {
-        videoList = new video({
+      let videoListHamid = await videoModel.findOne({
+        guild: guild.id,
+        Channel: "Hamid",
+      });
+
+      if (!videoListSayeh) {
+        videoListSayeh = new videoModel({
           guild: guild.id,
-          VideoId: data.items[0].id,
+          Channel: "Sayeh",
+          VideoId: dataSayeh.items[0].id,
         });
-        await videoList.save().catch(console.error);
+
+        return await videoListSayeh.save();
       }
 
-      if (videoList.VideoId === data.items[0].id) return;
-      if (notifiedChannels.has("sayeh")) return;
+      if (!videoListHamid) {
+        videoListHamid = new videoModel({
+          guild: guild.id,
+          Channel: "Hamid",
+          VideoId: dataHamid.items[0].id,
+        });
 
-      notifiedChannels.add("sayeh");
+        return await videoListHamid.save();
+      }
 
-      videoList = await video.updateOne(
-        { guild: guild.id },
+      let page;
+      if (videoListSayeh.VideoId !== dataSayeh.items[0].id) page = "Sayeh";
+      else if (videoListHamid.VideoId !== dataHamid.items[0].id) page = "Hamid";
+      else return;
+
+      if (notifiedChannels.has(page)) return;
+      notifiedChannels.add(page);
+
+      const data = page === "Sayeh" ? dataSayeh : dataHamid;
+
+      videoListSayeh = await videoModel.updateOne(
+        { guild: guild.id, Channel: page },
         {
           VideoId: data.items[0].id,
         }
       );
-
-      const channel = await guild.channels
-        .fetch(youtubeChannelID)
-        .catch(console.error);
 
       const { title, link, id, author } = data.items[0];
 
       const thumbnailId = id.slice(9);
       const image = `https://img.youtube.com/vi/${thumbnailId}/maxresdefault.jpg`;
 
+      const iconURL =
+        page === "Sayeh"
+          ? utils.thumbnails.twitch_sayeh
+          : utils.thumbnails.twitch_hamid;
+
+      const url =
+        page === "Sayeh" ? utils.urls.youtube_sayeh : utils.urls.youtube_hamid;
+
+      videoPresence(client);
+
       const embed = new EmbedBuilder()
-        .setTitle(`**${title}**`)
-        .setURL(link)
         .setAuthor({
           name: author,
-          iconURL:
-            "https://cdn.discordapp.com/attachments/760838336205029416/1089626902832107590/934476feaab28c0f586b688264b50041.webp",
-          url: "https://youtube.com/c/Sayehh/?sub_confirmation=1",
+          iconURL,
+          url,
         })
-        .setDescription(`Sayeh published a video on YouTube!`)
-        .setColor(0xff0000)
+        .setTitle(`**${title}**`)
+        .setURL(link)
+        .setDescription(`${page} published a video on YouTube!`)
+        .setColor(utils.colors.youtube)
         .setTimestamp(Date.now())
         .setImage(image)
-        .setThumbnail(
-          "https://cdn.discordapp.com/attachments/760838336205029416/1089626902832107590/934476feaab28c0f586b688264b50041.webp"
-        )
+        .setThumbnail(iconURL)
         .setFooter({
-          iconURL: `https://cdn4.iconfinder.com/data/icons/logos-and-brands/512/395_Youtube_logo-256.png`,
-          text: "YouTube",
+          iconURL: utils.footers.youtube,
+          text: utils.texts.youtube,
         });
 
-      const Content = `Hey @everyone\n**Sayeh** just published a new video! 😍🔔\n\n## ${title}\n\n${link}`;
+      const announcement = `Hey ${utils.tag}\n**${page}** just published a new video! 😍🔔\n\n## ${title}\n\n${link}`;
 
-      const youtubeButton = new ButtonBuilder()
-        .setLabel(`Watch Video`)
-        .setURL(`${link}`)
-        .setStyle(ButtonStyle.Link);
+      const { urlButton } = createUrlButton(utils.labels.video, link);
+      const button = new ActionRowBuilder().addComponents(urlButton);
 
-      const button = new ActionRowBuilder().addComponents(youtubeButton);
-
-      console.log(`Sayeh just published a new video on YouTube!`);
-
-      const msg = await channel
-        .send({
-          content: Content,
-        })
-        .catch(console.error);
+      const msg = await channel.send({
+        content: announcement,
+      });
 
       setTimeout(async () => {
         await msg?.edit({
           embeds: [embed],
           components: [button],
         });
-      }, 2 * 1000);
+      }, 2_000);
+
+      console.log(
+        `${consoleTags.notif} ${page} just published a new video on YouTube!`
+      );
 
       setTimeout(() => {
-        notifiedChannels.delete("sayeh");
-      }, 10 * 60 * 1000);
+        notifiedChannels.delete(page);
+      }, 600_000);
     } catch (error) {
-      console.log(chalk.red(`Connection to YouTube API failed...`));
+      console.error(
+        `${consoleTags.error} While fetching youtube notification data: `,
+        error
+      );
     }
   };
 };
