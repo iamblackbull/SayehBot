@@ -504,7 +504,7 @@ function createViewFavoriteEmbed(owner, object, target, page, totalPages) {
 
   const text = target
     ? determineSourceAndColor("favorite")
-    : `Favorite | Page ${page} of ${totalPages}`;
+    : `Favorite | Page ${page + 1} of ${totalPages}`;
 
   const embed = createEmbed({
     title,

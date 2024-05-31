@@ -121,16 +121,16 @@ module.exports = {
     if (type === 2) {
       const rollString = roll.toString();
 
-      if (rollString[0] === rollString[1]) {
+      if (rollString[0] == rollString[1]) {
         type = 1;
         amount = roll * roll; /// 121 to 9801
-      } else if (rollString[1] === 0) {
+      } else if (rollString[1] == 0) {
         type = 1;
         amount = roll * 10; /// 10 to 900
-      } else if (rollString[1] === 5) {
+      } else if (rollString[1] == 5) {
         type = 1;
         amount = roll * 5; /// 25 to 475
-      } else if (roll % 2 === 0) {
+      } else if (roll % 2 == 0) {
         type = 1;
         amount = roll * 2; /// 4 to 196
       } else {
