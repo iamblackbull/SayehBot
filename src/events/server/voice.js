@@ -26,11 +26,15 @@ module.exports = {
       !newState.channelId &&
       newState.channelId !== oldState.channelId
     ) {
+      console.log(
+        `${consoleTags.app} ${newState.member.user.username} left a voice channel.`
+      );
+
       const entryTimestamp = voiceChannelEntryTimestamps.get(userId);
 
       if (!entryTimestamp) return;
 
-      const amount = Math.floor((Date.now() - entryTimestamp) / 1_800_000);
+      const amount = Math.floor((Date.now() - entryTimestamp) / 1_200_000);
 
       voiceChannelEntryTimestamps.delete(userId);
 
@@ -40,10 +44,6 @@ module.exports = {
       const xpEarned = amount * finalXp;
 
       await handleVoiceXp(newState, xpEarned);
-
-      console.log(
-        `${consoleTags.app} ${newState.member.user.username} left a voice channel.`
-      );
     }
   },
 };

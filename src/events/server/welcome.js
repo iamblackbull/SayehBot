@@ -32,7 +32,9 @@ module.exports = {
     const role = member.guild.roles.cache.find(
       (role) => role.id === welcomeRoleID
     );
-    member.roles.add(role);
+    if (!role) return;
+
+    await member.roles.add(role);
 
     const { welcomeCanvas } = await generateWelcomeCard(user, memberCount);
 
@@ -45,7 +47,7 @@ module.exports = {
 
     console.log(`${consoleTags.app} ${user.username} joined the server.`);
 
-    const msg = await channel.send({
+    const msg = channel.send({
       content: content,
     });
 

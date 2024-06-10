@@ -6,21 +6,19 @@ const Levels = require("discord-xp");
 Levels.setURL(DBTOKEN);
 
 async function checkLevelUp(hasLevelUp, target, guild) {
-  if (hasLevelUp) {
-    const user = await Levels.fetch(target.id, guild.id);
+  if (!hasLevelUp) return;
 
-    console.log(
-      `${consoleTags.app} ${target.username} just advanced to Level ${user.level}.`
-    );
+  const user = await Levels.fetch(target.id, guild.id);
 
-    const channel = await guild.channels.fetch(rankChannelID);
+  console.log(
+    `${consoleTags.app} ${target.username} just advanced to Level ${user.level}.`
+  );
 
-    setTimeout(async () => {
-      await channel.send(
-        `🎊 ${target} just advanced to Level **${user.level}** 🙌`
-      );
-    }, 1 * 1000);
-  }
+  const channel = await guild.channels.fetch(rankChannelID);
+
+  setTimeout(async () => {
+    channel.send(`🎊 ${target} just advanced to Level **${user.level}** 🙌`);
+  }, 2 * 1000);
 }
 
 async function handleMessageXp(message, xp) {

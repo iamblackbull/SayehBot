@@ -11,7 +11,7 @@ module.exports = {
     .setType(ApplicationCommandType.User),
 
   async execute(interaction) {
-    const user = interaction.user;
+    const user = interaction.targetUser;
     const avatar = user.displayAvatarURL({ size: 1024, dynamic: true });
 
     const embed = new EmbedBuilder()

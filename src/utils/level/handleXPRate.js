@@ -2,7 +2,7 @@ const { subRole1, subRole2, subRole3, boostRole } = process.env;
 let cacheXp = 0;
 
 function getRandomXp() {
-  return Math.floor(Math.random() * 50 + 15); /// 15 to 50
+  return Math.floor(Math.random() * 100 + 30); /// 30 - 100
 }
 
 async function calculateXP(input, user) {

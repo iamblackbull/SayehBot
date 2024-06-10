@@ -13,12 +13,11 @@ module.exports = {
       guildId: queue.metadata.guild,
     });
 
-    if (playerList.isSkipped || playerList.isJustAdded) {
+    if (playerList.isSkipped || playerList.isJustAdded)
       return await playerModel.updateOne(
         { guildId: queue.metadata.guild },
         { isSkipped: false, isJustAdded: false }
       );
-    }
 
     if (queue.repeatMode !== 0 && queue.repeatMode < 3) return;
     if (!song.url || song.url === undefined || song.url === null) return;
