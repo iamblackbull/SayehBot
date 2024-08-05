@@ -56,7 +56,7 @@ module.exports = {
         content: content,
         files: [attachment],
       });
-    }, 3_000);
+    }, 5_000);
 
     setTimeout(() => {
       welcomeMessageSent.delete(member.id);
