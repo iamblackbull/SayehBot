@@ -18,7 +18,7 @@ module.exports = (client) => {
     const developer = await client.users.fetch(process.env.developerID);
     if (!developer) return;
 
-    const content = `[Warning] CPU: **${cpuPercent} %** | RAM: **${memPercent} %**`;
+    const content = `${consoleTags.warning} CPU: **${cpuPercent} %** | RAM: **${memPercent} %**`;
 
     await developer.send(content);
 

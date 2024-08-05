@@ -9,14 +9,10 @@ module.exports = {
 
   async execute(queue, song) {
     ////////////// return checks //////////////
-    const playerList = await playerModel.findOne(
-      {
-        guildId: queue.metadata.guild,
-      },
-      {
-        upsert: true,
-      }
-    );
+    const playerList = await playerModel.findOne({
+      guildId: queue.metadata.guild,
+    });
+    if (!playerList) return;
 
     if (playerList.isSkipped || playerList.isJustAdded)
       return await playerModel.updateOne(

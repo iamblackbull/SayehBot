@@ -26,9 +26,7 @@ module.exports.calculateXP = async (input, user) => {
     }
   }
 
-  if (input.member.roles.cache.has(boostRole)) {
-    boost += 0.5;
-  }
+  if (input.member.roles.cache.has(boostRole)) boost += 0.5;
 
   const finalXP = Math.floor(XP * boost);
 
