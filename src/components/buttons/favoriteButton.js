@@ -31,7 +31,12 @@ module.exports = {
       client
     );
 
-    const embed = createFavoriteEmbed(song, favoriteMode, favoriteLength);
+    const embed = createFavoriteEmbed(
+      interaction.user,
+      song,
+      favoriteMode,
+      favoriteLength
+    );
 
     await interaction.editReply({
       embeds: [embed],

@@ -81,7 +81,6 @@ module.exports = {
         await handleNoResultError(interaction);
       });
 
-    const { movieChannelID } = process.env;
-    handleNonMusicalDeletion(interaction, success, movieChannelID, 10);
+    handleNonMusicalDeletion(interaction, success, 10);
   },
 };

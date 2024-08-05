@@ -1,14 +1,6 @@
 const { ButtonBuilder, ActionRowBuilder, ButtonStyle } = require("discord.js");
 const { buttons } = require("../player/musicUtils");
 
-function createBookmarkButton(customId) {
-  return new ButtonBuilder()
-    .setCustomId(customId)
-    .setLabel("Bookmark")
-    .setEmoji(buttons.bookmark)
-    .setStyle(ButtonStyle.Primary);
-}
-
 function createButton(customId, emoji, style, disabled) {
   return new ButtonBuilder()
     .setCustomId(customId)
@@ -93,9 +85,10 @@ function createWarningButtons() {
     .setLabel("Cancel")
     .setStyle(ButtonStyle.Danger);
 
-  const button = new ActionRowBuilder()
-    .addComponents(cancelButton)
-    .addComponents(continueButton);
+  const button = new ActionRowBuilder().addComponents(
+    cancelButton,
+    continueButton
+  );
 
   return button;
 }
@@ -110,7 +103,11 @@ function createUrlButton(label, url) {
 }
 
 function createGameButtons(customId, recentRunUrl, bestRunUrl) {
-  const bookmarkButton = createBookmarkButton(customId);
+  const bookmarkButton = new ButtonBuilder()
+    .setCustomId(customId)
+    .setLabel("Bookmark")
+    .setEmoji(buttons.bookmark)
+    .setStyle(ButtonStyle.Primary);
 
   const button = new ActionRowBuilder().addComponents(bookmarkButton);
 
@@ -125,8 +122,24 @@ function createGameButtons(customId, recentRunUrl, bestRunUrl) {
       .setURL(bestRunUrl)
       .setStyle(ButtonStyle.Link);
 
-    button.addComponents(recentRunButton).addComponents(bestRunButton);
+    button.addComponents(recentRunButton, bestRunButton);
   }
+
+  return button;
+}
+
+function createBlackjackButtons() {
+  const hitButton = new ButtonBuilder()
+    .setCustomId("hit")
+    .setLabel("𝐇𝐢𝐭")
+    .setStyle(ButtonStyle.Primary);
+
+  const standButton = new ButtonBuilder()
+    .setCustomId("stand")
+    .setLabel("𝐒𝐭𝐚𝐧𝐝")
+    .setStyle(ButtonStyle.Secondary);
+
+  const button = new ActionRowBuilder().addComponents(hitButton, standButton);
 
   return button;
 }
@@ -139,4 +152,5 @@ module.exports = {
   createWarningButtons,
   createUrlButton,
   createGameButtons,
+  createBlackjackButtons,
 };

@@ -5,7 +5,6 @@ const { createMessageQueue } = require("../../utils/player/createQueue");
 const { createTrackEmbed } = require("../../utils/player/createMusicEmbed");
 const { search } = require("../../utils/player/handleSearch");
 const { createButtons } = require("../../utils/main/createButtons");
-const { consoleTags } = require("../../utils/main/mainUtils");
 const { handleMessageDelection } = require("../../utils/main/handleDeletion");
 
 module.exports = {
@@ -36,8 +35,8 @@ module.exports = {
       msg = await errorHandler.handleVoiceChannelErrorMessage(message);
     } else {
       const query = message.content.slice(match[0].length).trim();
-
-      const result = await search(query);
+      const engine = query.startsWith("https") ? "auto" : "youtube";
+      const result = await search(query, engine);
 
       if (!result.hasTracks()) {
         msg = await errorHandler.handleNoResultErrorMessage(message);
@@ -62,6 +61,10 @@ module.exports = {
             const song = result.tracks[0];
 
             const target = result.playlist ? result.tracks : song;
+
+            const entry = queue.tasksQueue.aquire();
+
+            await entry.getTask();
             await queue.addTrack(target);
 
             const embedData = createTrackEmbed(false, queue, result, song);
@@ -70,6 +73,8 @@ module.exports = {
 
             if (!queue.node.isPlaying() && !queue.node.isPaused())
               await queue.node.play();
+
+            await queue.tasksQueue.release();
 
             const button = createButtons(embedData.nowPlaying);
 
@@ -80,28 +85,7 @@ module.exports = {
 
             success = true;
           } catch (error) {
-            if (
-              error.message.includes("Sign in to confirm your age.") ||
-              error.message.includes("The following content may contain")
-            ) {
-              msg = await errorHandler.handleRestriceErrorMessage(message);
-            } else if (
-              error.message ===
-                "Cannot read properties of null (reading 'createStream')" ||
-              error.message.includes(
-                "Failed to fetch resources for ytdl streaming"
-              ) ||
-              error.message.includes("Could not extract stream for this track")
-            ) {
-              msg = await errorHandler.handleThirdPartyErrorMessage(message);
-            } else {
-              msg = await errorHandler.handleUnknownErrorMessage(message);
-
-              console.error(
-                `${consoleTags.error} While executing play message: `,
-                error
-              );
-            }
+            msg = errorHandler.handleMusicErrorMessage(message, error);
           }
         }
       }

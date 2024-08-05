@@ -21,7 +21,7 @@ module.exports = {
     .addSubcommand((subcommand) =>
       subcommand
         .setName("market")
-        .setDescription("Search for an item in Steam market")
+        .setDescription(`${utils.tags.game} Search for an item in Steam market`)
         .addStringOption((option) =>
           option
             .setName("item")
@@ -80,7 +80,7 @@ module.exports = {
     .addSubcommand((subcommand) =>
       subcommand
         .setName("store")
-        .setDescription("Search for a game in Steam store")
+        .setDescription(`${utils.tags.game} Search for a game in Steam store`)
         .addStringOption((option) =>
           option
             .setName("input")
@@ -330,7 +330,6 @@ module.exports = {
       }
     }
 
-    const { gameChannelID } = process.env;
-    handleNonMusicalDeletion(interaction, success, gameChannelID, 10);
+    handleNonMusicalDeletion(interaction, success, 10);
   },
 };

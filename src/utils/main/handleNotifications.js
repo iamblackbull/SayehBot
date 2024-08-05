@@ -1,11 +1,12 @@
 const { EmbedBuilder, ActionRowBuilder } = require("discord.js");
 const { mongoose } = require("mongoose");
 const streamModel = require("../../database/streamModel");
+const eventsModel = require("../../database/eventsModel");
+const channelModel = require("../../database/channelModel");
 const { getUserProfile, createItems } = require("../api/handleStream");
 const { createUrlButton } = require("../../utils/main/createButtons");
 const presenceHandler = require("../../utils/main/handlePresence");
 const utils = require("../main/mainUtils");
-const eventsModel = require("../../database/eventsModel");
 const { consoleTags } = require("./mainUtils");
 
 const notifiedChannels = new Set();
@@ -45,12 +46,11 @@ function resetStreamerData(streamer) {
   STREAMERS[streamer].msg = false;
 }
 
-async function sendStreamNotification(client, data) {
+async function startStream(client, data) {
   if (mongoose.connection.readyState !== 1) return;
 
   const guild = await client.guilds.fetch(process.env.guildID);
-  const channel = await guild.channels.fetch(process.env.streamChannelID);
-  if (!guild || !channel) return;
+  if (!guild) return;
 
   const eventsList = await eventsModel.findOne({
     guildId: guild.id,
@@ -58,8 +58,18 @@ async function sendStreamNotification(client, data) {
   });
   if (!eventsList) return;
 
-  const { user_login, user_name, game_name, title, viewer_count } = data;
+  const channelsList = await channelModel.findOne({
+    guildId: guild.id,
+  });
+  if (!channelsList) return;
 
+  const channelId = channelsList.streamId;
+  if (!channelId) return;
+
+  const channel = await guild.channels.fetch(channelId);
+  if (!channel) return;
+
+  const { user_login, user_name, game_name, title, viewer_count } = data;
   const { image, url } = createItems(user_name);
 
   let streamList = await streamModel.findOne({
@@ -145,7 +155,7 @@ async function sendStreamNotification(client, data) {
   }, 600_000);
 }
 
-async function updateStreamNotification(client, data) {
+async function updateStream(client, data) {
   if (mongoose.connection.readyState !== 1) return;
 
   const guild = await client.guilds.fetch(process.env.guildID);
@@ -180,8 +190,8 @@ async function updateStreamNotification(client, data) {
       `Streaming **${
         game_name || `Just Chatting`
       }** for ${viewer_count} viewers`
-    );
-  setImage(image);
+    )
+    .setImage(image);
 
   await streamer.msg.edit({
     embeds: [embed],
@@ -191,7 +201,7 @@ async function updateStreamNotification(client, data) {
   console.log(`${consoleTags.app} ${user_name}'s twitch notification updated.`);
 }
 
-async function endStreamNotification(client, channel) {
+async function endStream(client, channel) {
   if (mongoose.connection.readyState !== 1) return;
 
   const guild = await client.guilds.fetch(process.env.guildID);
@@ -212,14 +222,14 @@ async function endStreamNotification(client, channel) {
   await streamModel.updateOne(
     {
       guild: guild.id,
-      Streamer: channelLogin,
+      Streamer: login,
     },
     { IsLive: false }
   );
 
   presenceHandler.mainPresence(client);
 
-  const { result } = await getUserProfile(channelLogin);
+  const { result } = await getUserProfile(login);
   const { offline_image_url } = result;
 
   const announcement = `${channel} has gone offline. 😢`;
@@ -240,7 +250,7 @@ async function endStreamNotification(client, channel) {
 }
 
 module.exports = {
-  sendStreamNotification,
-  updateStreamNotification,
-  endStreamNotification,
+  startStream,
+  updateStream,
+  endStream,
 };

@@ -1,10 +1,10 @@
 const { EmbedBuilder, Events } = require("discord.js");
 const utils = require("../../utils/main/mainUtils");
+const { getUser } = require("../../utils/level/handleLevel");
 const { calculateXP } = require("../../utils/level/handleXPRate");
 const { handleInteractionXp } = require("../../utils/level/handleLevel");
-const Levels = require("discord-xp");
 
-Levels.setURL(process.env.DBTOKEN);
+const xpCooldown = new Set();
 
 const failedEmbed = new EmbedBuilder()
   .setTitle(utils.titles.error)
@@ -17,21 +17,6 @@ module.exports = {
   name: Events.InteractionCreate,
 
   async execute(interaction, client) {
-    if (
-      interaction.commandName !== "roll" &&
-      !interaction.isAutocomplete() &&
-      interaction.guild
-    ) {
-      const user = await Levels.fetch(
-        interaction.user.id,
-        interaction.guild.id
-      );
-
-      const { finalXp } = await calculateXP(interaction, user);
-
-      await handleInteractionXp(interaction, finalXp);
-    }
-
     if (interaction.isAutocomplete()) {
       const { commands } = client;
       const { commandName } = interaction;
@@ -56,8 +41,10 @@ module.exports = {
           `${utils.consoleTags.app} ${user.username} executed ${commandName} command.`
         );
       } catch (error) {
+        const errorText = error.code || error.message;
+
         failedEmbed.setDescription(
-          `Something went wrong while executing ${commandName} command.\nCode: ${error.code}`
+          `Something went wrong while executing ${commandName} command.\nCode: ${errorText}`
         );
 
         console.error(
@@ -92,8 +79,10 @@ module.exports = {
           `${utils.consoleTags.app} ${user.username} executed ${commandName} context menu command.`
         );
       } catch (error) {
+        const errorText = error.code || error.message;
+
         failedEmbed.setDescription(
-          `Something went wrong while executing ${commandName} context Menu command.\nCode: ${error.code}`
+          `Something went wrong while executing ${commandName} context Menu command.\nCode: ${errorText}`
         );
 
         console.error(
@@ -133,8 +122,10 @@ module.exports = {
           `${utils.consoleTags.app} ${user.username} executed ${customId} button.`
         );
       } catch (error) {
+        const errorText = error.code || error.message;
+
         return new Error(
-          `${utils.consoleTags.error} While executing ${customId} button.\nCode: ${error.code}`
+          `${utils.consoleTags.error} While executing ${customId} button.\nCode: ${errorText}`
         );
       }
     } else if (interaction.isModalSubmit()) {
@@ -154,10 +145,30 @@ module.exports = {
           `${utils.consoleTags.app} ${user.username} executed ${customId} modal.`
         );
       } catch (error) {
+        const errorText = error.code || error.message;
+
         return new Error(
-          `${utils.consoleTags.error} While executing ${customId} modal.\nCode: ${error.code}`
+          `${utils.consoleTags.error} While executing ${customId} modal.\nCode: ${errorText}`
         );
       }
     }
+
+    const { commandName, guildId, user } = interaction;
+
+    if (commandName === "roll" || commandName === "blackjack") return;
+    if (interaction.isAutocomplete()) return;
+    if (!guildId) return;
+
+    if (xpCooldown.has(user.id)) return;
+    xpCooldown.add(user.id);
+
+    const levelProfile = await getUser(guildId, user);
+    const XP = await calculateXP(interaction, levelProfile);
+
+    await handleInteractionXp(interaction, XP);
+
+    setTimeout(() => {
+      xpCooldown.delete(user.id);
+    }, 10_000);
   },
 };

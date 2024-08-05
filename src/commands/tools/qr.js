@@ -1,5 +1,4 @@
 const { SlashCommandBuilder, AttachmentBuilder } = require("discord.js");
-const { tags } = require("../../utils/main/mainUtils");
 const { handleAPIError } = require("../../utils/main/handleErrors");
 const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 const axios = require("axios");
@@ -7,7 +6,7 @@ const axios = require("axios");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("qr")
-    .setDescription(`${tags.new} Create a QR code`)
+    .setDescription("Create a QR code")
     .addStringOption((option) =>
       option
         .setName("query")
@@ -32,7 +31,6 @@ module.exports = {
       });
 
     const imageData = Buffer.from(response.data, "binary");
-
     const attachment = new AttachmentBuilder(imageData, "qr.png");
 
     await interaction.reply({
@@ -41,6 +39,6 @@ module.exports = {
 
     success = true;
 
-    handleNonMusicalDeletion(interaction, success, undefined, 5);
+    handleNonMusicalDeletion(interaction, success, 10);
   },
 };

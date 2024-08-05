@@ -2,8 +2,24 @@ const { useTimeline } = require("discord-player");
 const { musicChannelID } = process.env;
 const { consoleTags } = require("./mainUtils");
 
+function parseTime(time) {
+  const parts = time.split(":").map(Number);
+  let seconds = 0;
+
+  if (parts.length === 3) {
+    seconds += parts[0] * 3_600_000;
+    seconds += parts[1] * 60_000;
+    seconds += parts[2];
+  } else if (parts.length === 2) {
+    seconds += parts[0] * 60_000;
+    seconds += parts[1];
+  }
+
+  return seconds;
+}
+
 function calculateTimer(interaction, id, success) {
-  let timer = 2 * 60;
+  let timer = 120_000;
 
   if (success) {
     if (
@@ -21,18 +37,13 @@ function calculateTimer(interaction, id, success) {
         try {
           const { total, current } = timeline.timestamp;
 
-          const duration = total.label;
-          const convertor = duration.split(":");
-          const totalTimer = +convertor[0] * 60 + +convertor[1];
+          const totalDuration = parseTime(total.label);
+          const currentDuration = parseTime(current.label);
 
-          const currentDuration = current.label;
-          const currentConvertor = currentDuration.split(":");
-          const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
+          timer = totalDuration - currentDuration;
 
-          timer = totalTimer - currentTimer;
-
-          if (totalTimer == 0 || timer > 10 * 60) timer = 10 * 60;
-          else if (timer < 1 * 60) timer = 1 * 60;
+          if (timer == 0 || timer > 600_000) timer = 600_000;
+          else if (timer < 60_000) timer = 60_000;
         } catch (error) {
           console.log(
             `${consoleTags.error} While calculating track timer: `,
@@ -47,30 +58,31 @@ function calculateTimer(interaction, id, success) {
 }
 
 function handleInteractionDeletion(interaction, success) {
+  const { commandName, customId, guildId, channel, reactions } = interaction;
   let timer;
 
   if (
-    (success && interaction.commandName?.includes("autoplay")) ||
-    interaction.commandName?.includes("leave") ||
-    interaction.commandName?.includes("search") ||
-    interaction.commandName?.includes("shuffle") ||
-    interaction.customId?.includes("lyrics") ||
-    interaction.commandName?.includes("lyrics") ||
+    (success && commandName?.includes("autoplay")) ||
+    commandName?.includes("leave") ||
+    commandName?.includes("search") ||
+    commandName?.includes("shuffle") ||
+    customId?.includes("lyrics") ||
+    commandName?.includes("lyrics") ||
     success === "favorite"
   ) {
-    timer = 10 * 60;
+    timer = 600_000;
   } else {
-    timer = calculateTimer(interaction, interaction.guildId, success);
+    timer = calculateTimer(interaction, guildId, success);
   }
 
   const un = success ? "" : "un";
-  const timeoutLog = `${consoleTags.warning} Failed to delete ${un}successfull ${interaction.commandName} interaction.`;
-  const reactionLog = `${consoleTags.warning} Failed to remove reactions from ${un}successfull ${interaction.commandName} interaction.`;
+  const timeoutLog = `${consoleTags.warning} Failed to delete ${un}successfull ${commandName} interaction.`;
+  const reactionLog = `${consoleTags.warning} Failed to remove reactions from ${un}successfull ${commandName} interaction.`;
 
   setTimeout(async () => {
-    if (success && interaction?.channel?.id === musicChannelID) {
-      if (interaction.reactions?.cache.size > 0) {
-        await interaction.reactions.removeAll().catch((e) => {
+    if (success && channel.id === musicChannelID) {
+      if (reactions && reactions.cache.size > 0) {
+        await reactions.removeAll().catch((e) => {
           console.log(reactionLog);
         });
       }
@@ -81,19 +93,25 @@ function handleInteractionDeletion(interaction, success) {
         console.log(timeoutLog);
       });
     }
-  }, timer * 1000);
+  }, timer);
 }
 
-async function handleMessageDelection(client, firstMsg, msg, success) {
-  const timer = calculateTimer(false, msg.guild.id, success);
+async function handleMessageDelection(
+  client,
+  firstMsg,
+  msg,
+  success = Boolean
+) {
+  const { guild, channel, author } = msg;
+  const timer = calculateTimer(false, guild.id, success);
 
   const un = success ? "" : "un";
   const timeoutLog = `${consoleTags.warning} Failed to delete ${un}successfull play message.`;
 
   setTimeout(async () => {
-    if (success && msg?.channel?.id === musicChannelID) {
+    if (success && channel.id === musicChannelID) {
       await msg.edit({ components: [] });
-    } else if (msg?.author?.id === client.user.id) {
+    } else if (author.id === client.user.id) {
       try {
         await msg.delete();
         await firstMsg?.delete();
@@ -101,55 +119,58 @@ async function handleMessageDelection(client, firstMsg, msg, success) {
         console.log(timeoutLog);
       }
     }
-  }, timer * 1000);
+  }, timer);
 }
 
-function handleEventDelection(msg) {
-  const timer = calculateTimer(false, msg.guild.id, true);
+function handleEventDelection(msg, success = Boolean) {
+  const timer = calculateTimer(false, msg.guild.id, success);
 
   setTimeout(async () => {
-    await msg?.delete().catch((e) => {
+    await msg.delete().catch((e) => {
       console.log(
-        `${consoleTags.warning} Failed to delete playStart event message.`
+        `${consoleTags.warning} Failed to delete player event message.`
       );
     });
-  }, timer * 1000);
+  }, timer);
 }
 
-function handleFollowUpDeletion(interaction, msg, success) {
-  const timer = calculateTimer(interaction, interaction.guildId, success);
+function handleFollowUpDeletion(interaction, msg, success = Boolean) {
+  const { guildId, commandName, channel } = interaction;
+  const timer = calculateTimer(interaction, guildId, success);
 
   const un = success ? "" : "un";
-  const timeoutLog = `${consoleTags.warning} Failed to delete ${un}successfull ${interaction.commandName} follow-up.`;
+  const timeoutLog = `${consoleTags.warning} Failed to delete ${un}successfull ${commandName} follow-up.`;
 
   setTimeout(async () => {
-    if (success && interaction.channel?.id === musicChannelID)
-      await msg?.edit({ components: [] });
-    else {
-      await msg?.delete().catch((e) => {
+    if (success && channel.id === musicChannelID) {
+      await msg.edit({ components: [] });
+    } else {
+      await msg.delete().catch((e) => {
         console.log(timeoutLog);
       });
     }
-  }, timer * 1000);
+  }, timer);
 }
 
-function handleNonMusicalDeletion(interaction, success, channelId, minutes) {
+function handleNonMusicalDeletion(
+  interaction,
+  success = Boolean,
+  minutes = Number
+) {
+  const { reactions } = interaction;
   const timer = success ? minutes : 2;
 
-  const un = success ? "" : "un";
-  const timeoutLog = `${consoleTags.warning} Failed to delete ${un}successfull ${interaction.commandName} interaction.`;
-
   setTimeout(async () => {
-    if (success && interaction.channel.id === channelId) return;
-    else {
-      await interaction.deleteReply().catch((e) => {
-        console.log(timeoutLog);
-      });
+    if (reactions && reactions.cache.size) {
+      await reactions.removeAll();
     }
-  }, timer * 60 * 1000);
+
+    await interaction.editReply({ components: [] });
+  }, timer * 60_000);
 }
 
 module.exports = {
+  parseTime,
   handleInteractionDeletion,
   handleMessageDelection,
   handleEventDelection,

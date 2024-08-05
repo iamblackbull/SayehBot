@@ -1,20 +1,17 @@
+const xpModel = require("../../database/xpModel");
 const { subRole1, subRole2, subRole3, boostRole } = process.env;
-let cacheXp = 0;
 
-function getRandomXp() {
-  return Math.floor(Math.random() * 100 + 30); /// 30 - 100
-}
+module.exports.calculateXP = async (input, user) => {
+  const xpProfile = await xpModel.findOne({
+    guildId: user.guildId,
+  });
 
-async function calculateXP(input, user) {
-  let firstXp;
+  const baseXP = xpProfile ? xpProfile.basexp : 20;
+  const scale = 1.1;
 
-  do {
-    firstXp = getRandomXp();
-  } while (firstXp === cacheXp);
-  cacheXp = firstXp;
+  const XP = Math.floor(baseXP * Math.pow(scale, user.level));
 
-  let finalXp = parseInt(firstXp);
-  let boost = false;
+  let boost = 1;
 
   const roleMultipliers = new Map([
     [subRole1, 1.25],
@@ -22,24 +19,18 @@ async function calculateXP(input, user) {
     [subRole3, 2],
   ]);
 
-  if (user.level < 60 || !user.level || user.level !== undefined) {
-    for (const [role, multiplier] of roleMultipliers) {
-      if (input.member.roles.cache.has(role)) {
-        boost = multiplier;
-        break;
-      }
+  for (const [role, multiplier] of roleMultipliers) {
+    if (input.member.roles.cache.has(role)) {
+      boost = multiplier;
+      break;
     }
-
-    if (input.member.roles.cache.has(boostRole)) {
-      boost = boost ? boost + 0.5 : 1.5;
-    }
-
-    if (boost) finalXp = parseInt(firstXp * boost);
   }
 
-  return { finalXp };
-}
+  if (input.member.roles.cache.has(boostRole)) {
+    boost += 0.5;
+  }
 
-module.exports = {
-  calculateXP,
+  const finalXP = Math.floor(XP * boost);
+
+  return finalXP;
 };

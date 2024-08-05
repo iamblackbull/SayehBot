@@ -8,7 +8,7 @@ module.exports = (client) => {
   client.checkSystem = async () => {
     const { cpuPercent, memPercent } = await getSystemUsage();
 
-    if (memPercent < 90) return;
+    if (memPercent < 80) return;
 
     const now = Date.now();
 
@@ -18,7 +18,7 @@ module.exports = (client) => {
     const developer = await client.users.fetch(process.env.developerID);
     if (!developer) return;
 
-    const content = `CPU: **${cpuPercent} %** | RAM: **${memPercent} %**`;
+    const content = `[Warning] CPU: **${cpuPercent} %** | RAM: **${memPercent} %**`;
 
     await developer.send(content);
 

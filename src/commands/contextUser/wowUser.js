@@ -148,7 +148,7 @@ module.exports = {
 
             success = true;
 
-            await bookmark(interaction, wowEmbed);
+            await bookmark(interaction);
 
             const collector = pageReact(interaction, wowEmbed);
 
@@ -232,6 +232,6 @@ module.exports = {
       }
     }
 
-    handleNonMusicalDeletion(interaction, success, undefined, 10);
+    handleNonMusicalDeletion(interaction, success, 10);
   },
 };

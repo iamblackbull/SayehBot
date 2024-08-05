@@ -7,7 +7,7 @@ const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("scanurl")
-    .setDescription(`${utils.tags.new} Scan a url for viruses`)
+    .setDescription("Scan a url for viruses")
     .addStringOption((option) =>
       option.setName("url").setDescription("Input a url").setRequired(true)
     ),
@@ -41,6 +41,6 @@ module.exports = {
       success = true;
     }
 
-    handleNonMusicalDeletion(interaction, success, undefined, 5);
+    handleNonMusicalDeletion(interaction, success, 10);
   },
 };

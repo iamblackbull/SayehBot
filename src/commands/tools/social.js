@@ -11,7 +11,7 @@ const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("social")
-    .setDescription("Get info about Sayeh's social medias"),
+    .setDescription("Follow Sayeh's social medias"),
 
   async execute(interaction) {
     const embed = new EmbedBuilder()
@@ -56,6 +56,6 @@ module.exports = {
       components: [button],
     });
 
-    handleNonMusicalDeletion(interaction, true, undefined, 10);
+    handleNonMusicalDeletion(interaction, true, 10);
   },
 };

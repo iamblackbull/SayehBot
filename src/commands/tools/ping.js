@@ -8,7 +8,7 @@ const utils = require("../../utils/main/mainUtils");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("ping")
-    .setDescription(`${utils.tags.updated} Get info about latency of the bot`)
+    .setDescription("Get info about latency of the bot")
     .addStringOption((option) =>
       option.setName("host").setDescription("Input an host name or ip")
     ),
@@ -71,8 +71,12 @@ module.exports = {
 
         if (reaction.emoji.name == "➡" && page < totalPages - 1) {
           page++;
+
+          embed.setThumbnail();
         } else if (reaction.emoji.name == "⬅" && page !== 0) {
           --page;
+
+          embed.setThumbnail(utils.thumbnails.ping);
         } else return;
 
         embed.setDescription(pages[page]).setFooter({
@@ -84,6 +88,6 @@ module.exports = {
       });
     }
 
-    handleNonMusicalDeletion(interaction, success, undefined, 5);
+    handleNonMusicalDeletion(interaction, success, 10);
   },
 };

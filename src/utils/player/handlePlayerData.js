@@ -9,9 +9,9 @@ async function handleData(guildId, nowPlaying) {
   await updatePlayerData(guildId, updates);
 }
 
-async function handleSkipData(interaction) {
+async function handleSkipData(guildId) {
   const updates = { isSkipped: true };
-  await updatePlayerData(interaction.guildId, updates);
+  await updatePlayerData(guildId, updates);
 }
 
 module.exports = {

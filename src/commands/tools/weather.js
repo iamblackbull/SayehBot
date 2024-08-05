@@ -7,7 +7,7 @@ const axios = require("axios");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("weather")
-    .setDescription(`${utils.tags.updated} Get info about weather conditions`)
+    .setDescription("Get info about weather conditions")
     .addStringOption((option) =>
       option
         .setName("location")
@@ -149,6 +149,6 @@ module.exports = {
       success = true;
     }
 
-    handleNonMusicalDeletion(interaction, success, undefined, 10);
+    handleNonMusicalDeletion(interaction, success, 10);
   },
 };

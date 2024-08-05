@@ -13,9 +13,18 @@ const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("warn")
-    .setDescription(`${utils.tags.mod} Warn a user`)
+    .setDescription(`${utils.tags.updated} ${utils.tags.mod} Warn a user`)
     .addUserOption((option) =>
-      option.setName("user").setDescription("Pick a member").setRequired(true)
+      option
+        .setName("user")
+        .setDescription("Pick a member to warn")
+        .setRequired(true)
+    )
+    .addStringOption((option) =>
+      option
+        .setName("reason")
+        .setDescription("Input a reason for this warning")
+        .setRequired(false)
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .setDMPermission(false),
@@ -24,6 +33,7 @@ module.exports = {
     let success = false;
     const { guild, options, user } = interaction;
     const target = options.getUser("user");
+    const reason = options.getString("reason") || "Warned by a moderator.";
     const targetId = target.id;
 
     const member = await guild.members.fetch(targetId);
@@ -47,7 +57,7 @@ module.exports = {
         fetchReply: true,
       });
 
-      const { warnSuccess, warns } = await warn(user, target, guild.id);
+      const { warnSuccess, warns } = await warn(user, target, guild.id, reason);
 
       success = warnSuccess;
 
@@ -68,6 +78,6 @@ module.exports = {
       });
     }
 
-    handleNonMusicalDeletion(interaction, success, undefined, 5);
+    handleNonMusicalDeletion(interaction, success, 10);
   },
 };

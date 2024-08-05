@@ -3,7 +3,7 @@ const { gifs, colors } = require("../../utils/main/mainUtils");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("finger")
+    .setName("flip")
     .setDescription("Flip someone off")
     .addUserOption((option) =>
       option.setName("user").setDescription("Pick a member").setRequired(true)

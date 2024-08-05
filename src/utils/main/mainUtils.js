@@ -3,18 +3,17 @@ const titles = {
   delete: "**🚮 Delete**",
   help: "**❔ Help**",
   ping: "**📶 Ping**",
-  system: "**💻 System**",
   qr: "**⏹ QR Code**",
   scan: "**🌍 Website Virus Scan**",
   gamble_winner: "**🥇 Winner**",
-  gamble_loser: "**☹ Loser**",
+  gamble_loser: "**😢 Loser**",
   bookmark: "**🔖 Bookmark**",
   level: "**🤖 Leveling System**",
-  leaderboard: "🎖 Leaderboard",
+  leaderboard: "🏅 Leaderboard",
   birthday: "**🎂 Birthday**",
-  commands: "**Available Commands**",
-  presence: "**Presence Updated**",
-  profile: "**Profile Updated**",
+  commands: "**/ Available Commands**",
+  presence: "**👤 Presence Updated**",
+  profile: "**👤 Profile Updated**",
   error: "**Error**",
   warn: "**Target Warned**",
   warning: "**Warning!**",
@@ -25,15 +24,27 @@ const titles = {
   report_success: "**Successfully Reported**",
   action_failed: "**Action Failed**",
   simulate: "**Simulation**",
-  info: "**SayehBot Info**",
+  info: "**Bot Info**",
   events: "**Events**",
   website: "**sayehgame.com**",
   yell: "**📢 Yell**",
   announce: "**Announcement**",
+  blackjack: "🃏 𝐁𝐥𝐚𝐜𝐤𝐣𝐚𝐜𝐤",
+};
+
+const events = {
+  welcome: "🎀 Welcome",
+  leave: "👋 Leave",
+  boost: "🚀 Boost",
+  birthday: "🎂 Birthday",
+  stream: "📺 Stream",
+  video: "📺 Video",
+  level: "🥇 Level",
+  mod: "⚔️ Moderation",
 };
 
 const presences = {
-  main: "Chilling Panda 🐼💤",
+  main: "𝑪𝒉𝒊𝒍𝒍𝒊𝒏𝒈 𝑷𝒂𝒏𝒅𝒂 🐼💤",
   stream: "on Twitch 📺",
   video: "New Video on YouTube! 📺",
 };
@@ -51,7 +62,6 @@ const texts = {
   wow: "World of Warcraft",
   twitch: "Twitch",
   youtube: "YouTube",
-  kick: "Kick",
   telegram: "Telegram",
   instagram: "Instagram",
   steam: "Steam",
@@ -61,7 +71,7 @@ const texts = {
   website: "Website",
 };
 
-const tag = "everyone";
+const tag = "@everyone";
 
 const colors = {
   default: "#25bfc4",
@@ -79,6 +89,7 @@ const colors = {
   imdb: "#deb522",
   gamble_winner: "#001eff",
   gamble_loser: "#d20202",
+  casino: "#2b07b8",
   sunny_weather: "#ffe700",
   clear_weather: "#00ccff",
   rain_weather: "#7f9ba6",
@@ -121,6 +132,7 @@ const thumbnails = {
   access: "https://i.imgur.com/iJSVpii.png",
   case: "https://i.imgur.com/pHfa5pw.png",
   roll: "https://i.imgur.com/851YpFE.png",
+  casino: "https://i.imgur.com/NabJ4ov.png",
   bookmark: "https://i.imgur.com/FjwLaip.png",
   twitch_sayeh: "https://i.imgur.com/7aO5p95.png",
   twitch_hamid: "https://i.imgur.com/VdPzgLm.png",
@@ -158,7 +170,7 @@ const warnPenalties = [
   { label: "30 Minutes Timeout", timer: 1_800_000 },
   { label: "1 Hour Timeout", timer: 3_600_000 },
   { label: "5 Hours Timeout", timer: 18_000_000 },
-  { label: "12 Hours Time out", timer: 43_200_000 },
+  { label: "12 Hours Timeout", timer: 43_200_000 },
   { label: "1 Day Timeout", timer: 86_400_000 },
   { label: "3 Days Timeout", timer: 259_200_000 },
   { label: "1 Week Timeout", timer: 604_800_000 },
@@ -202,17 +214,27 @@ const tags = {
   new: "[New]",
   updated: "[Updated]",
   mod: "[Mods-only]",
+  game: "[Game]",
 };
 
 const consoleTags = {
-  app: "[Application Logs]",
+  app: "[Application]",
   notif: "[Notification]",
   warning: "[Warning]",
   error: "[Error]",
+  player: "[Player]",
+};
+
+const results = {
+  won: "𝐘𝐨𝐮 𝐰𝐨𝐧!",
+  lost: "𝐘𝐨𝐮 𝐥𝐨𝐬𝐭.",
+  busted: "𝐁𝐮𝐬𝐭𝐞𝐝! 𝐘𝐨𝐮 𝐥𝐨𝐬𝐭.",
+  tie: "𝐓𝐢𝐞!",
 };
 
 module.exports = {
   titles,
+  events,
   presences,
   labels,
   colors,
@@ -229,4 +251,5 @@ module.exports = {
   modes,
   tags,
   consoleTags,
+  results,
 };

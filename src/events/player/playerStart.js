@@ -9,9 +9,14 @@ module.exports = {
 
   async execute(queue, song) {
     ////////////// return checks //////////////
-    const playerList = await playerModel.findOne({
-      guildId: queue.metadata.guild,
-    });
+    const playerList = await playerModel.findOne(
+      {
+        guildId: queue.metadata.guild,
+      },
+      {
+        upsert: true,
+      }
+    );
 
     if (playerList.isSkipped || playerList.isJustAdded)
       return await playerModel.updateOne(
@@ -42,6 +47,6 @@ module.exports = {
       components: [button],
     });
 
-    handleEventDelection(msg);
+    handleEventDelection(msg, true);
   },
 };

@@ -1,12 +1,9 @@
 const { SlashCommandBuilder, AttachmentBuilder } = require("discord.js");
-const { DBTOKEN, rankChannelID } = process.env;
-const errorHandler = require("../../utils/main/handleErrors");
+const { mongoose } = require("mongoose");
+const { getUser } = require("../../utils/level/handleLevel");
 const { generateCard } = require("../../utils/level/generateCard");
 const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
-const { mongoose } = require("mongoose");
-const Levels = require("discord-xp");
-
-Levels.setURL(DBTOKEN);
+const errorHandler = require("../../utils/main/handleErrors");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -18,22 +15,21 @@ module.exports = {
     .setDMPermission(false),
 
   async execute(interaction) {
+    let success = false;
     const target = interaction.options.getUser("user") || interaction.user;
     const memberTarget = interaction.guild.members.cache.get(target.id);
-    const user = await Levels.fetch(target.id, interaction.guild.id, true);
-    const qualified = user.xp > 0;
-    let success = false;
+    const levelProfile = await getUser(interaction.guild.id, target);
 
     if (mongoose.connection.readyState !== 1) {
       errorHandler.handleDatabaseError(interaction);
-    } else if (!qualified) {
+    } else if (levelProfile.xp <= 0) {
       errorHandler.handleXpError(interaction, target);
     } else {
       await interaction.deferReply({
         fetchReply: true,
       });
 
-      const { canvas } = await generateCard(target, memberTarget, user);
+      const canvas = await generateCard(target, memberTarget, levelProfile);
 
       const attachment = new AttachmentBuilder(canvas.toBuffer());
 
@@ -44,6 +40,6 @@ module.exports = {
       success = true;
     }
 
-    handleNonMusicalDeletion(interaction, success, rankChannelID, 5);
+    handleNonMusicalDeletion(interaction, success, 10);
   },
 };

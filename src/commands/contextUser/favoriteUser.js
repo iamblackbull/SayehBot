@@ -46,7 +46,7 @@ module.exports = {
 
       ////////////// first song data //////////////
       const query = splitPlaylist[0];
-      const result = await search(query);
+      const result = await search(query, "auto");
 
       const song = result.tracks[0];
 
@@ -80,7 +80,7 @@ module.exports = {
             playlistLength
           );
 
-          await handleData(interaction, embedData.nowPlaying);
+          await handleData(interaction.guildId, embedData.nowPlaying);
 
           if (!queue.node.isPlaying() && !queue.node.isPaused())
             await queue.node.play();

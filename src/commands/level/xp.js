@@ -6,79 +6,37 @@ const {
 const { mongoose } = require("mongoose");
 const errorHandler = require("../../utils/main/handleErrors");
 const eventsModel = require("../../database/eventsModel");
-const { handleInteractionCommand } = require("../../utils/level/handleLevel");
+const xpModel = require("../../database/xpModel");
 const utils = require("../../utils/main/mainUtils");
 const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
-const Levels = require("discord-xp");
-
-Levels.setURL(process.env.DBTOKEN);
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("xp")
-    .setDescription(`${utils.tags.mod} Manage user level and XP`)
-    .addStringOption((option) =>
-      option
-        .setName("action")
-        .setDescription("Select an action to perform")
-        .setRequired(true)
-        .addChoices(
-          {
-            name: "Give",
-            value: "granted",
-          },
-          {
-            name: "Take",
-            value: "removed",
-          }
-        )
-    )
-    .addStringOption((option) =>
-      option
-        .setName("unit")
-        .setDescription("Select unit")
-        .setRequired(true)
-        .addChoices(
-          {
-            name: "Level",
-            value: "level",
-          },
-          {
-            name: "XP",
-            value: "xp",
-          }
-        )
-    )
+    .setDescription(`${utils.tags.updated} ${utils.tags.mod} Change XP rate of this server`)
     .addIntegerOption((option) =>
       option
-        .setName("amount")
-        .setDescription("Input the amount")
+        .setName("rate")
+        .setDescription("Input a number to set as XP rate")
+        .setMinValue(1)
+        .setMaxValue(100)
         .setRequired(true)
-    )
-    .addUserOption((option) =>
-      option.setName("user").setDescription("Pick any member").setRequired(true)
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
     .setDMPermission(false),
 
   async execute(interaction) {
     let success = false;
-    const { options, guild } = interaction;
-    const target = options.getUser("user");
-    const action = options.get("action").value;
-    const unit = options.get("unit").value;
-    const amount = options.getInteger("amount");
-    const userLevel = await Levels.fetch(target.id, guild.id, true);
+    const { options, guildId } = interaction;
+    const rate = options.getInteger("rate");
 
     const eventsList = await eventsModel.findOne({
-      guildId: guild.id,
+      guildId,
       Level: true,
     });
 
     if (mongoose.connection.readyState !== 1) {
       errorHandler.handleDatabaseError(interaction);
-    } else if (userLevel <= 0) {
-      errorHandler.handleXpError(interaction, target);
     } else if (!eventsList) {
       errorHandler.handleDisabledError(interaction);
     } else {
@@ -86,16 +44,25 @@ module.exports = {
         fetchReply: true,
       });
 
-      const { Action, Unit } = await handleInteractionCommand(
-        interaction,
-        amount,
-        action,
-        unit
+      const xpProfile = await xpModel.findOneAndUpdate(
+        {
+          guildId,
+        },
+        {
+          basexp: rate,
+        },
+        { upsert: true }
+      );
+
+      console.log(
+        `${utils.consoleTags.app} Base XP of ${interaction.guild.name} server has been set to ${xpProfile.basexp} by ${interaction.user.username}`
       );
 
       const embed = new EmbedBuilder()
         .setTitle(utils.titles.level)
-        .setDescription(`**${amount} ${Unit}** ${Action} ${target}.`)
+        .setDescription(
+          `XP rate of this server has been set to ${xpProfile.basexp}`
+        )
         .setColor(utils.colors.default);
 
       await interaction.editReply({
@@ -105,6 +72,6 @@ module.exports = {
       success = true;
     }
 
-    handleNonMusicalDeletion(interaction, success, undefined, 5);
+    handleNonMusicalDeletion(interaction, success, 10);
   },
 };

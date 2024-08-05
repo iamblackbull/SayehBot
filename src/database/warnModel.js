@@ -5,6 +5,7 @@ const warnSchema = new mongoose.Schema({
   UserId: String,
   Username: String,
   Warns: Number,
+  Reason: String,
   isApplied: Boolean,
 });
 

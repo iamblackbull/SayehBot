@@ -7,6 +7,7 @@ const {
 const { AudioFilters, useTimeline } = require("discord-player");
 const { filters } = require("../../utils/player/musicUtils");
 const { createFilterEmbed } = require("../../utils/player/createMusicEmbed");
+const { parseTime } = require("../../utils/main/handleDeletion");
 const errorHandler = require("../../utils/main/handleErrors");
 const { consoleTags } = require("../../utils/main/mainUtils");
 const deletionHandler = require("../../utils/main/handleDeletion");
@@ -81,21 +82,18 @@ module.exports = {
 
         ////////////// handling menu interaction //////////////
         const { timestamp } = useTimeline(guildId);
-        const duration = timestamp.total.label;
-        const convertor = duration.split(":");
-        const totalTimer = +convertor[0] * 60 + +convertor[1];
 
-        const currentDuration = timestamp.current.label;
-        const currentConvertor = currentDuration.split(":");
-        const currentTimer = +currentConvertor[0] * 60 + +currentConvertor[1];
+        const totalDuration = parseTime(timestamp.total.label);
+        const currentDuration = parseTime(timestamp.current.label);
 
-        let timer = totalTimer - currentTimer;
+        let timer = totalDuration - currentDuration;
 
-        if (timer > 10 * 60) timer = 10 * 60;
-        if (timer < 1 * 60) timer = 1 * 60;
+        if (timer < 60_000) timer = 60_000;
 
-        if (totalTimer == 0) {
+        if (timer == 0) {
           await errorHandler.handleLiveTrackError(interaction);
+        } else if (timer > 600_000) {
+          await errorHandler.handleTooLongTrackError(interaction);
         } else {
           const filterEmbed = await interaction.reply({
             embeds: [embed],
@@ -108,7 +106,7 @@ module.exports = {
             const collector = await filterEmbed.createMessageComponentCollector(
               {
                 filter: (input) => input.user.id === user.id,
-                time: timer * 1000,
+                time: timer,
               }
             );
 

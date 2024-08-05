@@ -7,9 +7,9 @@ const booleans = {
 };
 
 const cooldowns = {
-  leaveOnStopCooldown: 5 * 60 * 1000,
-  leaveOnEndCooldown: 5 * 60 * 1000,
-  leaveOnEmptyCooldown: 10 * 1000,
+  leaveOnStopCooldown: 300_000,
+  leaveOnEndCooldown: 300_000,
+  leaveOnEmptyCooldown: 10_000,
 };
 
 const ytdlOptions = {

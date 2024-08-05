@@ -3,6 +3,7 @@ const { mainPresence } = require("../../utils/main/handlePresence");
 const intervals = require("../../utils/client/intervals");
 const { getWarnClient } = require("../../utils/main/warnPenalty");
 const { getReportClient } = require("../../utils/main/handleReports");
+const { getLevelClient } = require("../../utils/level/levelActions");
 const { consoleTags } = require("../../utils/main/mainUtils");
 
 module.exports = {
@@ -12,14 +13,13 @@ module.exports = {
   async execute(client) {
     await mainPresence(client);
 
-    client.emit("twitch");
+    intervals.setIntervals(client);
 
     getWarnClient(client);
     getReportClient(client);
+    getLevelClient(client);
 
     console.log(`${consoleTags.app} SayehBot is online.`);
-
-    intervals.setIntervals(client);
 
     setInterval(() => {
       intervals.clearIntervals();

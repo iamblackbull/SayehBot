@@ -1,12 +1,11 @@
 const { SlashCommandBuilder, PermissionsBitField } = require("discord.js");
 const { handleData } = require("../../utils/player/handlePlayerData");
-const { searchYouTube } = require("../../utils/player/handleSearch");
+const { search } = require("../../utils/player/handleSearch");
 const { createQueue } = require("../../utils/player/createQueue");
 const embedCreator = require("../../utils/player/createMusicEmbed");
 const errorHandler = require("../../utils/main/handleErrors");
 const { createButtons } = require("../../utils/main/createButtons");
 const { searchReact } = require("../../utils/main/handleReaction");
-const { consoleTags } = require("../../utils/main/mainUtils");
 const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
@@ -35,7 +34,7 @@ module.exports = {
       errorHandler.handleVoiceChannelError(interaction);
     } else {
       const query = interaction.options.getString("query", true);
-      const result = await searchYouTube(query);
+      const result = await search(query, "youtubeSearch");
 
       if (!result.hasTracks()) {
         errorHandler.handleNoResultError(interaction);
@@ -78,12 +77,15 @@ module.exports = {
 
           await reaction.users.remove(user.id);
 
-          ////////////// set target song //////////////
-          const index = parseInt(reaction.emoji.name.charAt(0)) - 1;
-          const song = result.tracks[index];
-
           try {
+            ////////////// set target song //////////////
+            const index = parseInt(reaction.emoji.name.charAt(0)) - 1;
+            const song = result.tracks[index];
+
             ////////////// add track to queue //////////////
+            const entry = queue.tasksQueue.aquire();
+
+            await entry.getTask();
             await queue.addTrack(song);
 
             ////////////// follow-up response //////////////
@@ -94,10 +96,12 @@ module.exports = {
               song
             );
 
-            await handleData(interaction, nowPlaying);
+            await handleData(interaction.guildId, nowPlaying);
 
             if (!queue.node.isPlaying() && !queue.node.isPaused())
               await queue.node.play();
+
+            await queue.tasksQueue.release();
 
             const button = createButtons(nowPlaying);
 
@@ -108,28 +112,7 @@ module.exports = {
 
             deletionHandler.handleFollowUpDeletion(interaction, msg, success);
           } catch (error) {
-            if (
-              error.message.includes("Sign in to confirm your age.") ||
-              error.message.includes("The following content may contain")
-            ) {
-              errorHandler.handleRestriceError(interaction);
-            } else if (
-              error.message ===
-                "Cannot read properties of null (reading 'createStream')" ||
-              error.message.includes(
-                "Failed to fetch resources for ytdl streaming"
-              ) ||
-              error.message.includes("Could not extract stream for this track")
-            ) {
-              errorHandler.handleThirdPartyError(interaction);
-            } else {
-              errorHandler.handleUnknownError(interaction);
-
-              console.error(
-                `${consoleTags.error} While executing ${interaction.commandName} command: `,
-                error
-              );
-            }
+            errorHandler.handleMusicError(interaction, error);
           }
         });
       }

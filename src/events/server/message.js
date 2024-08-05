@@ -1,14 +1,14 @@
 ﻿const { PermissionFlagsBits, Events } = require("discord.js");
+const eventsModel = require("../../database/eventsModel");
 const { scan } = require("../../utils/api/scanUrlApi");
 const { bannedWords } = require("../../utils/main/mainUtils");
 const { warn } = require("../../utils/main/warnTarget");
+const { getUser } = require("../../utils/level/handleLevel");
 const { calculateXP } = require("../../utils/level/handleXPRate");
 const { handleMessageXp } = require("../../utils/level/handleLevel");
-const eventsModel = require("../../database/eventsModel");
 const { consoleTags } = require("../../utils/main/mainUtils");
-const Levels = require("discord-xp");
 
-Levels.setURL(process.env.DBTOKEN);
+const xpCooldown = new Set();
 
 module.exports = {
   name: Events.MessageCreate,
@@ -18,7 +18,7 @@ module.exports = {
     if (message.webhookId) return;
     if (!message.guild) return;
 
-    const { member, content, channel, author, guild } = message;
+    const { member, content, channel, author, guildId } = message;
 
     const hasPermission = member.permissions.has(
       PermissionFlagsBits.ManageMessages
@@ -45,7 +45,7 @@ module.exports = {
 
       if (virus) {
         ban = true;
-        reason = "virus url";
+        reason = `Detected url with virus: ${url}`;
       } else {
         if (hasPermission) return;
 
@@ -63,46 +63,53 @@ module.exports = {
 
         if (url.includes("discord.gg")) {
           ban = true;
-          reason = "discord url";
+          reason = `Usage of a discord url: ${url}`;
         } else {
           if (ignoredChannels.includes(channel.id)) return;
 
           ban = true;
-          reason = "url";
+          reason = `Unauthorized use of a url: ${url}`;
         }
       }
     } else if (bannedWords.includes(content.toLowerCase())) {
       if (hasPermission) return;
 
       ban = true;
-      reason = "text";
+      reason = "Usage of a banned word.";
     } else if (content.toLowerCase().includes("@everyone")) {
       if (hasPermission) return;
 
       ban = true;
-      reason = "unauthorized use of @everyone";
+      reason = "Unauthorized use of @everyone.";
     }
 
     const eventsList = await eventsModel.findOne({
-      guildId: guild.id,
+      guildId: guildId,
       Moderation: true,
     });
 
     if (ban && eventsList) {
       console.log(
-        `${consoleTags.app} Deleted a message contained a ${reason} in ${channel.name} by ${author.username}.`
+        `${consoleTags.app} Deleted a message contained ${reason} in ${channel.name} by ${author.username}.`
       );
 
       message.delete();
 
-      if (!hasPermission) await warn(client.user, author, guild.id);
+      if (!hasPermission) await warn(client.user, author, guildId, reason);
     } else {
       if (channel.id === process.env.selfpromoChannelID) return;
 
-      const user = await Levels.fetch(author.id, guild.id);
-      const { finalXp } = await calculateXP(message, user);
+      if (xpCooldown.has(author.id)) return;
+      xpCooldown.add(author.id);
 
-      await handleMessageXp(message, finalXp);
+      const levelProfile = await getUser(guildId, author);
+      const XP = await calculateXP(message, levelProfile);
+
+      await handleMessageXp(message, XP);
+
+      setTimeout(() => {
+        xpCooldown.delete(author.id);
+      }, 10_000);
     }
   },
 };

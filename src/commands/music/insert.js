@@ -7,7 +7,6 @@ const { createQueue } = require("../../utils/player/createQueue");
 const { createTrackEmbed } = require("../../utils/player/createMusicEmbed");
 const { search } = require("../../utils/player/handleSearch");
 const { createButtons } = require("../../utils/main/createButtons");
-const { consoleTags } = require("../../utils/main/mainUtils");
 const deletionHandler = require("../../utils/main/handleDeletion");
 
 module.exports = {
@@ -35,7 +34,8 @@ module.exports = {
     const query = interaction.options.getString("query", true);
     if (!query) return;
 
-    const result = await search(query);
+    const engine = query.startsWith("https") ? "auto" : "youtube";
+    const result = await search(query, engine);
     if (!result.hasTracks()) return;
 
     const respond = response(result);
@@ -55,8 +55,8 @@ module.exports = {
       errorHandler.handleVoiceChannelError(interaction);
     } else {
       const query = interaction.options.getString("query", true);
-
-      const result = await search(query);
+      const engine = query.startsWith("https") ? "auto" : "youtube";
+      const result = await search(query, engine);
 
       if (!result.hasTracks()) {
         errorHandler.handleNoResultError(interaction);
@@ -86,9 +86,11 @@ module.exports = {
             target = queue.tracks.size + 1;
           }
 
-          const song = result.tracks[0];
-
           try {
+            const song = result.tracks[0];
+            const entry = queue.tasksQueue.aquire();
+
+            await entry.getTask();
             await queue.insertTrack(song, target - 1);
 
             const { embed, nowPlaying } = createTrackEmbed(
@@ -102,10 +104,12 @@ module.exports = {
               embed.setTitle(`**${titles.track} ${target}**`);
             }
 
-            await handleData(interaction, nowPlaying);
+            await handleData(interaction.guildId, nowPlaying);
 
             if (!queue.node.isPlaying() && !queue.node.isPaused())
               await queue.node.play();
+
+            await queue.tasksQueue.release();
 
             const button = createButtons(nowPlaying);
 
@@ -116,28 +120,7 @@ module.exports = {
 
             success = true;
           } catch (error) {
-            if (
-              error.message.includes("Sign in to confirm your age.") ||
-              error.message.includes("The following content may contain")
-            ) {
-              errorHandler.handleRestriceError(interaction);
-            } else if (
-              error.message ===
-                "Cannot read properties of null (reading 'createStream')" ||
-              error.message.includes(
-                "Failed to fetch resources for ytdl streaming"
-              ) ||
-              error.message.includes("Could not extract stream for this track")
-            ) {
-              errorHandler.handleThirdPartyError(interaction);
-            } else {
-              errorHandler.handleUnknownError(interaction);
-
-              console.error(
-                `${consoleTags.error} While executing ${interaction.commandName} command: `,
-                error
-              );
-            }
+            errorHandler.handleMusicError(interaction, error);
           }
         }
       }

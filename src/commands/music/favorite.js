@@ -118,7 +118,7 @@ module.exports = {
         ? inputQuery
         : splitPlaylist[0];
 
-      const result = await search(query);
+      const result = await search(query, "auto");
 
       const song = result.tracks[0];
 
@@ -156,7 +156,7 @@ module.exports = {
                   playlistLength
                 );
 
-              await handleData(interaction, nowPlaying);
+              await handleData(interaction.guildId, nowPlaying);
 
               if (!queue.node.isPlaying() && !queue.node.isPaused())
                 await queue.node.play();
@@ -199,12 +199,7 @@ module.exports = {
               components: [button],
             });
 
-            await favoriteHandler.handleButtons(
-              favoriteEmbed,
-              client,
-              interaction,
-              song
-            );
+            await favoriteHandler.handleButtons(client, interaction, song);
           } else {
             const stringPlaylist = favoriteList.Playlist.map(
               (song, index) =>
@@ -279,6 +274,7 @@ module.exports = {
               await favoriteHandler.handleResult(interaction, result);
 
             const embed = embedCreator.createFavoriteEmbed(
+              interaction.user,
               song,
               favoriteMode,
               favoriteLength
@@ -292,12 +288,7 @@ module.exports = {
 
             success = "favorite";
 
-            await favoriteHandler.handleButtons(
-              favoriteEmbed,
-              client,
-              interaction,
-              song
-            );
+            await favoriteHandler.handleButtons(client, interaction, song);
           }
 
           break;
@@ -338,7 +329,7 @@ module.exports = {
         ////////////// handling default subcommad just in case //////////////
         default: {
           console.error(
-            `${consoleTags.error} Something went wrong while executing ${interaction.commandName} subcommand.`
+            `${consoleTags.error} Something went wrong while executing ${interaction.commandName} ${sub} command.`
           );
         }
       }

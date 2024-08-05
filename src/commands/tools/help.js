@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const utils = require("../../utils/main/mainUtils");
+const { maxLevel } = require("../../utils/level/cardUtils");
 const { pageReact } = require("../../utils/main/handleReaction");
 const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 
@@ -39,8 +40,9 @@ module.exports = {
       \n\n## 💕 Custom Favorite Playlist :
       \nYou can add or remove a track from your favorite playlist by clicking the (♥) button whenever a track is playling. You can modify or play your favorite playlist at anytime with **\`/favorite\`** .
       \n\n### 📝 Note :
-      \n- 🏁 Level Cap: **60**
-      \n- 🎲 You will win or lose XP by using **\`/roll\`** . You can also win **10,000** XP by guessing right your upcoming roll! (30 sec cooldown)`,
+      \n- 🏁 Level Cap: **${maxLevel}**
+      \n- 🎲 You will win or lose XP by using **\`/roll\`** . You can also win **50,000** XP by guessing right your upcoming roll! (30 sec cooldown)
+      \n- 🃏 You can win or lose XP by playing **\`/blackjack\`** .`,
     ];
 
     let page = 0;
@@ -83,6 +85,6 @@ module.exports = {
       });
     });
 
-    handleNonMusicalDeletion(interaction, true, undefined, 10);
+    handleNonMusicalDeletion(interaction, true, 10);
   },
 };

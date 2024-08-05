@@ -10,7 +10,7 @@ const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("commands")
-    .setDescription(`${utils.tags.new} Get a list of available commands`),
+    .setDescription("Get a list of available slash commands"),
 
   async execute(interaction, client) {
     const reply = await interaction.deferReply({
@@ -23,12 +23,15 @@ module.exports = {
     );
 
     const slashCommandsArray = Array.from(slashCommands.values());
+    const sortedSlashCommandsArray = slashCommandsArray.sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
 
-    const totalCommands = slashCommandsArray.length;
+    const totalCommands = sortedSlashCommandsArray.length;
     let page = 0;
     const totalPages = Math.ceil(totalCommands / 10);
 
-    const commandList = slashCommandsArray
+    const commandList = sortedSlashCommandsArray
       .slice(page * 10, page * 10 + 10)
       .map((command) => `- **\`/${command.name}\`** : ${command.description}`)
       .join("\n");
@@ -60,7 +63,7 @@ module.exports = {
         --page;
       } else return;
 
-      const updatedCommandList = slashCommandsArray
+      const updatedCommandList = sortedSlashCommandsArray
         .slice(page * 10, page * 10 + 10)
         .map((command) => `- **\`/${command.name}\`** : ${command.description}`)
         .join("\n");
@@ -75,6 +78,6 @@ module.exports = {
       });
     });
 
-    handleNonMusicalDeletion(interaction, true, undefined, 10);
+    handleNonMusicalDeletion(interaction, true, 10);
   },
 };

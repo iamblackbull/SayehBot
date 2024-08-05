@@ -1,15 +1,11 @@
-const { DBTOKEN, subRole1, subRole2, subRole3, boostRole } = process.env;
+const { sayehID, subRole1, subRole2, subRole3, boostRole } = process.env;
 const { colors, fonts } = require("./cardUtils");
+const { XPreqs, maxLevel } = require("./cardUtils");
 const Canvas = require("canvas");
 const path = require("path");
-const Levels = require("discord-xp");
-
-Levels.setURL(DBTOKEN);
 
 async function generateCard(target, member, user) {
-  const neededXp = Levels.xpFor(parseInt(user.level + 1));
-  const passedXp = Levels.xpFor(parseInt(user.level));
-  const finalXp = neededXp - passedXp;
+  const neededXp = XPreqs[user.level - 1];
 
   const canvas = new Canvas.createCanvas(1000, 300);
   const card = canvas.getContext("2d");
@@ -44,21 +40,24 @@ async function generateCard(target, member, user) {
 
   card.strokeStyle = colors.primary;
 
-  if (user.level < 60) {
-    card.strokeRect(300, 200, (barWidth * (user.xp - passedXp)) / finalXp, 0);
+  if (user.level < maxLevel) {
+    card.strokeRect(300, 200, (barWidth * user.xp) / neededXp, 0);
   } else {
     card.strokeRect(300, 200, barWidth, 0);
   }
 
   card.fillStyle = colors.primary;
 
-  if (target.id === "481094367407374348") {
+  if (target.id === sayehID) {
     card.font = "90px Space Silhouette Font";
     card.fillText("SAYEH", 280, 150);
   } else {
     if (target.globalName.length <= 10) {
       card.font = "70px BubbleGum";
-    } else if (target.globalName.length > 10 && target.globalName.length <= 15) {
+    } else if (
+      target.globalName.length > 10 &&
+      target.globalName.length <= 15
+    ) {
       card.font = "50px BubbleGum";
     } else {
       card.font = "35px BubbleGum";
@@ -95,7 +94,7 @@ async function generateCard(target, member, user) {
   }
 
   if (volume !== 0) {
-    if (boost) volume = volume + 50;
+    if (boost) volume += 50;
 
     card.font = "25px BubbleGum";
     card.fillStyle = colors.secondary;
@@ -105,28 +104,30 @@ async function generateCard(target, member, user) {
     card.fillText(`${volume}%`, 860, 260, 200);
   }
 
-  const xpLine =
-    user.level < 60 ? `${user.xp - passedXp}/${finalXp} XP` : "MAX";
+  const xpLine = user.level < maxLevel ? `${user.xp}/${neededXp} XP` : "MAX";
 
-  if (xpLine.length <= 10) {
-    if (xpLine.length <= 3) {
-      card.font = "30px BubbleGum";
-      card.fillStyle = colors.secondary;
-      card.fillText(xpLine, 850, 150);
-    } else {
-      card.font = "25px BubbleGum";
-      card.fillStyle = colors.secondary;
-      card.fillText(xpLine, 780, 150);
-    }
-  } else if (xpLine.length > 10) {
-    card.font = "18px BubbleGum";
-    card.fillStyle = colors.secondary;
-    card.fillText(xpLine, 780, 150);
+  let xpFontSize;
+  let xpPosition;
+  if (xpLine.length <= 3) {
+    xpFontSize = "30";
+    xpPosition = 850;
+  } else if (xpLine.length <= 10) {
+    xpFontSize = "25";
+    xpPosition = 780;
+  } else if (xpLine.length < 13) {
+    xpFontSize = "18";
+    xpPosition = 780;
   } else if (xpLine.length > 13) {
-    card.font = "13px BubbleGum";
-    card.fillStyle = colors.secondary;
-    card.fillText(xpLine, 780, 150);
+    xpFontSize = "13";
+    xpPosition = 780;
+  } else {
+    xpFontSize = "11";
+    xpPosition = 780;
   }
+
+  card.font = `${xpFontSize}px BubbleGum`;
+  card.fillStyle = colors.secondary;
+  card.fillText(xpLine, xpPosition, 150);
 
   card.beginPath();
   card.arc(130, 140, 110, 0, 2 * Math.PI);
@@ -134,7 +135,7 @@ async function generateCard(target, member, user) {
   card.clip();
   card.drawImage(profile, 20, 30, 220, 220);
 
-  return { canvas };
+  return canvas;
 }
 
 async function generateWelcomeCard(target, memberCount) {
@@ -174,7 +175,9 @@ async function generateWelcomeCard(target, memberCount) {
   welcomeCard.fillStyle = colors.secondary;
   welcomeCard.font = `40px ${fontStyle}`;
   welcomeCard.textAlign = "center";
-  welcomeCard.fillText(target.globalName.toUpperCase(), 512, 410);
+
+  const name = target.globalName ? target.globalName : target.username;
+  welcomeCard.fillText(name.toUpperCase(), 512, 410);
 
   /////// Draw Member info
   welcomeCard.fillStyle = strokeStyle;
@@ -189,7 +192,7 @@ async function generateWelcomeCard(target, memberCount) {
   welcomeCard.clip();
   welcomeCard.drawImage(welcomeProfile, 393, 47, 238, 238);
 
-  return { welcomeCanvas };
+  return welcomeCanvas;
 }
 
 module.exports = {
