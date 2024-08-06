@@ -9,4 +9,4 @@ const levelSchema = new mongoose.Schema({
   totalxp: Number,
 });
 
-module.exports = mongoose.model("level", levelSchema);
+module.exports = mongoose.model("level", levelSchema, "leveling");
