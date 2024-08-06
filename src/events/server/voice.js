@@ -15,6 +15,8 @@ module.exports = {
     const { member, guild } = newState;
 
     if (!oldState.channelId && newState.channelId) {
+      if (voiceChannelEntryIntervals.get(member.user.id)) return;
+
       const intervalId = setInterval(async () => {
         const levelProfile = await getUser(guild.id, member.user);
         const XP = await calculateXP(newState, levelProfile);
