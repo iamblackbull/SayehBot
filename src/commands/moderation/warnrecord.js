@@ -7,7 +7,7 @@ const utils = require("../../utils/main/mainUtils");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("warnrecord")
-    .setDescription(`${utils.tags.new} Check your warning records`)
+    .setDescription("Check your warning records")
     .setDMPermission(false),
 
   async execute(interaction) {

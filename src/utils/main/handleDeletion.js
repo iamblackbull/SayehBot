@@ -58,7 +58,7 @@ function calculateTimer(interaction, id, success) {
 }
 
 function handleInteractionDeletion(interaction, success) {
-  const { commandName, customId, guildId, channel, reactions } = interaction;
+  const { commandName, customId, guildId, channel } = interaction;
   let timer;
 
   if (
@@ -77,16 +77,9 @@ function handleInteractionDeletion(interaction, success) {
 
   const un = success ? "" : "un";
   const timeoutLog = `${consoleTags.warning} Failed to delete ${un}successfull ${commandName} interaction.`;
-  const reactionLog = `${consoleTags.warning} Failed to remove reactions from ${un}successfull ${commandName} interaction.`;
 
   setTimeout(async () => {
     if (success && channel.id === musicChannelID) {
-      if (reactions && reactions.cache.size > 0) {
-        await reactions.removeAll().catch((e) => {
-          console.log(reactionLog);
-        });
-      }
-
       await interaction.editReply({ components: [] });
     } else {
       interaction?.deleteReply().catch((e) => {
@@ -157,14 +150,9 @@ function handleNonMusicalDeletion(
   success = Boolean,
   minutes = Number
 ) {
-  const { reactions } = interaction;
   const timer = success ? minutes : 2;
 
   setTimeout(async () => {
-    if (reactions && reactions.cache.size) {
-      await reactions.removeAll();
-    }
-
     await interaction.editReply({ components: [] });
   }, timer * 60_000);
 }

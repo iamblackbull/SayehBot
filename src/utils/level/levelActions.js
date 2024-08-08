@@ -16,10 +16,10 @@ async function appendXp(user, XP) {
   userXP += XP;
   totalXP += XP;
 
-  while (userXP >= XPreqs[userLevel - 1]) {
+  while (userXP >= XPreqs[userLevel]) {
     leveledUp = true;
 
-    userXP -= XPreqs[userLevel - 1];
+    userXP -= XPreqs[userLevel];
     userLevel++;
   }
 
@@ -58,7 +58,7 @@ async function subtractXp(user, XP) {
   while (userXP < 0 && userLevel > 0) {
     leveledDown = true;
     --userLevel;
-    userXP += XPreqs[userLevel - 1];
+    userXP += XPreqs[userLevel];
   }
 
   if (totalXP < 0) {
@@ -66,6 +66,8 @@ async function subtractXp(user, XP) {
     userXP = 0;
     totalXP = 0;
   }
+
+  if (userLevel == 0 && userXP < 0) userXP = 0;
 
   await levelModel.findOneAndUpdate(
     {
@@ -91,20 +93,16 @@ async function subtractXp(user, XP) {
 
 async function appendLevel(user, levels) {
   let leveledUp = false;
-
-  let userXP = user.xp;
   let totalXP = user.totalxp;
   let userLevel = user.level;
 
   for (let i = 0; i < levels; i++) {
     if (userLevel < maxLevel) {
-      userXP += XPreqs[userLevel - 1];
-      totalXP += XPreqs[userLevel - 1];
-
+      totalXP += XPreqs[userLevel];
       userLevel++;
 
       leveledUp = true;
-    } else break;
+    }
   }
 
   await levelModel.findOneAndUpdate(
@@ -114,7 +112,7 @@ async function appendLevel(user, levels) {
     },
     {
       level: userLevel,
-      xp: userXP,
+      xp: user.xp,
       totalxp: totalXP,
     },
     {
@@ -131,26 +129,17 @@ async function appendLevel(user, levels) {
 
 async function subtractLevel(user, levels) {
   let leveledDown = false;
-
-  let userXP = user.xp;
   let totalXP = user.totalxp;
   let userLevel = user.level;
 
   for (let i = 0; i < levels; i++) {
     if (userLevel > 0) {
       userLevel--;
-
-      userXP -= XPreqs[userLevel - 1];
-      totalXP -= XPreqs[userLevel - 1];
+      totalXP -= XPreqs[userLevel];
 
       leveledDown = true;
-    } else {
-      userXP = 0;
-      break;
     }
   }
-
-  if (userXP < 0) userXP = 0;
 
   await levelModel.findOneAndUpdate(
     {
@@ -159,7 +148,7 @@ async function subtractLevel(user, levels) {
     },
     {
       level: userLevel,
-      xp: userXP,
+      xp: user.xp,
       totalxp: totalXP,
     },
     {

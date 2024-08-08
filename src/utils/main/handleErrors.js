@@ -369,7 +369,7 @@ async function handleXpError(interaction, target) {
   const XPError = new EmbedBuilder()
     .setTitle("Not enough XP")
     .setDescription(
-      `${target} does not have enough XP.\nTry again with ${tag}.`
+      `${target} does not have enough XP or their already have too much XP.\nTry again with ${tag}.`
     )
     .setColor(colors.warning)
     .setThumbnail(thumbnails.warning);

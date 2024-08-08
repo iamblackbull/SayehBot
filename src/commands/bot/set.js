@@ -12,16 +12,10 @@ module.exports = {
     .setDescription(
       `${utils.tags.new} ${utils.tags.mod} Set a channel as a special channel`
     )
-    .addChannelOption((option) =>
-      option
-        .setName("channel")
-        .setDescription("Select a channel")
-        .setRequired(false)
-    )
     .addStringOption((option) =>
       option
         .setName("role")
-        .setDescription("Choose a role for your selected channel")
+        .setDescription("Choose a role to give to a channel")
         .setRequired(true)
         .addChoices(
           {
@@ -49,7 +43,7 @@ module.exports = {
             value: "video",
           },
           {
-            name: utils.events.leave,
+            name: utils.events.level,
             value: "level",
           },
           {
@@ -57,6 +51,12 @@ module.exports = {
             value: "moderation",
           }
         )
+    )
+    .addChannelOption((option) =>
+      option
+        .setName("channel")
+        .setDescription("Select a channel")
+        .setRequired(false)
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
     .setDMPermission(false),

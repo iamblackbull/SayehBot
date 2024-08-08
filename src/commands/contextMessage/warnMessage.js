@@ -25,8 +25,8 @@ module.exports = {
       PermissionFlagsBits.ManageMessages
     );
 
-    const msg = await channel.messages.fetch(targetId);
-    const targatHasPermission = msg.member.permissions.has(
+    const targetMassge = await channel.messages.fetch(targetId);
+    const targatHasPermission = targetMassge.member.permissions.has(
       PermissionFlagsBits.ManageMessages
     );
 
@@ -41,7 +41,7 @@ module.exports = {
         fetchReply: true,
       });
 
-      const { author } = msg;
+      const { author } = targetMassge;
       const reason = "Warned by a moderator.";
       const { warnSuccess, warns } = await warn(user, author, guild.id, reason);
 

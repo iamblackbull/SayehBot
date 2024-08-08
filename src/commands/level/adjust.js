@@ -3,6 +3,7 @@ const {
   EmbedBuilder,
   PermissionFlagsBits,
 } = require("discord.js");
+const { maxLevel, XPreqs } = require("../../utils/level/cardUtils");
 const { mongoose } = require("mongoose");
 const errorHandler = require("../../utils/main/handleErrors");
 const eventsModel = require("../../database/eventsModel");
@@ -31,12 +32,12 @@ module.exports = {
             .setRequired(true)
             .addChoices(
               {
-                name: "Give",
+                name: "Grant",
                 value: "granted",
               },
               {
                 name: "Take",
-                value: "removed",
+                value: "taken",
               }
             )
         )
@@ -45,6 +46,8 @@ module.exports = {
             .setName("amount")
             .setDescription("Input the amount of levels")
             .setRequired(true)
+            .setMinValue(1)
+            .setMaxValue(maxLevel)
         )
     )
     .addSubcommand((subcommand) =>
@@ -64,12 +67,12 @@ module.exports = {
             .setRequired(true)
             .addChoices(
               {
-                name: "Give",
+                name: "Grant",
                 value: "granted",
               },
               {
                 name: "Take",
-                value: "removed",
+                value: "taken",
               }
             )
         )
@@ -78,6 +81,8 @@ module.exports = {
             .setName("amount")
             .setDescription("Input the amount of xp")
             .setRequired(true)
+            .setMinValue(1)
+            .setMaxValue(XPreqs[maxLevel - 1])
         )
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
@@ -91,7 +96,7 @@ module.exports = {
     const target = options.getUser("user");
     const action = options.get("action").value;
     const amount = options.getInteger("amount");
-    let actionLabel;
+    let mode = false;
 
     const eventsList = await eventsModel.findOne({
       guildId,
@@ -109,11 +114,11 @@ module.exports = {
 
       switch (sub) {
         case "level":
-          actionLabel = await adjustLevel(interaction, amount, action);
+          mode = await adjustLevel(interaction, amount, action);
           break;
 
         case "xp":
-          actionLabel = await adjustXp(interaction, amount, action);
+          mode = await adjustXp(interaction, amount, action);
           break;
 
         ////////////// handling default subcommad just in case //////////////
@@ -124,16 +129,20 @@ module.exports = {
         }
       }
 
-      const embed = new EmbedBuilder()
-        .setTitle(utils.titles.level)
-        .setDescription(`**${amount} ${sub}** ${actionLabel} ${target}.`)
-        .setColor(utils.colors.default);
+      if (!mode) {
+        errorHandler.handleXpError(interaction, target);
+      } else {
+        const embed = new EmbedBuilder()
+          .setTitle(utils.titles.level)
+          .setDescription(`**${amount} ${sub}** ${mode} ${target}.`)
+          .setColor(utils.colors.default);
 
-      await interaction.editReply({
-        embeds: [embed],
-      });
+        await interaction.editReply({
+          embeds: [embed],
+        });
 
-      success = true;
+        success = true;
+      }
     }
 
     handleNonMusicalDeletion(interaction, success, 10);

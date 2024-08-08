@@ -147,6 +147,7 @@ module.exports = {
         );
       }
     }
+
     handleNonMusicalDeletion(interaction, success, 10);
   },
 };

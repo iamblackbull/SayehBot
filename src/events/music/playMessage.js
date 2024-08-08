@@ -62,7 +62,7 @@ module.exports = {
 
             const target = result.playlist ? result.tracks : song;
 
-            const entry = queue.tasksQueue.aquire();
+            const entry = queue.tasksQueue.acquire();
 
             await entry.getTask();
             await queue.addTrack(target);

@@ -38,7 +38,7 @@ async function getUser(guildId, user) {
       totalxp: 0,
     });
 
-    await levelModel.save().catch(console.error);
+    await levelProfile.save().catch(console.error);
   }
 
   return levelProfile;
@@ -156,58 +156,59 @@ async function handleBlackjackXP(interaction, xp, result) {
 async function adjustLevel(interaction, amount, action) {
   const { options, user, guildId } = interaction;
   const target = options.getUser("user");
+  let mode = false;
 
   const enabled = await checkEvent(guildId);
-  if (!enabled) return;
+  if (!enabled) return mode;
 
   const levelProfile = await getUser(guildId, target);
-  if (levelProfile.level >= maxLevel) return;
-
-  let Action;
 
   if (action === "granted") {
-    Action = "granted to";
+    if (levelProfile.level >= maxLevel) return mode;
 
+    mode = "granted to";
     await appendLevel(levelProfile, amount);
   } else {
-    Action = "removed from";
+    if (levelProfile.level <= 0) return mode;
 
+    mode = "taken from";
     await subtractLevel(levelProfile, amount);
   }
 
   console.log(
-    `${consoleTags.app} ${amount} level ${Action} ${target.username} by ${user.username}.`
+    `${consoleTags.app} ${amount} level ${mode} ${target.username} by ${user.username}.`
   );
 
-  return Action;
+  return mode;
 }
 
 async function adjustXp(interaction, amount, action) {
   const { options, user, guildId } = interaction;
   const target = options.getUser("user");
+  let mode = false;
 
   const enabled = await checkEvent(guildId);
-  if (!enabled) return;
+  if (!enabled) return mode;
 
   const levelProfile = await getUser(guildId, target);
-  if (levelProfile.level >= maxLevel) return;
-
-  let Action;
 
   if (action === "granted") {
-    Action = "granted to";
+    if (levelProfile.level >= maxLevel) return mode;
+
+    mode = "granted to";
     await appendXp(levelProfile, amount);
   } else {
-    Action = "removed from";
+    if (levelProfile.totalxp <= 0) return mode;
 
+    mode = "taken from";
     await subtractXp(levelProfile, amount);
   }
 
   console.log(
-    `${consoleTags.app} ${amount} xp ${Action} ${target.username} by ${user.username}.`
+    `${consoleTags.app} ${amount} xp ${mode} ${target.username} by ${user.username}.`
   );
 
-  return Action;
+  return mode;
 }
 
 async function getLeaderboard(guildId, limit = Number) {
