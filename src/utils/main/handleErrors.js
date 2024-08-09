@@ -1,6 +1,12 @@
 const { EmbedBuilder } = require("discord.js");
-const { titles, colors, thumbnails, formatsLabel } = require("./mainUtils");
 const musicUtils = require("../player/musicUtils");
+const {
+  titles,
+  colors,
+  thumbnails,
+  formatsLabel,
+  consoleTags,
+} = require("./mainUtils");
 
 const warningEmbed = new EmbedBuilder()
   .setColor(colors.warning)
@@ -184,9 +190,7 @@ async function handleNoResultError(interaction) {
 
   const description =
     interaction.commandName === "wow"
-      ? noResultError.setDescription(
-          `- Make sure you input the correct information.\n- Character's profile must be available in **[raider.io](https://raider.io).**\nTry again with ${tag}.`
-        )
+      ? `- Make sure you input the correct information.\n- Character's profile must be available in **[raider.io](https://raider.io).**\nTry again with ${tag}.`
       : `Make sure you input a valid query.\nTry again with ${tag}.`;
 
   noResultError.setDescription(description);
@@ -362,21 +366,21 @@ async function handleAccessDeniedError(interaction) {
 async function handleXpError(interaction, target) {
   const tag = `</${interaction.commandName}:${interaction.commandId}>`;
 
-  const emptyPlaylistError = new EmbedBuilder()
+  const XPError = new EmbedBuilder()
     .setTitle("Not enough XP")
     .setDescription(
-      `${target} has not gained enough xp. You should at least send **1** message in the server.\nTry again with ${tag}.`
+      `${target} does not have enough XP or their already have too much XP.\nTry again with ${tag}.`
     )
     .setColor(colors.warning)
     .setThumbnail(thumbnails.warning);
 
   if (interaction.deferred || interaction.replied) {
     await interaction.editReply({
-      embeds: [emptyPlaylistError],
+      embeds: [XPError],
     });
   } else {
     await interaction.reply({
-      embeds: [emptyPlaylistError],
+      embeds: [XPError],
     });
   }
 }
@@ -467,6 +471,24 @@ async function handleLargeFileError(interaction) {
   warningEmbed
     .setTitle("**File is too large**")
     .setDescription("File cannot be larger than 10240.0 kb.");
+
+  if (interaction.deferred || interaction.replied) {
+    await interaction.editReply({
+      embeds: [warningEmbed],
+    });
+  } else {
+    await interaction.reply({
+      embeds: [warningEmbed],
+    });
+  }
+}
+
+async function handleTooLongTrackError(interaction) {
+  warningEmbed
+    .setTitle("**Too Long**")
+    .setDescription(
+      "This action is only usable on tracks shorter than 10 mins."
+    );
 
   if (interaction.deferred || interaction.replied) {
     await interaction.editReply({
@@ -606,6 +628,67 @@ async function handleInvalidDate(interaction) {
   }
 }
 
+async function handleMusicError(interaction, error) {
+  if (
+    error.message.includes("Sign in to confirm your age.") ||
+    error.message.includes("The following content may contain")
+  ) {
+    await handleRestriceError(interaction);
+  } else if (
+    error.message ===
+      "Cannot read properties of null (reading 'createStream')" ||
+    error.message.includes("Failed to fetch resources for ytdl streaming") ||
+    error.message.includes("Could not extract stream for this track")
+  ) {
+    await handleThirdPartyError(interaction);
+  } else {
+    await handleUnknownError(interaction);
+
+    console.error(
+      `${consoleTags.error} While executing ${interaction.commandName} command: `,
+      error
+    );
+  }
+}
+
+async function handleMusicErrorMessage(message, error) {
+  let msg;
+
+  if (
+    error.message.includes("Sign in to confirm your age.") ||
+    error.message.includes("The following content may contain")
+  ) {
+    msg = await errorHandler.handleRestriceErrorMessage(message);
+  } else if (
+    error.message ===
+      "Cannot read properties of null (reading 'createStream')" ||
+    error.message.includes("Failed to fetch resources for ytdl streaming") ||
+    error.message.includes("Could not extract stream for this track")
+  ) {
+    msg = await errorHandler.handleThirdPartyErrorMessage(message);
+  } else {
+    msg = await errorHandler.handleUnknownErrorMessage(message);
+
+    console.error(`${consoleTags.error} While executing play message: `, error);
+  }
+
+  return msg;
+}
+
+function handlePlayerError() {
+  warningEmbed.setDescription("A player error occurred while playing a track.");
+
+  return warningEmbed;
+}
+
+function handlePlayerSkipError(track) {
+  warningEmbed.setDescription(
+    `Player failed to load the stream for **[${track.title}](${track.url})** and skipped the track.`
+  );
+
+  return warningEmbed;
+}
+
 module.exports = {
   handleDatabaseError,
   handleStreamModeError,
@@ -636,6 +719,7 @@ module.exports = {
   handlePingUnknownError,
   handleFileFormatError,
   handleLargeFileError,
+  handleTooLongTrackError,
   handleRateLimitError,
   handleUnavailableError,
   handleNoBookmarkProfileError,
@@ -643,4 +727,8 @@ module.exports = {
   handleDisabledError,
   handleCaseOpenError,
   handleInvalidDate,
+  handleMusicError,
+  handleMusicErrorMessage,
+  handlePlayerError,
+  handlePlayerSkipError,
 };

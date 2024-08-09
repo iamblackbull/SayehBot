@@ -105,6 +105,6 @@ module.exports = {
       success = true;
     }
 
-    handleNonMusicalDeletion(interaction, success, undefined, 10);
+    handleNonMusicalDeletion(interaction, success, 10);
   },
 };

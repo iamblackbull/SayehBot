@@ -46,6 +46,6 @@ module.exports = {
       handleAPIError(interaction);
     }
 
-    handleNonMusicalDeletion(interaction, success, undefined, 10);
+    handleNonMusicalDeletion(interaction, success, 10);
   },
 };

@@ -1,7 +1,6 @@
 const { AttachmentBuilder, Events } = require("discord.js");
-const { welcomeRoleID, guildID } = process.env;
 const eventsModel = require("../../database/eventsModel");
-const { getChannelId } = require("../../commands/server/setwelcome");
+const channelModel = require("../../database/channelModel");
 const { generateWelcomeCard } = require("../../utils/level/generateCard");
 const { consoleTags } = require("../../utils/main/mainUtils");
 
@@ -14,29 +13,34 @@ module.exports = {
     const { guild, user } = member;
     const { memberCount } = guild;
 
+    if (welcomeMessageSent.has(member.id)) return;
+    welcomeMessageSent.add(member.id);
+
     const eventsList = await eventsModel.findOne({
       guildId: guild.id,
       MemberAdd: true,
     });
     if (!eventsList) return;
 
-    if (welcomeMessageSent.has(member.id)) return;
-    welcomeMessageSent.add(member.id);
+    const channelsList = await channelModel.findOne({
+      guildId: guild.id,
+    });
+    if (!channelsList) return;
 
-    const channelId = getChannelId(guildID);
+    const channelId = channelsList.welcomeId;
     if (!channelId) return;
 
     const channel = guild.channels.cache.get(channelId);
     if (!channel) return;
 
     const role = member.guild.roles.cache.find(
-      (role) => role.id === welcomeRoleID
+      (role) => role.id === process.env.welcomeRoleID
     );
     if (!role) return;
 
     await member.roles.add(role);
 
-    const { welcomeCanvas } = await generateWelcomeCard(user, memberCount);
+    const welcomeCanvas = await generateWelcomeCard(user, memberCount);
 
     const attachment = new AttachmentBuilder(welcomeCanvas.toBuffer());
 
@@ -47,18 +51,15 @@ module.exports = {
 
     console.log(`${consoleTags.app} ${user.username} joined the server.`);
 
-    const msg = channel.send({
-      content: content,
-    });
-
     setTimeout(async () => {
-      await msg?.edit({
+      await channel.send({
+        content: content,
         files: [attachment],
       });
-    }, 2 * 1000);
+    }, 5_000);
 
     setTimeout(() => {
       welcomeMessageSent.delete(member.id);
-    }, 10 * 60 * 1000);
+    }, 600_000);
   },
 };

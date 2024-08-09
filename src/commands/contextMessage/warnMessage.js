@@ -20,13 +20,13 @@ module.exports = {
     let success = false;
     const { guild, channel, user, targetId } = interaction;
 
-    const member = await guild.members.fetch(interaction.user.id);
+    const member = await guild.members.fetch(user.id);
     const hasPermission = member.permissions.has(
       PermissionFlagsBits.ManageMessages
     );
 
-    const msg = await channel.messages.fetch(targetId);
-    const targatHasPermission = msg.member.permissions.has(
+    const targetMassge = await channel.messages.fetch(targetId);
+    const targatHasPermission = targetMassge.member.permissions.has(
       PermissionFlagsBits.ManageMessages
     );
 
@@ -41,14 +41,16 @@ module.exports = {
         fetchReply: true,
       });
 
-      const { warnSuccess, warns } = await warn(user, msg.author, guild.id);
+      const { author } = targetMassge;
+      const reason = "Warned by a moderator.";
+      const { warnSuccess, warns } = await warn(user, author, guild.id, reason);
 
       success = warnSuccess;
 
       const embed = new EmbedBuilder()
         .setTitle(utils.titles.warn)
         .setDescription(
-          `${msg.author} has been warned.\nTotal Warnings: **${warns}**`
+          `${author} has been warned.\nTotal Warnings: **${warns}**`
         )
         .setColor(utils.colors.warning)
         .setThumbnail(utils.thumbnails.success)
@@ -62,6 +64,6 @@ module.exports = {
       });
     }
 
-    handleNonMusicalDeletion(interaction, success, undefined, 5);
+    handleNonMusicalDeletion(interaction, success, 10);
   },
 };

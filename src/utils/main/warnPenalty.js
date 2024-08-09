@@ -3,9 +3,9 @@ const { mongoose } = require("mongoose");
 const warnModel = require("../../database/warnModel");
 const utils = require("../../utils/main/mainUtils");
 
-let importedClient;
-function getWarnClient(client) {
-  importedClient = client;
+let client;
+function getWarnClient(importedClient) {
+  client = importedClient;
 }
 
 async function applyPenalty(UserId) {
@@ -18,13 +18,13 @@ async function applyPenalty(UserId) {
 
   if (!warnList || warnList.Warns < 1) return;
 
-  const guild = await importedClient.guilds.fetch(warnList.guildId);
+  const guild = await client.guilds.fetch(warnList.guildId);
   const member = await guild.members.fetch(warnList.UserId);
-  const target = await importedClient.users.fetch(warnList.UserId);
+  const target = await client.users.fetch(warnList.UserId);
   if (!guild || !member) return;
 
   const warns = warnList.Warns;
-  const reason = `${warns} Warnings received.`;
+  const reason = `${warnList.Reason} (${warns} Total Warnings)`;
   const penalty = utils.warnPenalties[warns - 1];
 
   const nextPenalty =
@@ -35,9 +35,10 @@ async function applyPenalty(UserId) {
   const embed = new EmbedBuilder()
     .setTitle(utils.titles.warning)
     .setDescription(
-      `You have been warned **${warns}** time(s)! Please watch your behavior.
-        \n\n## Current Warning Penalty:
-        \n- ${penalty.label}
+      `You have been warned **${warns}** time(s) in Sayeh's server! Please watch your behavior.
+        \n\n## Current Warning Details:
+        \n- Penalty: ${penalty.label}
+        \n- Reason: ${reason}
         \n${nextPenalty}`
     )
     .setThumbnail(utils.thumbnails.warning)

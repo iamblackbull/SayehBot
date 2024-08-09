@@ -12,6 +12,7 @@ module.exports = {
     const playerList = await playerModel.findOne({
       guildId: queue.metadata.guild,
     });
+    if (!playerList) return;
 
     if (playerList.isSkipped || playerList.isJustAdded)
       return await playerModel.updateOne(
@@ -42,6 +43,6 @@ module.exports = {
       components: [button],
     });
 
-    handleEventDelection(msg);
+    handleEventDelection(msg, true);
   },
 };

@@ -22,8 +22,10 @@ async function getUserProfile(username) {
 }
 
 function createItems(username) {
+  const name = username.toLowerCase();
   const timestamp = Date.now();
-  const image = `https://static-cdn.jtvnw.net/previews-ttv/live_user_${username}-1920x1080.jpg?NgOqCvLCECvrHGtf=1&t=${timestamp}`;
+
+  const image = `https://static-cdn.jtvnw.net/previews-ttv/live_user_${name}-1920x1080.jpg?NgOqCvLCECvrHGtf=1&t=${timestamp}`;
   const url = `https://www.twitch.tv/${username}`;
 
   return { image, url };

@@ -1,5 +1,6 @@
 const { EmbedBuilder } = require("discord.js");
 const { titles, footers, texts, thumbnails, colors } = require("./musicUtils");
+const { parseTime } = require("../main/handleDeletion");
 
 function createEmbed({ title, description, color, author, thumbnail, footer }) {
   const embed = new EmbedBuilder()
@@ -7,15 +8,11 @@ function createEmbed({ title, description, color, author, thumbnail, footer }) {
     .setDescription(description)
     .setColor(color);
 
-  if (author) {
-    embed.setAuthor(author);
-  }
-  if (thumbnail) {
-    embed.setThumbnail(thumbnail);
-  }
-  if (footer) {
-    embed.setFooter(footer);
-  }
+  if (author) embed.setAuthor(author);
+
+  if (thumbnail) embed.setThumbnail(thumbnail);
+
+  if (footer) embed.setFooter(footer);
 
   return embed;
 }
@@ -64,23 +61,23 @@ function determineSourceAndColor(url) {
 }
 
 function setDurationLabel(trackDuration) {
-  const convertor = trackDuration.split(":");
-  const totalTimer = +convertor[0] * 60 + +convertor[1];
+  const time = parseTime(trackDuration);
 
   let duration = "LIVE";
-  if (totalTimer != 0) duration = trackDuration;
+  if (time != 0) duration = trackDuration;
 
   return duration;
 }
 
 function createTrackEmbed(interaction, queue, result, song) {
+  const { commandName, customId, user } = interaction;
   const playlist = result?.playlist;
   const length = result?.tracks?.length;
 
   let author = false;
   if (playlist) {
     author = {
-      name: playlist.title,
+      name: `${playlist.title} (${length} Tracks)`,
       iconURL: playlist.thumbnail,
       url: playlist.url,
     };
@@ -105,27 +102,27 @@ function createTrackEmbed(interaction, queue, result, song) {
   let nowPlaying = queueSize === 0;
 
   let title = playlist
-    ? playlist.url.toLowerCase().includes("album")
-      ? `${titles.album} (${length} Tracks)`
-      : `${titles.playlist} (${length} Tracks)`
+    ? playlist.type === "album"
+      ? titles.album
+      : titles.playlist
     : nowPlaying
     ? titles.nowplaying
-    : `**${titles.track} ${queueSize}**`;
+    : `**${titles.track} #${queueSize}**`;
 
   if (interaction === "playerStart") {
     nowPlaying = true;
 
     title = titles.nowplaying;
-  } else if (interaction?.commandName) {
-    if (interaction.commandName === "previous") {
+  } else if (commandName) {
+    if (commandName === "previous") {
       nowPlaying = true;
 
       title = titles.previous;
-    } else if (interaction.commandName === "replay") {
+    } else if (commandName === "replay") {
       nowPlaying = true;
 
       title = titles.replay;
-    } else if (interaction.commandName === "skip") {
+    } else if (commandName === "skip") {
       if (queueSize >= 1 && queue.currentTrack) {
         nowPlaying = true;
 
@@ -136,17 +133,17 @@ function createTrackEmbed(interaction, queue, result, song) {
         title = titles.skip;
       }
     }
-  } else if (interaction?.customId) {
+  } else if (customId) {
     author = {
-      name: interaction.user.globalName,
-      iconURL: interaction.user.displayAvatarURL({ size: 1024, dynamic: true }),
+      name: user.globalName || user.username,
+      iconURL: user.displayAvatarURL({ size: 1024, dynamic: true }),
     };
 
-    if (interaction.customId === "previous-button") {
+    if (customId === "previous-button") {
       nowPlaying = true;
 
       title = titles.previous;
-    } else if (interaction.customId === "skip-button") {
+    } else if (customId === "skip-button") {
       if (queueSize >= 1 && queue.currentTrack) {
         nowPlaying = true;
 
@@ -242,16 +239,19 @@ function createSearchEmbed(result, isLink) {
 }
 
 async function createPauseEmbed(interaction, queue) {
+  const { commandName, commandId, user } = interaction;
   let title;
   let thumbnail;
 
-  let author = undefined;
-  if (interaction.customId) {
-    author = {
-      name: interaction.user.globalName,
-      iconURL: interaction.user.displayAvatarURL({ size: 1024, dynamic: true }),
-    };
-  }
+  const author = interaction.customId
+    ? {
+        name: user.globalName || user.username,
+        iconURL: user.displayAvatarURL({
+          size: 1024,
+          dynamic: true,
+        }),
+      }
+    : undefined;
 
   await queue.node.setPaused(!queue.node.isPaused());
 
@@ -265,9 +265,12 @@ async function createPauseEmbed(interaction, queue) {
     thumbnail = thumbnails.resume;
   }
 
-  const description = `Use ${interaction.commandId} again or click the button below to toggle.`;
+  const commandLabel = interaction.customId
+    ? "pause-button"
+    : `</${commandName}:${commandId}>`;
+  const description = `Use ${commandLabel} again or click the button below to toggle.`;
 
-  const { iconURL, text, color } = determineSourceAndColor("music");
+  const { color } = determineSourceAndColor("music");
 
   const embed = createEmbed({
     title,
@@ -275,10 +278,6 @@ async function createPauseEmbed(interaction, queue) {
     color,
     author,
     thumbnail,
-    footer: {
-      iconURL,
-      text,
-    },
   });
 
   return embed;
@@ -381,28 +380,30 @@ function createVoteEmbed(requiredVotes, phase) {
   return embed;
 }
 
-function createFavoriteEmbed(song, favoriteMode, favoriteLength) {
-  let mode;
+function createFavoriteEmbed(owner, song, favoriteMode, favoriteLength) {
+  const user = owner.globalName || owner.username;
+  const name = `${user}'s Favorites (${favoriteLength} Tracks)`;
+  const avatar = owner.displayAvatarURL({ size: 1024, dynamic: true });
+
+  let title;
   let descriptionMode;
   let thumbnail = song.thumbnail;
 
   switch (favoriteMode) {
     case "add":
-      mode = titles.addfavorite;
+      title = titles.addfavorite;
       descriptionMode = `**[${song.title}](${song.url})**\nhas been added to your favorite playlist.`;
       break;
     case "remove":
-      mode = titles.removefavorite;
+      title = titles.removefavorite;
       descriptionMode = `**[${song.title}](${song.url})**\nhas been removed from your favorite playlist.`;
       break;
     case "full":
-      mode = titles.fullfavorite;
+      title = titles.fullfavorite;
       descriptionMode = `Your favorite playlist is full.`;
       thumbnail = thumbnails.fullfavorite;
       break;
   }
-
-  const title = `${mode} (${favoriteLength} Tracks)`;
 
   const description = `${descriptionMode}\nUse </favorite play:1108681222764367962> to play your playlist.`;
 
@@ -412,6 +413,10 @@ function createFavoriteEmbed(song, favoriteMode, favoriteLength) {
     title,
     description,
     color,
+    author: {
+      name,
+      iconURL: avatar,
+    },
     thumbnail,
     footer: {
       iconURL,
@@ -423,10 +428,10 @@ function createFavoriteEmbed(song, favoriteMode, favoriteLength) {
 }
 
 function createPlayFavoriteEmbed(owner, queue, song, target, length) {
-  const user = owner.globalName;
+  const user = owner.globalName || owner.username;
   const name = target
-    ? `${user}'s Favorites (Track ${target})`
-    : `${user}'s Favorites`;
+    ? `${user}'s Favorites (Track #${target})`
+    : `${user}'s Favorites (${length} Tracks)`;
   const avatar = owner.displayAvatarURL({ size: 1024, dynamic: true });
 
   let queueSize = queue.tracks.size;
@@ -450,8 +455,8 @@ function createPlayFavoriteEmbed(owner, queue, song, target, length) {
   const title = target
     ? nowPlaying
       ? titles.nowplaying
-      : `**${titles.track} ${queueSize}**`
-    : `${titles.playlist} (${length} Tracks)`;
+      : `**${titles.track} #${queueSize}**`
+    : titles.playlist;
 
   const duration = setDurationLabel(song.duration);
   const description = `**[${song.title}](${song.url})**\n**${song.author}**\n${duration}`;
@@ -479,9 +484,9 @@ function createPlayFavoriteEmbed(owner, queue, song, target, length) {
 }
 
 function createViewFavoriteEmbed(owner, object, target, page, totalPages) {
-  const user = owner.globalName;
+  const user = owner.globalName || owner.username;
   const name = target
-    ? `${user}'s Favorites (Track ${target})`
+    ? `${user}'s Favorites (Track #${target})`
     : `${user}'s Favorites (${object.length} Tracks)`;
   const avatar = owner.displayAvatarURL({ size: 1024, dynamic: true });
 
@@ -525,9 +530,9 @@ function createViewFavoriteEmbed(owner, object, target, page, totalPages) {
 }
 
 function createDeleteWarningFavoriteEmbed(owner, song, target) {
-  const user = owner.globalName;
+  const user = owner.globalName || owner.username;
   const name = target
-    ? `${user}'s Favorites (Track ${target})`
+    ? `${user}'s Favorites (Track #${target})`
     : `${user}'s Favorites`;
   const avatar = owner.displayAvatarURL({ size: 1024, dynamic: true });
 
@@ -580,17 +585,13 @@ function createFilterEmbed(description) {
 function createRepeatEmbed(description) {
   const title = titles.repeat;
   const thumbnail = thumbnails.repeat;
-  const { iconURL, text, color } = determineSourceAndColor("music");
+  const { color } = determineSourceAndColor("music");
 
   const embed = createEmbed({
     title,
     description,
     color,
     thumbnail,
-    footer: {
-      iconURL,
-      text,
-    },
   });
 
   return embed;
@@ -599,17 +600,13 @@ function createRepeatEmbed(description) {
 function createShuffleEmbed(description) {
   const title = titles.shuffle;
   const thumbnail = thumbnails.shuffle;
-  const { iconURL, text, color } = determineSourceAndColor("music");
+  const { color } = determineSourceAndColor("music");
 
   const embed = createEmbed({
     title,
     description,
     color,
     thumbnail,
-    footer: {
-      iconURL,
-      text,
-    },
   });
 
   return embed;
@@ -619,17 +616,13 @@ function createLeaveEmbed() {
   const title = titles.leave;
   const description = "Queue has been destroyed.";
   const thumbnail = thumbnails.leave;
-  const { iconURL, text, color } = determineSourceAndColor("music");
+  const { color } = determineSourceAndColor("music");
 
   const embed = createEmbed({
     title,
     description,
     color,
     thumbnail,
-    footer: {
-      iconURL,
-      text,
-    },
   });
 
   return embed;

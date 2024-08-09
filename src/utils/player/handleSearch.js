@@ -1,25 +1,9 @@
 const { useMainPlayer, QueryType } = require("discord-player");
 const player = useMainPlayer();
 
-async function search(query) {
-  let result;
-
-  if (query.toLowerCase().startsWith("https")) {
-    result = await player.search(query, {
-      searchEngine: QueryType.AUTO,
-    });
-  } else {
-    result = await player.search(query, {
-      searchEngine: QueryType.YOUTUBE,
-    });
-  }
-
-  return result;
-}
-
-async function searchYouTube(query) {
+async function search(query, searchEngine) {
   const result = await player.search(query, {
-    searchEngine: QueryType.YOUTUBE_SEARCH,
+    searchEngine,
   });
 
   return result;
@@ -38,6 +22,8 @@ async function searchFavorite(playlist, slice) {
       searchEngine: QueryType.AUTO,
     });
 
+    if (!result.hasTracks()) return;
+
     const song = result.tracks[0];
     resultArray.push(song);
 
@@ -53,6 +39,5 @@ async function searchFavorite(playlist, slice) {
 
 module.exports = {
   search,
-  searchYouTube,
   searchFavorite,
 };

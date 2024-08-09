@@ -164,7 +164,7 @@ module.exports = {
 
             success = true;
 
-            await bookmark(interaction, overwatchEmbed);
+            await bookmark(interaction);
 
             const collector = pageReact(interaction, overwatchEmbed);
 
@@ -201,6 +201,6 @@ module.exports = {
       }
     }
 
-    handleNonMusicalDeletion(interaction, success, undefined, 10);
+    handleNonMusicalDeletion(interaction, success, 10);
   },
 };

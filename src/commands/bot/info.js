@@ -7,13 +7,16 @@ const { mongoose } = require("mongoose");
 const { handleDatabaseError } = require("../../utils/main/handleErrors");
 const utils = require("../../utils/main/mainUtils");
 const eventsModel = require("../../database/eventsModel");
+const channelModel = require("../../database/channelModel");
+const { getSystemUsage } = require("../../utils/client/handleSystemUsage");
 const { version, dependencies } = require("../../../package.json");
+const { pageReact } = require("../../utils/main/handleReaction");
 const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("info")
-    .setDescription(`${utils.tags.mod} See info about the bot`)
+    .setDescription(`${utils.tags.updated} ${utils.tags.mod} See bot information`)
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .setDMPermission(false),
 
@@ -23,7 +26,7 @@ module.exports = {
     if (mongoose.connection.readyState !== 1) {
       handleDatabaseError(interaction);
     } else {
-      await interaction.deferReply({
+      const infoEmbed = await interaction.deferReply({
         fetchReply: true,
       });
 
@@ -47,6 +50,12 @@ module.exports = {
       }
       uptimeString += `${hoursLabel}:${minutesLabel}:${remainingSecondsLabel}`;
 
+      const { cpuPercent, memPercent, totalMemoryGB } = await getSystemUsage();
+
+      const usageDescription = `### Host System Usage:
+                              > **CPU** : ${cpuPercent}%
+                              > **RAM (Total)** : ${memPercent}% (${totalMemoryGB} GB)`;
+
       const eventsList = await eventsModel.findOne({
         guildId: interaction.guildId,
       });
@@ -62,49 +71,113 @@ module.exports = {
         moderation: eventsList?.Moderation ?? false,
       };
 
+      const channelsList = await channelModel.findOne({
+        guildId: interaction.guildId,
+      });
+
+      const channelString = {
+        welcome: channelsList?.welcomeId ?? false,
+        leave: channelsList?.leaveId ?? false,
+        boost: channelsList?.boostId ?? false,
+        birthday: channelsList?.birthdayId ?? false,
+        stream: channelsList?.streamId ?? false,
+        video: channelsList?.videoId ?? false,
+        level: channelsList?.levelId ?? false,
+        mod: channelsList?.moderationId ?? false,
+      };
+
+      const channelNames = {};
+
+      for (const [key, channelId] of Object.entries(channelString)) {
+        if (channelId) {
+          const channel = await client.channels.fetch(channelId);
+
+          if (channel) channelNames[key] = channel.name;
+          else channelNames[key] = undefined;
+        } else {
+          channelNames[key] = undefined;
+        }
+      }
+
+      const uptime = `### Uptime:
+                      \n${uptimeString}`;
+
       const versions = `### Versions:
                       > SayehBot: \`${version}\`
                       > node.js: \`${nodeVersion}\`
                       > discord.js: \`${discordJsVersion}\`
                       > discord-player: \`${playerVersion}\``;
 
-      const uptime = `### Uptime:\n
-                      ${uptimeString}`;
-
       const { enabled, disabled } = utils.modes;
       const eventsDescription = `### Events:
-                              > **Welcome** : ${
-                                eventsString.memberAdd ? enabled : disabled
-                              }
-                              > **Leave** : ${
-                                eventsString.memberRemove ? enabled : disabled
-                              }
-                              > **Boost** : ${
-                                eventsString.memberUpdate ? enabled : disabled
-                              }
-                              > **Birthday** : ${
-                                eventsString.birthday ? enabled : disabled
-                              }
-                              > **Stream** : ${
-                                eventsString.stream ? enabled : disabled
-                              }
-                              > **Video** : ${
-                                eventsString.video ? enabled : disabled
-                              }
-                              > **Level** : ${
-                                eventsString.level ? enabled : disabled
-                              }
-                              > **Moderation** : ${
-                                eventsString.moderation ? enabled : disabled
-                              }`;
+                              \nSee which features of the bot are enabled:\n
+                              > **${utils.events.welcome}** : ${
+        eventsString.memberAdd ? enabled : disabled
+      }
+                              > **${utils.events.leave}** : ${
+        eventsString.memberRemove ? enabled : disabled
+      }
+                              > **${utils.events.boost}** : ${
+        eventsString.memberUpdate ? enabled : disabled
+      }
+                              > **${utils.events.birthday}** : ${
+        eventsString.birthday ? enabled : disabled
+      }
+                              > **${utils.events.stream}** : ${
+        eventsString.stream ? enabled : disabled
+      }
+                              > **${utils.events.video}** : ${
+        eventsString.video ? enabled : disabled
+      }
+                              > **${utils.events.level}** : ${
+        eventsString.level ? enabled : disabled
+      }
+                              > **${utils.events.mod}** : ${
+        eventsString.moderation ? enabled : disabled
+      }`;
+
+      const channelsDescription = `### Special Channels:
+                                \nChannels which are set as special channels for events:\n
+                                > **${utils.events.welcome}** : ${
+        channelString.welcome ? channelNames.welcome : disabled
+      }
+                                > **${utils.events.leave}** : ${
+        channelString.leave ? channelNames.leave : disabled
+      }
+                                > **${utils.events.boost}** : ${
+        channelString.boost ? channelNames.boost : disabled
+      }
+                                > **${utils.events.birthday}** : ${
+        channelString.birthday ? channelNames.birthday : disabled
+      }
+                                > **${utils.events.stream}** : ${
+        channelString.stream ? channelNames.stream : disabled
+      }
+                                > **${utils.events.video}** : ${
+        channelString.video ? channelNames.video : disabled
+      }
+                                > **${utils.events.level}** : ${
+        channelString.level ? channelNames.level : disabled
+      }
+                                > **${utils.events.mod}** : ${
+        channelString.mod ? channelNames.mod : disabled
+      }`;
+
+      const pages = [
+        `${uptime}\n${usageDescription}\n${versions}`,
+        `${eventsDescription}\n${channelsDescription}`,
+      ];
+
+      let page = 0;
+      const totalPages = pages.length;
 
       const embed = new EmbedBuilder()
         .setTitle(utils.titles.info)
-        .setDescription(`${versions}\n${uptime}\n${eventsDescription}`)
+        .setDescription(pages[0])
         .setThumbnail(client.user.avatarURL())
         .setColor(utils.colors.default)
         .setFooter({
-          text: utils.texts.bot,
+          text: `${utils.texts.bot} | Page ${page + 1} of ${totalPages}`,
           iconURL: utils.footers.bot,
         });
 
@@ -113,8 +186,32 @@ module.exports = {
       });
 
       success = true;
+
+      ////////////// page switching collector //////////////
+      const collector = pageReact(interaction, infoEmbed);
+
+      collector.on("collect", async (reaction, user) => {
+        if (user.bot) return;
+
+        await reaction.users.remove(user.id);
+
+        if (reaction.emoji.name === "➡" && page < totalPages - 1) {
+          page++;
+        } else if (reaction.emoji.name === "⬅" && page !== 0) {
+          --page;
+        }
+
+        embed.setDescription(pages[page]).setFooter({
+          text: `${utils.texts.bot} | Page ${page + 1} of ${totalPages}`,
+          iconURL: utils.footers.bot,
+        });
+
+        await interaction.editReply({
+          embeds: [embed],
+        });
+      });
     }
 
-    handleNonMusicalDeletion(interaction, success, undefined, 5);
+    handleNonMusicalDeletion(interaction, success, 10);
   },
 };

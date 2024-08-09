@@ -11,7 +11,7 @@ const overwatch = require("overwatch-api");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("overwatch")
-    .setDescription(`${utils.tags.new} Get Overwatch stats`)
+    .setDescription(`${utils.tags.game} Get Overwatch stats`)
     .addStringOption((option) =>
       option
         .setName("username")
@@ -152,7 +152,7 @@ module.exports = {
 
         success = true;
 
-        await bookmark(interaction, overwatchEmbed);
+        await bookmark(interaction);
 
         const collector = pageReact(interaction, overwatchEmbed);
 
@@ -186,7 +186,7 @@ module.exports = {
         });
       }
 
-      handleNonMusicalDeletion(interaction, success, undefined, 10);
+      handleNonMusicalDeletion(interaction, success, 10);
     });
   },
 };

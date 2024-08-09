@@ -17,11 +17,11 @@ module.exports = {
         .setRequired(true)
         .addChoices(
           {
-            name: "Welcome",
+            name: utils.events.welcome,
             value: Events.GuildMemberAdd,
           },
           {
-            name: "Leave",
+            name: utils.events.leave,
             value: Events.GuildMemberRemove,
           }
         )
@@ -31,7 +31,7 @@ module.exports = {
 
   async execute(interaction, client) {
     const event = interaction.options.get("event").value;
-    client.emit(event, interaction.member);
+    await client.emit(event, interaction.member);
 
     const embed = new EmbedBuilder()
       .setTitle(utils.titles.simulate)
@@ -39,8 +39,8 @@ module.exports = {
       .setColor(utils.colors.default)
       .setThumbnail(utils.thumbnails.success)
       .setFooter({
-        text: utils.texts.tools,
-        iconURL: utils.footers.tools,
+        text: utils.texts.bot,
+        iconURL: utils.footers.bot,
       });
 
     await interaction.reply({

@@ -13,7 +13,7 @@ const RIO = new noderiowrapper();
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("wow")
-    .setDescription("Get World of Warcraft stats")
+    .setDescription(`${utils.tags.game} Get World of Warcraft stats`)
     .addStringOption((option) =>
       option
         .setName("character")
@@ -158,7 +158,7 @@ module.exports = {
 
         success = true;
 
-        await bookmark(interaction, wowEmbed);
+        await bookmark(interaction);
 
         const collector = pageReact(interaction, wowEmbed);
 
@@ -240,6 +240,6 @@ module.exports = {
         }
       });
 
-    handleNonMusicalDeletion(interaction, success, undefined, 10);
+    handleNonMusicalDeletion(interaction, success, 10);
   },
 };

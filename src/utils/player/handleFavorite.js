@@ -1,12 +1,12 @@
 const { ComponentType } = require("discord.js");
 const { mongoose } = require("mongoose");
 const favoriteModel = require("../../database/favoriteModel");
-const { titles, favoriteSizes } = require("./musicUtils");
-const queueCreator = require("./createQueue");
 const embedCreator = require("./createMusicEmbed");
-const playerDataHandler = require("./handlePlayerData");
-const buttonCreator = require("../main/createButtons");
-const deletionHandler = require("../main/handleDeletion");
+const { titles, favoriteSizes } = require("./musicUtils");
+const { createFavoriteQueue } = require("./createQueue");
+const { handleData } = require("./handlePlayerData");
+const { createButtons } = require("../main/createButtons");
+const { handleInteractionDeletion } = require("../main/handleDeletion");
 const { consoleTags } = require("../main/mainUtils");
 
 async function updateFavoriteList(user, song) {
@@ -170,91 +170,84 @@ async function handleDeletion(
     });
 }
 
-async function handleButtons(favoriteEmbed, client, interaction, song) {
-  const timer = 10 * 60 * 1000;
+async function handleButtons(client, interaction, song) {
+  const collector = interaction.channel.createMessageComponentCollector({
+    componentType: ComponentType.Button,
+    time: 600_000,
+  });
 
-  favoriteEmbed
-    .awaitMessageComponent({
-      componentType: ComponentType.Button,
-      time: timer,
-    })
-    .then(async (messageComponentInteraction) => {
-      if (messageComponentInteraction.customId === "play-button") {
-        let success = false;
+  collector.on("collect", async (i) => {
+    if (i.customId === "play-button") {
+      let success = false;
 
-        const queue =
-          client.player.nodes.get(interaction.guildId) ||
-          (await queueCreator.createFavoriteQueue(client, interaction, song));
+      const queue =
+        client.player.nodes.get(interaction.guildId) ||
+        (await createFavoriteQueue(client, interaction, song));
 
-        if (!queue.connection) {
-          await queue.connect(interaction.member.voice.channel);
-        }
-
-        if (
-          queue.connection.joinConfig.channelId !==
-          interaction.member.voice?.channel?.id
-        )
-          return;
-
-        await queue.addTrack(song);
-
-        const { embed, nowPlaying } = embedCreator.createTrackEmbed(
-          interaction,
-          queue,
-          false,
-          song
-        );
-
-        await playerDataHandler.handleData(interaction, nowPlaying);
-
-        if (!queue.node.isPlaying() && !queue.node.isPaused())
-          await queue.node.play();
-
-        const button = buttonCreator.createButtons(nowPlaying);
-
-        const reply = await messageComponentInteraction.reply({
-          embeds: [embed],
-          components: [button],
-        });
-
-        success = true;
-
-        deletionHandler.handleInteractionDeletion(reply, success);
-      } else {
-        if (mongoose.connection.readyState !== 1) return;
-
-        const { favoriteMode, favoriteLength } = await updateFavoriteList(
-          interaction.user,
-          song
-        );
-
-        const embed = embedCreator.createFavoriteEmbed(
-          song,
-          favoriteMode,
-          favoriteLength
-        );
-
-        await messageComponentInteraction.reply({
-          embeds: [embed],
-          ephemeral: true,
-        });
+      if (!queue.connection) {
+        await queue.connect(interaction.member.voice.channel);
       }
 
-      await interaction.editReply({
-        components: [],
+      if (
+        queue.connection.joinConfig.channelId !==
+        interaction.member.voice?.channel?.id
+      )
+        return;
+
+      const entry = queue.tasksQueue.aquire();
+
+      await entry.getTask();
+      await queue.addTrack(song);
+
+      const { embed, nowPlaying } = embedCreator.createTrackEmbed(
+        interaction,
+        queue,
+        false,
+        song
+      );
+
+      await handleData(interaction.guildId, nowPlaying);
+
+      if (!queue.node.isPlaying() && !queue.node.isPaused())
+        await queue.node.play();
+
+      await queue.tasksQueue.release();
+
+      const button = createButtons(nowPlaying);
+
+      const reply = await i.reply({
+        embeds: [embed],
+        components: [button],
       });
-    })
-    .catch((error) => {
-      if (error.code === "InteractionCollectorError") {
-        console.log(
-          `${consoleTags.warning} Interaction response timed out for ${interaction.commandName} buttons.`
-        );
-      } else {
-        console.error(
-          `${consoleTags.error} While awaiting interaction response for ${interaction.commandName} buttons.`
-        );
-      }
+
+      success = true;
+
+      handleInteractionDeletion(reply, success);
+    } else {
+      if (mongoose.connection.readyState !== 1) return;
+
+      const { favoriteMode, favoriteLength } = await updateFavoriteList(
+        interaction.user,
+        song
+      );
+
+      const embed = embedCreator.createFavoriteEmbed(
+        i.user,
+        song,
+        favoriteMode,
+        favoriteLength
+      );
+
+      await i.reply({
+        embeds: [embed],
+        ephemeral: true,
+      });
+    }
+
+    await interaction.editReply({
+      components: [],
     });
+  });
 }
 
 module.exports = {

@@ -1,7 +1,7 @@
 const { mongoose } = require("mongoose");
 const streamModel = require("../../database/streamModel");
 const streamHandler = require("../../utils/api/handleStream");
-const notificationHandler = require("../../utils/main/handleNotifications");
+const { updateStream } = require("../../utils/main/handleNotifications");
 
 module.exports = (client) => {
   client.updateStream = async () => {
@@ -16,6 +16,6 @@ module.exports = (client) => {
 
     if (result === undefined || result.type !== "live") return;
 
-    notificationHandler.updateStreamNotification(client, result);
+    await updateStream(client, result);
   };
 };

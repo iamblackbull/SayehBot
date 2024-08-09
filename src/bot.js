@@ -3,7 +3,6 @@ const { TOKEN, DBTOKEN } = process.env;
 const mongoose = require("mongoose");
 const fs = require("fs");
 const { Player } = require("discord-player");
-const executing = require("node:process");
 const {
   Client,
   Collection,
@@ -15,7 +14,6 @@ const {
   cooldowns,
   ytdlOptions,
 } = require("./utils/player/queueUtils");
-const { consoleTags } = require("./utils/main/mainUtils");
 
 const client = new Client({
   intents: [
@@ -48,16 +46,6 @@ client.player = new Player(client, {
   ...ytdlOptions,
 });
 client.player.extractors.loadDefault();
-
-executing.on("unhandledRejection", (reason) => {
-  console.error(
-    `${consoleTags.error} Unhandled Rejection with reason: `,
-    reason
-  );
-});
-executing.on("uncaughtException", (reason) => {
-  console.error(`${consoleTags.error} Uncaugh Exception with reason: `, reason);
-});
 
 client.commands = new Collection();
 client.buttons = new Collection();

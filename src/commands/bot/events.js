@@ -21,35 +21,35 @@ module.exports = {
         .setRequired(true)
         .addChoices(
           {
-            name: "Welcome",
+            name: utils.events.welcome,
             value: Events.GuildMemberAdd,
           },
           {
-            name: "Leave",
+            name: utils.events.leave,
             value: Events.GuildMemberRemove,
           },
           {
-            name: "Boost",
+            name: utils.events.boost,
             value: Events.GuildMemberUpdate,
           },
           {
-            name: "Birthday",
+            name: utils.events.birthday,
             value: "birthday",
           },
           {
-            name: "Stream",
+            name: utils.events.stream,
             value: "stream",
           },
           {
-            name: "Video",
+            name: utils.events.video,
             value: "video",
           },
           {
-            name: "Level",
+            name: utils.events.level,
             value: "level",
           },
           {
-            name: "Moderation",
+            name: utils.events.mod,
             value: "moderation",
           },
           {
@@ -151,7 +151,7 @@ module.exports = {
       const embed = new EmbedBuilder()
         .setTitle(utils.titles.events)
         .setDescription(
-          `Event has been successfully ${enable ? "enabled" : "disabled"}.`
+          `Event has been successfully **${enable ? "enabled" : "disabled"}**.`
         )
         .setThumbnail(utils.thumbnails.success)
         .setColor(utils.colors.default)
@@ -171,6 +171,6 @@ module.exports = {
       success = true;
     }
 
-    handleNonMusicalDeletion(interaction, success, undefined, 5);
+    handleNonMusicalDeletion(interaction, success, 10);
   },
 };

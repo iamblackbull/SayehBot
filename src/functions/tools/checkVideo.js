@@ -1,6 +1,7 @@
 const { EmbedBuilder, ActionRowBuilder } = require("discord.js");
 const { mongoose } = require("mongoose");
 const eventsModel = require("../../database/eventsModel");
+const channelModel = require("../../database/channelModel");
 const videoModel = require("../../database/videoModel");
 const utils = require("../../utils/main/mainUtils");
 const { createUrlButton } = require("../../utils/main/createButtons");
@@ -16,14 +17,24 @@ module.exports = (client) => {
     if (mongoose.connection.readyState !== 1) return;
 
     const guild = await client.guilds.fetch(process.env.guildID);
-    const channel = await guild.channels.fetch(process.env.youtubeChannelID);
-    if (!guild || !channel) return;
+    if (!guild) return;
 
     const eventsList = await eventsModel.findOne({
       guildId: guild.id,
       Video: true,
     });
     if (!eventsList) return;
+
+    const channelsList = await channelModel.findOne({
+      guildId: guild.id,
+    });
+    if (!channelsList) return;
+
+    const channelId = channelsList.videoId;
+    if (!channelId) return;
+
+    const channel = await guild.channels.fetch(channelId);
+    if (!channel) return;
 
     try {
       const dataSayeh = await parser.parseURL(

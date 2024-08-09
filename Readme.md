@@ -1,4 +1,4 @@
-# SayehBot v1.7.0 Installation Guide
+# SayehBot v1.7.1 Installation Guide
 > **Recommended:** use `sudo -s` to make sure you have permission.
 
 ## 1. Update Server
@@ -35,7 +35,7 @@ OR install manually :
 ## 8. Create package.json file
 - In the main folder, use this command: `npm init`
 - for name, type and enter: `sayehbot`
-- for version, type and enter: `1.7.0`
+- for version, type and enter: `1.7.1`
 - for description, type and enter: `Official Sayeh's discord server bot`
 - for main file, type and enter: `./src/bot.js`
 - for test command, type and enter: `node .`
@@ -44,7 +44,7 @@ OR install manually :
 ## 9. Install Packages
 - `npm i discord.js @discordjs/opus@0.8.0 @discordjs/rest @discordjs/voice@0.11.0 discord-api-types dotenv @web-scrobbler/metadata-filter`
 
-- `npm i axios canvas@2.11.2 discord-giveaways@6.0.1 discord-xp@1.1.16 moment-timezone@0.5.37 mongoose ms@2.1.3 nasa-apod@0.2.0 node-fetch@3.2.10 node-twitch@0.4.7`
+- `npm i axios canvas@2.11.2 discord-giveaways@6.0.1 moment-timezone@0.5.37 mongoose ms@2.1.3 nasa-apod@0.2.0 node-fetch@3.2.10 node-twitch@0.4.7`
 
 - `npm i rss-parser@3.12.0 node-pre-gyp node-opus opusscript@0.0.8 noderiowrapper@1.1.1 steam-market-pricing@2.0.0 oxr@1.1.4 movier@3.0.1 genius-lyrics@4.4.3 steam-searcher@1.0.4 howlongtobeat node-os-utils overwatch-api @matsukky/twitchtracker googleapis`
 
@@ -63,8 +63,9 @@ Space Font installation :
   - Create a folder with `mkdir space`
   - Go back to root and copy the .ttf file to the directory with `cp Space Silhouette Font.ttf ~/../usr/share/fonts/truetype/space`
 
+<hr>
 
-> Now you can run the bot using `node .` in the main folder or using pm2.
+> Now you can run the bot using `node .` in the main folder which will stop the bot whenever you close the terminal. Use pm2 to make sure the bot stays online.
 
 # PM2 Installation Guide
 - Install with `npm install pm2 -g`

@@ -1,18 +1,23 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 const { handleRollXp } = require("../../utils/level/handleLevel");
+const { getUser } = require("../../utils/level/handleLevel");
 const utils = require("../../utils/main/mainUtils");
+const { maxLevel } = require("../../utils/level/cardUtils");
 const eventsModel = require("../../database/eventsModel");
-const Levels = require("discord-xp");
 
-Levels.setURL(process.env.DBTOKEN);
 const rollCooldown = new Set();
+let cacheRoll = 0;
+
+function getRoll() {
+  return Math.floor(Math.random() * max) + min;
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("roll")
     .setDescription(
-      `${utils.tags.updated} Roll a random number between 1 - 100 or custom amounts`
+      `${utils.tags.game} Roll a random number between 1 - 100 or custom amounts`
     )
     .setDMPermission(false)
     .addIntegerOption((option) =>
@@ -31,7 +36,7 @@ module.exports = {
       option
         .setName("guess")
         .setDescription(
-          "Guess right your upcoming roll to win 10,000 XP! (1 - 100 only)"
+          "Guess right your upcoming roll to win 50,000 XP! (1 - 100 only)"
         )
         .setMinValue(1)
         .setMaxValue(100)
@@ -45,29 +50,21 @@ module.exports = {
     let custom = true;
     if (min == 1 && max == 100) custom = false;
 
-    let roll = Math.floor(Math.random() * max) + min;
+    let roll = getRoll();
 
-    if (roll > max) {
-      roll = max;
+    do {
+      roll = getRoll();
+    } while (roll > max || roll < min);
 
-      console.log(
-        `${utils.consoleTags.warning} Roll was bigger than the max number and it was forced to max number.`
-      );
-    }
-
-    if (roll < min) {
-      roll = min;
-
-      console.log(
-        `${utils.consoleTags.warning} Roll was smaller than the min number and it was forced to min number.`
-      );
-    }
+    let bonus = false;
+    if (cacheRoll == roll) bonus = 10_000;
+    cacheRoll = roll;
 
     await interaction.reply({
       content: `🎲 ${interaction.user} rolls **${roll}** (${min} - ${max})`,
     });
 
-    handleNonMusicalDeletion(interaction, true, undefined, 2);
+    handleNonMusicalDeletion(interaction, true, 10);
 
     const eventsList = await eventsModel.findOne({
       guildId: interaction.guild.id,
@@ -76,11 +73,10 @@ module.exports = {
     if (!eventsList) return;
 
     const target = interaction.user;
-    const user = await Levels.fetch(target.id, interaction.guild.id, true);
+    const levelProfile = await getUser(interaction.guild.id, target);
 
     if (custom) return;
-    if (user.xp < 10_000) return;
-    if (user.level >= 60) return;
+    if (levelProfile.level >= maxLevel) return;
 
     if (rollCooldown.has(interaction.user.id)) return;
     rollCooldown.add(interaction.user.id);
@@ -91,15 +87,15 @@ module.exports = {
     switch (roll) {
       case 1:
         type = 0;
-        amount = 100 * 10; /// 1,000
+        amount = 100 * 100; /// 10,000
         break;
       case 7:
         type = 1;
-        amount = roll * 70; /// 410
+        amount = roll * 140; /// 820
         break;
       case 13:
         type = 0;
-        amount = roll * 13; /// 169
+        amount = roll * 130; /// 1,690
         break;
       case 69:
         type = 1;
@@ -111,7 +107,7 @@ module.exports = {
         break;
       case 100:
         type = 1;
-        amount = roll * 10; /// 1,000
+        amount = roll * 100; /// 10,000
         break;
 
       default:
@@ -141,12 +137,14 @@ module.exports = {
 
     if (guess && roll == guess) {
       type = 1;
-      amount = 10_000;
+      amount += 50_000;
     }
+
+    amount += bonus;
 
     const XP = parseInt(amount);
 
-    await handleRollXp(interaction, user, XP, type, roll);
+    await handleRollXp(interaction, XP, type, roll);
 
     const title =
       type === 1 ? utils.titles.gamble_winner : utils.titles.gamble_loser;
@@ -170,6 +168,6 @@ module.exports = {
 
     setTimeout(() => {
       rollCooldown.delete(interaction.user.id);
-    }, 30_000);
+    }, 10_000);
   },
 };

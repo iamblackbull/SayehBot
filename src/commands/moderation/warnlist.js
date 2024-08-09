@@ -53,7 +53,7 @@ module.exports = {
           .map((warning, index) => {
             return `**${index + 1}.** ${warning.Username} (**${
               warning.Warns
-            }** Warns)`;
+            }** Warnings)`;
           })
           .join("\n");
 
@@ -112,6 +112,6 @@ module.exports = {
       }
     }
 
-    handleNonMusicalDeletion(interaction, success, undefined, 10);
+    handleNonMusicalDeletion(interaction, success, 10);
   },
 };

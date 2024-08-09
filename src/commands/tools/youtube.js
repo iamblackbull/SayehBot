@@ -7,7 +7,7 @@ const { handleNonMusicalDeletion } = require("../../utils/main/handleDeletion");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("youtube")
-    .setDescription(`${utils.tags.new} Get info about a youtube channel`)
+    .setDescription("Get info about a youtube channel")
     .addStringOption((option) =>
       option
         .setName("channel")
@@ -68,6 +68,6 @@ module.exports = {
       success = true;
     }
 
-    handleNonMusicalDeletion(interaction, success, undefined, 5);
+    handleNonMusicalDeletion(interaction, success, 10);
   },
 };

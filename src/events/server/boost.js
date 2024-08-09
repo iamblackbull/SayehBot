@@ -1,5 +1,6 @@
 const { Events } = require("discord.js");
 const eventsModel = require("../../database/eventsModel");
+const channelModel = require("../../database/channelModel");
 const { consoleTags } = require("../../utils/main/mainUtils");
 
 const boostMessageSent = new Set();
@@ -14,6 +15,14 @@ module.exports = {
     });
     if (!eventsList) return;
 
+    const channelsList = await channelModel.findOne({
+      guildId: newMember.guild.id,
+    });
+    if (!channelsList) return;
+
+    const channelId = channelsList.boostId;
+    if (!channelId) return;
+
     const oldStatus = oldMember.premiumSince;
     const newStatus = newMember.premiumSince;
 
@@ -24,14 +33,14 @@ module.exports = {
       boostMessageSent.add(id);
 
       client.channels.cache
-        .get(process.env.boostChannelID)
+        .get(channelId)
         .send(`🚀 ${user} just boosted the server! 💜 (+50% XP Boost)`);
 
       console.log(`${consoleTags.app} ${user.username} boosted the server.`);
 
       setTimeout(() => {
         boostMessageSent.delete(id);
-      }, 10 * 60 * 1000);
+      }, 600_000);
     }
   },
 };

@@ -1,7 +1,7 @@
-const playerDataHandler = require("./handlePlayerData");
-const embedCreator = require("./createMusicEmbed");
-const buttonCreator = require("../main/createButtons");
-const errorHandler = require("../main/handleErrors");
+const { handleSkipData } = require("./handlePlayerData");
+const { createTrackEmbed } = require("./createMusicEmbed");
+const { createButtons } = require("../main/createButtons");
+const { handleQueueError } = require("../main/handleErrors");
 const { titles } = require("./musicUtils");
 
 async function skip(interaction, queue) {
@@ -19,14 +19,14 @@ async function skip(interaction, queue) {
     song = queue.currentTrack;
   }
 
-  const { embed, nowPlaying } = embedCreator.createTrackEmbed(
+  const { embed, nowPlaying } = createTrackEmbed(
     interaction,
     queue,
     false,
     song
   );
 
-  const button = buttonCreator.createButtons(nowPlaying);
+  const button = createButtons(nowPlaying);
 
   if (!trackNumber) {
     await queue.node.skip();
@@ -37,7 +37,7 @@ async function skip(interaction, queue) {
   if (nowPlaying) {
     if (!queue.node.isPlaying()) await queue.node.play();
 
-    await playerDataHandler.handleSkipData(interaction);
+    await handleSkipData(interaction.guildId);
   }
 
   await interaction.editReply({
@@ -51,14 +51,14 @@ async function previous(interaction, queue, previous) {
     if (previous) {
       await queue.history.back();
 
-      await playerDataHandler.handleSkipData(interaction);
+      await handleSkipData(interaction.guildId);
     } else {
       await queue.node.seek(0);
     }
 
     const song = queue.currentTrack;
 
-    const { embed, nowPlaying } = embedCreator.createTrackEmbed(
+    const { embed, nowPlaying } = createTrackEmbed(
       interaction,
       queue,
       false,
@@ -69,14 +69,14 @@ async function previous(interaction, queue, previous) {
       embed.setTitle(titles.replay);
     }
 
-    const button = buttonCreator.createButtons(nowPlaying);
+    const button = createButtons(nowPlaying);
 
     await interaction.editReply({
       embeds: [embed],
       components: [button],
     });
   } catch (error) {
-    errorHandler.handleQueueError(interaction);
+    handleQueueError(interaction);
   }
 }
 

@@ -1,5 +1,6 @@
 const { EmbedBuilder } = require("discord.js");
 const reportModel = require("../../database/reportModel");
+const channelModel = require("../../database/channelModel");
 const utils = require("../../utils/main/mainUtils");
 
 let importedClient;
@@ -48,10 +49,19 @@ async function notifyReporter(doc) {
 
 async function notifyModeratos(doc) {
   const guild = await importedClient.guilds.fetch(process.env.guildID);
-  const channel = await guild.channels.fetch(process.env.modChannelID);
   const reporter = await guild.members.fetch(doc.ReporterId);
   const target = await guild.members.fetch(doc.TargetId);
-  if (!guild || !channel || !reporter || !target) return;
+  if (!guild || !reporter || !target) return;
+
+  const channelsList = await channelModel.findOne({
+    guildId: guild.id,
+  });
+  if (!channelsList) return;
+
+  const channelId = channelsList.moderationId;
+  if (!channelId) return;
+
+  const channel = await guild.channels.fetch(channelId);
 
   const avatar = reporter.user.displayAvatarURL({ size: 1024, dynamic: true });
   let description = `**Reason**\n\`\`\`${doc.Reason}\`\`\`\n**Message**\n\`\`\`${doc.Message}\`\`\``;
