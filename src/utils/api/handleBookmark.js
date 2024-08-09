@@ -57,11 +57,7 @@ async function bookmark(interaction) {
         .setTitle(utils.titles.bookmark)
         .setDescription("Your profile has been saved in the database.")
         .setColor(utils.colors.default)
-        .setThumbnail(utils.thumbnails.bookmark)
-        .setFooter({
-          iconURL: utils.footers.tools,
-          text: utils.texts.tools,
-        });
+        .setThumbnail(utils.thumbnails.bookmark);
 
       await i.reply({
         embeds: [bookmarkEmbed],
