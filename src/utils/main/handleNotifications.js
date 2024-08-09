@@ -193,12 +193,14 @@ async function updateStream(client, data) {
     )
     .setImage(image);
 
-  await streamer.msg.edit({
+  const msg = await streamer.msg.edit({
     embeds: [embed],
     content: announcement,
   });
 
   console.log(`${consoleTags.app} ${user_name}'s twitch notification updated.`);
+
+  updateStreamerData(user_login, data, embed, announcement, msg);
 }
 
 async function endStream(client, channel) {
