@@ -22,7 +22,7 @@ module.exports = {
 
     if (mongoose.connection.readyState !== 1) {
       errorHandler.handleDatabaseError(interaction);
-    } else if (levelProfile.xp <= 0) {
+    } else if (levelProfile.totalxp <= 0) {
       errorHandler.handleXpError(interaction, target);
     } else {
       await interaction.deferReply({

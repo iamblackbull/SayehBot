@@ -148,7 +148,7 @@ async function subtractLevel(user, levels) {
     },
     {
       level: userLevel,
-      xp: user.xp,
+      xp: 0,
       totalxp: totalXP,
     },
     {

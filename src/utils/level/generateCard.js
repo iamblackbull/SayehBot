@@ -1,11 +1,13 @@
 const { sayehID, subRole1, subRole2, subRole3, boostRole } = process.env;
 const { colors, fonts } = require("./cardUtils");
 const { XPreqs, maxLevel } = require("./cardUtils");
+const { getRank } = require("./handleLevel");
 const Canvas = require("canvas");
 const path = require("path");
 
 async function generateCard(target, member, user) {
-  const neededXp = XPreqs[user.level - 1];
+  const neededXp = XPreqs[user.level];
+  const rank = await getRank(user.guildId, user.userId);
 
   const canvas = new Canvas.createCanvas(1000, 300);
   const card = canvas.getContext("2d");
@@ -68,7 +70,7 @@ async function generateCard(target, member, user) {
 
   card.font = "35px BubbleGum";
   card.fillStyle = colors.primary;
-  card.fillText(`#${user.position || 0}`, 730, 40, 80);
+  card.fillText(`#${rank || 0}`, 730, 40, 80);
   card.fillText(user.level || 0, 900, 40, 80);
 
   card.font = "35px BubbleGum";
@@ -118,10 +120,10 @@ async function generateCard(target, member, user) {
     xpFontSize = "18";
     xpPosition = 780;
   } else if (xpLine.length > 13) {
-    xpFontSize = "13";
+    xpFontSize = "16";
     xpPosition = 780;
   } else {
-    xpFontSize = "11";
+    xpFontSize = "13";
     xpPosition = 780;
   }
 

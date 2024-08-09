@@ -214,11 +214,29 @@ async function adjustXp(interaction, amount, action) {
 async function getLeaderboard(guildId, limit = Number) {
   const leaderboard = await levelModel
     .find({ guildId })
-    .sort({ level: -1 })
+    .sort({ level: -1, xp: -1 })
     .limit(limit)
     .exec();
 
   return leaderboard;
+}
+
+async function getRank(guildId, userId) {
+  const levelProfile = await levelModel.findOne({ guildId, userId });
+
+  if (!levelProfile) return false;
+
+  const higherRankedCount = await levelModel.countDocuments({
+    guildId,
+    $or: [
+      { level: { $gt: levelProfile.level } },
+      { level: levelProfile.level, xp: { $gt: levelProfile.xp } },
+    ],
+  });
+
+  const rank = higherRankedCount + 1;
+
+  return rank;
 }
 
 module.exports = {
@@ -232,4 +250,5 @@ module.exports = {
   adjustLevel,
   adjustXp,
   getLeaderboard,
+  getRank,
 };

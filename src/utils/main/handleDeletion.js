@@ -153,7 +153,8 @@ function handleNonMusicalDeletion(
   const timer = success ? minutes : 2;
 
   setTimeout(async () => {
-    await interaction.editReply({ components: [] });
+    if (!success) await interaction.deleteReply().catch(e);
+    else await interaction.editReply({ components: [] }).catch(e);
   }, timer * 60_000);
 }
 

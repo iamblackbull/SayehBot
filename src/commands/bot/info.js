@@ -110,7 +110,7 @@ module.exports = {
 
       const { enabled, disabled } = utils.modes;
       const eventsDescription = `### Events:
-                              \nSee which features of the bot are enabled:
+                              \nSee which features of the bot are enabled:\n
                               > **${utils.events.welcome}** : ${
         eventsString.memberAdd ? enabled : disabled
       }
@@ -137,7 +137,7 @@ module.exports = {
       }`;
 
       const channelsDescription = `### Special Channels:
-                                \nChannels which are set as special channels for events:
+                                \nChannels which are set as special channels for events:\n
                                 > **${utils.events.welcome}** : ${
         channelString.welcome ? channelNames.welcome : disabled
       }
@@ -203,7 +203,7 @@ module.exports = {
 
         embed.setDescription(pages[page]).setFooter({
           text: `${utils.texts.bot} | Page ${page + 1} of ${totalPages}`,
-          iconURL: utils.footers.page,
+          iconURL: utils.footers.bot,
         });
 
         await interaction.editReply({
